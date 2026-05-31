@@ -2,7 +2,7 @@
     "name": "SGOU SLM Browser - By Researcher Tizar",
     "short_name": "SGOU SLM",
     "description": "Browse SGOU self-learning material and download course PDFs offline",
-    "start_url": "./index.html",
+    "start_url": "./",
     "scope": "./",
     "display": "standalone",
     "orientation": "portrait-primary",
