@@ -18,6 +18,18 @@
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-E2N7NJNRQB', {
+            'anonymize_ip': true,
+            'cookie_flags': 'SameSite=None;Secure'
+        });
+    </script>
 </head>
 
 <body>
@@ -41,7 +53,20 @@
         <div class="header-inner">
             <div class="header-top">
                 <div class="header-text">
-                    <h1>SGOU SLM Browser</h1>
+                    <h1>
+                        <!-- Logo -->
+                        <svg class="logo" width="36" height="36" viewBox="0 0 512 512" aria-hidden="true">
+                            <rect width="512" height="512" rx="108" fill="var(--accent)" />
+                            <rect x="72" y="365" width="368" height="10" rx="5" fill="var(--header-text)"
+                                opacity=".4" />
+                            <text x="256" y="290" font-family="Georgia,serif" font-size="210" font-weight="bold"
+                                fill="var(--header-text)" text-anchor="middle" dominant-baseline="central">SG</text>
+                        </svg>
+                        <span class="title-group">
+                            SGOU SLM Browser
+                            <span class="credit">by Researcher Tizar</span>
+                        </span>
+                    </h1>
                     <p>Sree Narayanaguru Open University — Self Learning Material</p>
                 </div>
                 <div class="header-actions">
@@ -86,20 +111,6 @@
         </div>
         <div class="controls-row">
             <div class="filters" id="filters" role="group" aria-label="Level filter"></div>
-            <div class="view-controls" id="viewControls">
-                <button class="view-btn" id="expandAll" aria-label="Expand all">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9" />
-                    </svg> All
-                </button>
-                <button class="view-btn" id="collapseAll" aria-label="Collapse all">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="18 15 12 9 6 15" />
-                    </svg> All
-                </button>
-            </div>
         </div>
         <div class="stats" id="stats" aria-live="polite"></div>
     </div>
@@ -140,7 +151,11 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <footer>Data source: sgou.ac.in — Course PDFs hosted on SGOU's CDN</footer>
+    <footer>
+        <span>Course PDFs hosted on SGOU's CDN</span>
+        <span class="footer-sep">&middot;</span>
+        <span class="footer-count" id="downloadCount"></span>
+    </footer>
 
     <script src="script.js" defer></script>
 </body>
