@@ -1,5 +1,5 @@
 // ===============================
-//  SGOU Programme Browser
+//  SGOU Programme Browser (Fixed)
 // ===============================
 
 let allData = [];
@@ -7,6 +7,8 @@ let activeLevel = 'ALL';
 let isSearching = false;
 let deferredInstallPrompt = null;
 let currentAbort = null;
+let revealObserver = null;
+let searchAbort = null;
 
 // ===============================
 //  ANALYTICS
@@ -41,7 +43,30 @@ document.addEventListener('DOMContentLoaded', () => {
   initInstallPrompt();
   initOfflineDetection();
   updateDownloadCount();
+  handleDeepLinks();
 });
+
+// ===============================
+//  DEEP LINKS (PWA shortcuts + URL params)
+// ===============================
+function handleDeepLinks() {
+  const params = new URLSearchParams(window.location.search);
+  const action = params.get('action');
+  const filter = params.get('filter');
+
+  if (action === 'search') {
+    requestAnimationFrame(() => {
+      const inp = $('searchInput');
+      if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  }
+
+  if (filter && ['UG', 'PG', 'FYUG'].includes(filter)) {
+    activeLevel = filter;
+    // Will be applied once data loads — stored and applied in loadData success
+    window._pendingFilter = filter;
+  }
+}
 
 // ===============================
 //  SKELETONS
@@ -60,7 +85,6 @@ function showSkeletons() {
 //  DATA LOADING (with sorting)
 // ===============================
 async function loadData() {
-  // Abort any stale fetch
   if (currentAbort) currentAbort.abort();
   currentAbort = new AbortController();
 
@@ -70,8 +94,6 @@ async function loadData() {
       if (!r.ok) continue;
 
       const raw = await r.json();
-
-      // Validate & sanitize data
       if (!Array.isArray(raw)) throw new Error('Data is not an array');
 
       allData = raw
@@ -87,10 +109,17 @@ async function loadData() {
           }))
         }));
 
-      // SORT ALPHABETICALLY by programme_name
       allData.sort((a, b) =>
         a.programme_name.localeCompare(b.programme_name, 'en', { sensitivity: 'base' })
       );
+
+      // Apply pending deep-link filter
+      if (window._pendingFilter) {
+        activeLevel = window._pendingFilter;
+        delete window._pendingFilter;
+        document.querySelectorAll('.pill').forEach(p =>
+          p.classList.toggle('active', p.dataset.level === activeLevel));
+      }
 
       buildFilters();
       renderProgrammes(allData);
@@ -99,7 +128,6 @@ async function loadData() {
       return;
     } catch (err) {
       if (err.name === 'AbortError') return;
-      // try next URL
     }
   }
 
@@ -143,7 +171,7 @@ function syncMeta() {
 }
 
 // ===============================
-//  SEARCH
+//  SEARCH (with debounce & animations)
 // ===============================
 function initSearch() {
   const input = $('searchInput');
@@ -151,24 +179,35 @@ function initSearch() {
   if (!input) return;
 
   let searchTimer;
+  let analyticsTimer;
+
   input.addEventListener('input', () => {
     hideRecent();
-    handleSearch();
+    // Debounce the actual search render
     clearTimeout(searchTimer);
+    searchTimer = setTimeout(handleSearch, 120);
+
+    // Debounce analytics separately
+    clearTimeout(analyticsTimer);
     const q = input.value.toLowerCase().trim();
     if (q.length >= 2) {
-      searchTimer = setTimeout(() => {
+      analyticsTimer = setTimeout(() => {
         GA.trackSearch(q, document.querySelectorAll('.search-result-item').length);
       }, 1500);
     }
+
+    // Immediate clear-button visibility update
+    if (clear) clear.classList.toggle('visible', q.length > 0);
   });
 
   input.addEventListener('focus', () => { if (!input.value.trim()) showRecent(); });
   input.addEventListener('blur', () => setTimeout(hideRecent, 200));
 
   clear?.addEventListener('click', () => {
-    input.value = ''; clear.classList.remove('visible');
-    handleSearch(); input.focus();
+    input.value = '';
+    clear.classList.remove('visible');
+    handleSearch();
+    input.focus();
   });
 }
 
@@ -188,17 +227,19 @@ function handleSearch() {
   if (q.length > 0) {
     isSearching = true;
     if (grid) grid.style.display = 'none';
-    if ($('viewControls')) $('viewControls').style.display = 'none';
+    const vc = $('viewControls');
+    if (vc) vc.style.display = 'none';
     if (!results) return;
     results.classList.add('active');
 
+    // Build matches efficiently
     const matches = [];
     const seen = new Set();
     filtered.forEach(prog => {
       const pHit = prog.programme_name.toLowerCase().includes(q);
       prog.semesters.forEach(sem => {
         sem.courses.forEach(c => {
-          const hit = c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || pHit;
+          const hit = pHit || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
           if (hit && !seen.has(c.code)) {
             seen.add(c.code);
             matches.push({ prog, sem, course: c });
@@ -207,7 +248,6 @@ function handleSearch() {
       });
     });
 
-    // Sort search results alphabetically
     matches.sort((a, b) =>
       a.course.name.localeCompare(b.course.name, 'en', { sensitivity: 'base' })
     );
@@ -223,9 +263,9 @@ function handleSearch() {
         matches.map((m, i) => {
           const lv = m.prog.level;
           const cls = lv === 'PG' ? 'pg' : lv === 'UG' ? 'ug' : 'fyug';
-          const label = (lv === 'FYUG' || lv === 'FYUG') ? '4-Year UG' : lv;
+          const label = lv === 'FYUG' ? 'FYUG' : lv;
           const fn = sanitize(m.course.code + '_' + m.course.name) + '.pdf';
-          return `<div class="search-result-item" data-delay="${Math.min(i * 40, 300)}">
+          return `<div class="search-result-item" data-idx="${i}">
   <span class="search-result-level ${cls}">${label}</span>
   <div class="search-result-body">
     <div class="search-result-programme">${hl(m.prog.programme_name, q)} &middot; ${m.sem.semester}</div>
@@ -244,8 +284,10 @@ function handleSearch() {
       PDF</a>
   </div>
 </div>`;
-
         }).join('');
+
+      // Trigger staggered entrance animation using rAF + IntersectionObserver
+      animateSearchResults();
     }
 
     const st = $('stats');
@@ -255,9 +297,47 @@ function handleSearch() {
   } else {
     isSearching = false;
     if (results) { results.classList.remove('active'); results.innerHTML = ''; }
-    if ($('viewControls')) $('viewControls').style.display = '';
+    const vc = $('viewControls');
+    if (vc) vc.style.display = '';
     if (grid) { grid.style.display = ''; renderProgrammes(filtered); }
     updateStats(filtered);
+  }
+}
+
+// ===============================
+//  SEARCH RESULTS ANIMATION
+// ===============================
+let searchObserver = null;
+
+function animateSearchResults() {
+  // Disconnect previous observer if any
+  if (searchObserver) { searchObserver.disconnect(); searchObserver = null; }
+
+  const items = document.querySelectorAll('.search-result-item');
+  if (!items.length) return;
+
+  // Use IntersectionObserver for scroll-aware staggered reveal
+  if ('IntersectionObserver' in window) {
+    let stagger = 0;
+    searchObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const item = entry.target;
+          const delay = stagger;
+          stagger = Math.min(stagger + 35, 250);
+          requestAnimationFrame(() => {
+            item.style.transitionDelay = delay + 'ms';
+            item.classList.add('animate-in');
+          });
+          searchObserver.unobserve(item);
+        }
+      });
+    }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
+
+    items.forEach(item => searchObserver.observe(item));
+  } else {
+    // Fallback: just show them
+    items.forEach(item => item.classList.add('animate-in'));
   }
 }
 
@@ -296,11 +376,10 @@ function buildFilters() {
   const el = $('filters');
   if (!el) return;
   el.innerHTML = '';
-  el.appendChild(mkPill('All', 'ALL', true, allData.length));
+  el.appendChild(mkPill('All', 'ALL', activeLevel === 'ALL', allData.length));
   levels.forEach(lv => {
     const count = allData.filter(p => p.level === lv).length;
-    const label = lv === 'FYUG' ? 'FYUG' : lv;
-    el.appendChild(mkPill(label, lv, false, count));
+    el.appendChild(mkPill(lv, lv, activeLevel === lv, count));
   });
 }
 
@@ -317,7 +396,7 @@ function mkPill(label, level, active, count) {
 // ===============================
 function initDelegation() {
   document.addEventListener('click', e => {
-    // Card header
+    // Card header toggle
     const hdr = e.target.closest('.card-header');
     if (hdr?.closest('.programme-card')) {
       const card = hdr.closest('.programme-card');
@@ -377,6 +456,19 @@ function initDelegation() {
         p.classList.toggle('active', p.dataset.level === activeLevel));
       GA.trackFilter(activeLevel);
       handleSearch();
+      return;
+    }
+
+    // Expand all
+    if (e.target.closest('#expandAll')) {
+      expandAll();
+      return;
+    }
+
+    // Collapse all
+    if (e.target.closest('#collapseAll')) {
+      collapseAll();
+      return;
     }
   });
 }
@@ -390,12 +482,15 @@ function toggleCard(card) {
 
   if (card.classList.contains('open')) {
     body.style.maxHeight = body.scrollHeight + 'px';
-    body.offsetHeight;
+    // Force reflow
+    void body.offsetHeight;
     body.style.maxHeight = '0px';
     card.classList.remove('open');
     card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
+    body.setAttribute('aria-hidden', 'true');
   } else {
     card.classList.add('open');
+    body.setAttribute('aria-hidden', 'false');
     body.style.maxHeight = body.scrollHeight + 'px';
     card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
 
@@ -405,12 +500,14 @@ function toggleCard(card) {
     };
     body.addEventListener('transitionend', onEnd);
 
-    setTimeout(() => {
-      const r = card.getBoundingClientRect();
-      if (r.bottom > window.innerHeight + 40) {
-        window.scrollTo({ top: window.scrollY + r.top - 72, behavior: 'smooth' });
-      }
-    }, 350);
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const r = card.getBoundingClientRect();
+        if (r.bottom > window.innerHeight + 40) {
+          window.scrollTo({ top: window.scrollY + r.top - 72, behavior: 'smooth' });
+        }
+      }, 350);
+    });
   }
 }
 
@@ -419,17 +516,22 @@ function toggleCard(card) {
 // ===============================
 function expandAll() {
   GA.trackEngagement('expand_all');
-  document.querySelectorAll('.programme-card:not(.open)').forEach(card => {
+  const cards = document.querySelectorAll('.programme-card:not(.open)');
+  cards.forEach((card, i) => {
     const body = card.querySelector('.card-body');
     if (!body) return;
-    card.classList.add('open');
-    body.style.maxHeight = body.scrollHeight + 'px';
-    card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
-    const onEnd = () => {
-      if (card.classList.contains('open')) body.style.maxHeight = 'none';
-      body.removeEventListener('transitionend', onEnd);
-    };
-    body.addEventListener('transitionend', onEnd);
+    // Stagger opening for smooth visual
+    setTimeout(() => {
+      card.classList.add('open');
+      body.setAttribute('aria-hidden', 'false');
+      body.style.maxHeight = body.scrollHeight + 'px';
+      card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
+      const onEnd = () => {
+        if (card.classList.contains('open')) body.style.maxHeight = 'none';
+        body.removeEventListener('transitionend', onEnd);
+      };
+      body.addEventListener('transitionend', onEnd);
+    }, i * 50);
   });
 }
 
@@ -439,9 +541,10 @@ function collapseAll() {
     const body = card.querySelector('.card-body');
     if (!body) return;
     body.style.maxHeight = body.scrollHeight + 'px';
-    body.offsetHeight;
+    void body.offsetHeight;
     body.style.maxHeight = '0px';
     card.classList.remove('open');
+    body.setAttribute('aria-hidden', 'true');
     card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
   });
 }
@@ -483,25 +586,27 @@ function initKeyboard() {
     if (e.key === 'Escape') {
       const inp = $('searchInput');
       if (document.activeElement === inp) {
-        if (inp.value) { inp.value = ''; $('searchClear')?.classList.remove('visible'); handleSearch(); }
-        else inp.blur();
+        if (inp.value) {
+          inp.value = '';
+          $('searchClear')?.classList.remove('visible');
+          handleSearch();
+        } else {
+          inp.blur();
+        }
       } else {
-        // Close all open cards on Escape
         collapseAll();
       }
     }
   });
-
-  $('expandAll')?.addEventListener('click', expandAll);
-  $('collapseAll')?.addEventListener('click', collapseAll);
 }
 
 // ===============================
-//  SCROLL REVEAL
+//  SCROLL REVEAL (performant)
 // ===============================
-let revealObserver = null;
 function initScrollReveal() {
-  if (revealObserver) revealObserver.disconnect();
+  // Clean up previous observer
+  if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
+
   document.body.classList.add('js-reveal');
 
   if (!('IntersectionObserver' in window)) {
@@ -509,16 +614,28 @@ function initScrollReveal() {
     return;
   }
 
-  let stagger = 0;
-  revealObserver = new IntersectionObserver(entries => {
+  revealObserver = new IntersectionObserver((entries) => {
+    // Batch process: stagger only within each intersection batch
+    let batchDelay = 0;
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        setTimeout(() => entry.target.classList.add('revealed'), stagger);
-        stagger = Math.min(stagger + 55, 300);
-        revealObserver.unobserve(entry.target);
+        const card = entry.target;
+        requestAnimationFrame(() => {
+          card.style.transitionDelay = batchDelay + 'ms';
+          card.classList.add('revealed');
+          // After transition completes, clean up delay for hover/expand transitions
+          const cleanup = () => {
+            card.style.transitionDelay = '0ms';
+            card.classList.add('reveal-done');
+            card.removeEventListener('transitionend', cleanup);
+          };
+          card.addEventListener('transitionend', cleanup);
+        });
+        batchDelay += 50;
+        revealObserver.unobserve(card);
       }
     });
-  }, { threshold: 0.03, rootMargin: '0px 0px -20px 0px' });
+  }, { threshold: 0.03, rootMargin: '0px 0px -30px 0px' });
 
   document.querySelectorAll('.programme-card:not(.revealed)').forEach(el => revealObserver.observe(el));
 }
@@ -575,14 +692,15 @@ function renderProgrammes(data, query) {
     return;
   }
 
-  grid.innerHTML = data.map((prog, idx) => {
+  // Build HTML in one shot
+  const html = data.map((prog, idx) => {
     const sems = prog.semesters;
     const total = sems.reduce((a, s) => a + s.courses.length, 0);
     const lv = prog.level === 'FYUG' ? 'FYUG' : prog.level;
 
     return `<div class="programme-card" data-level="${lv}" data-idx="${idx}" role="listitem">
       <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
-        <span class="level-tag">${prog.level === 'FYUG' ? '4-Year UG' : prog.level}</span>
+        <span class="level-tag">${prog.level === 'FYUG' ? 'FYUG' : prog.level}</span>
         <h2>${hl(prog.programme_name, query)}</h2>
         <div class="meta">${sems.length} sem &middot; ${total} courses</div>
         <span class="toggle-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -608,14 +726,13 @@ function renderProgrammes(data, query) {
     </div>
   </div>
 </div>`;
-
-
     }).join('')}
         </div>`).join('')}
       </div>
     </div>`;
   }).join('');
 
+  grid.innerHTML = html;
   initScrollReveal();
 }
 
@@ -631,14 +748,13 @@ async function downloadPDF(url, filename, btnEl) {
     btnEl.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round" class="spin-path"/></svg> Wait`;
   }
 
-  showToast('Preparing download…');
+  showToast('Preparing download\u2026');
   let blob = null;
   let method = 'new_tab';
 
   try {
     const origin = new URL(url, location.href).origin;
     if (origin !== location.origin) {
-      // Cross-origin: try proxy, then direct
       try {
         const ctrl = new AbortController();
         const tmr = setTimeout(() => ctrl.abort(), 18000);
@@ -667,7 +783,7 @@ async function downloadPDF(url, filename, btnEl) {
     incrementDownloadCount();
   } else {
     triggerDownload(url, filename);
-    showToast('PDF opened — save from your browser');
+    showToast('PDF opened \u2014 save from your browser');
   }
 
   const code = filename?.replace(/\.pdf$/i, '') || 'unknown';
@@ -712,12 +828,27 @@ function updateDownloadCount() {
 //  SHARE
 // ===============================
 async function shareContent(name, url) {
+  const credit = '\n\nShared via SGOU SLM Browser by Researcher Tizar\nhttps://sgou-slm-database.vercel.app/';
   if (navigator.share) {
-    try { await navigator.share({ title: name + ' — SGOU', url }); GA.trackShare(name, 'web_share'); } catch (_) { }
+    try {
+      await navigator.share({
+        title: name + ' \u2014 SGOU SLM',
+        text: 'Check out this course: ' + name + credit,
+        url
+      });
+      GA.trackShare(name, 'web_share');
+    } catch (_) { }
   } else if (navigator.clipboard) {
-    try { await navigator.clipboard.writeText(url); showToast('Link copied'); GA.trackShare(name, 'clipboard'); } catch (_) { showToast('Could not copy'); }
+    try {
+      await navigator.clipboard.writeText(url + credit);
+      showToast('Link + credits copied');
+      GA.trackShare(name, 'clipboard');
+    } catch (_) {
+      showToast('Could not copy');
+    }
   }
 }
+
 
 // ===============================
 //  COPY TO CLIPBOARD
@@ -755,7 +886,9 @@ function showToast(msg, ms = 2200) {
   if (!el) return;
   clearTimeout(toastTimer);
   el.textContent = msg;
-  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => el.classList.add('visible'));
+  });
   toastTimer = setTimeout(() => el.classList.remove('visible'), ms);
 }
 
@@ -767,42 +900,90 @@ function registerServiceWorker() {
   navigator.serviceWorker.register('./sw.js').then(reg => {
     reg.addEventListener('updatefound', () => {
       reg.installing?.addEventListener('statechange', function () {
-        if (this.state === 'activated') showToast('App updated — refresh for latest', 3500);
+        if (this.state === 'activated') showToast('App updated \u2014 refresh for latest', 3500);
       });
     });
   }).catch(() => { });
 }
 
 // ===============================
-//  PWA: INSTALL PROMPT
+//  PWA: INSTALL PROMPT (enhanced)
 // ===============================
 function initInstallPrompt() {
   const banner = $('installBanner');
-  const standalone = window.matchMedia('(display-mode:standalone)').matches;
-  const dismissed = safeGet('sgou-install-dismissed');
+  const installBtn = $('installBtn');
+  const dismissBtn = $('installDismiss');
 
-  window.addEventListener('beforeinstallprompt', e => {
+  // --- Auto-detect: already installed ---
+  const isStandalone = window.matchMedia('(display-mode:standalone)').matches
+    || window.navigator.standalone === true
+    || document.referrer.includes('android-app://');
+
+  if (isStandalone) {
+    safeSet('sgou-pwa-installed', '1');
+    banner?.classList.remove('visible');
+    return; // Already installed, nothing to do
+  }
+
+  // Check if user previously dismissed (within this session or persisted)
+  const dismissed = safeGet('sgou-install-dismissed');
+  const installed = safeGet('sgou-pwa-installed');
+
+  // If the app was previously detected as installed, don't show
+  if (installed) return;
+
+  // Listen for the browser's install prompt
+  window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
-    if (!standalone && !dismissed && banner) {
+
+    // Show banner after a brief delay (unless dismissed)
+    if (!dismissed && banner) {
       setTimeout(() => banner.classList.add('visible'), 2500);
     }
   });
 
-  $('installBtn')?.addEventListener('click', async () => {
-    if (!deferredInstallPrompt) return;
+  // Detect successful installation via event
+  window.addEventListener('appinstalled', () => {
+    safeSet('sgou-pwa-installed', '1');
+    banner?.classList.remove('visible');
+    deferredInstallPrompt = null;
+    showToast('App installed successfully!');
+    GA.trackInstall('appinstalled_event');
+  });
+
+  // Install button click
+  installBtn?.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) {
+      // Fallback: if no prompt available, guide user
+      showToast('Use your browser\'s install option');
+      return;
+    }
     banner?.classList.remove('visible');
     deferredInstallPrompt.prompt();
     const { outcome } = await deferredInstallPrompt.userChoice;
-    if (outcome === 'accepted') showToast('App installed!');
+    if (outcome === 'accepted') {
+      safeSet('sgou-pwa-installed', '1');
+      showToast('App installed!');
+    }
     GA.trackInstall(outcome);
     deferredInstallPrompt = null;
   });
 
-  $('installDismiss')?.addEventListener('click', () => {
+  // Dismiss button
+  dismissBtn?.addEventListener('click', () => {
     banner?.classList.remove('visible');
     safeSet('sgou-install-dismissed', '1');
     GA.trackInstall('dismissed');
+  });
+
+  // Also detect display-mode changes (user installs via other means)
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
+    if (e.matches) {
+      safeSet('sgou-pwa-installed', '1');
+      banner?.classList.remove('visible');
+      showToast('App installed successfully!');
+    }
   });
 }
 
@@ -822,13 +1003,25 @@ function initOfflineDetection() {
 //  UTILITIES
 // ===============================
 function $(sel) { return document.getElementById(sel) || document.querySelector(sel); }
-function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
-function hl(t, q) { return q ? t.replace(new RegExp(`(${er(q.trim())})`, 'gi'), '<mark>$1</mark>') : t; }
-function er(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-function ea(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
-function sanitize(s) { return String(s).replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').substring(0, 80); }
 
-// Safe localStorage wrappers
+function hl(t, q) {
+  if (!q) return t;
+  return t.replace(new RegExp(`(${er(q.trim())})`, 'gi'), '<mark>$1</mark>');
+}
+
+function er(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function ea(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function sanitize(s) {
+  return String(s).replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').substring(0, 80);
+}
+
 function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { } }

@@ -11,6 +11,60 @@
     "categories": [
         "education"
     ],
+    "shortcuts": [
+        {
+            "name": "Search Courses",
+            "short_name": "Search",
+            "description": "Search for a course or programme",
+            "url": "./?action=search",
+            "icons": [
+                {
+                    "src": "icon.svg",
+                    "sizes": "any",
+                    "type": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "name": "Browse Programmes",
+            "short_name": "Browse",
+            "description": "View all available programmes",
+            "url": "./?action=browse",
+            "icons": [
+                {
+                    "src": "icon.svg",
+                    "sizes": "any",
+                    "type": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "name": "UG Programmes",
+            "short_name": "UG",
+            "description": "Undergraduate programmes",
+            "url": "./?filter=UG",
+            "icons": [
+                {
+                    "src": "icon.svg",
+                    "sizes": "any",
+                    "type": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "name": "PG Programmes",
+            "short_name": "PG",
+            "description": "Postgraduate programmes",
+            "url": "./?filter=PG",
+            "icons": [
+                {
+                    "src": "icon.svg",
+                    "sizes": "any",
+                    "type": "image/svg+xml"
+                }
+            ]
+        }
+    ],
     "icons": [
         {
             "src": "icon.svg",

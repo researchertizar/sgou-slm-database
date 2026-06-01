@@ -1,9 +1,13 @@
-const CACHE = 'sgou-v6';
+const CACHE = 'sgou-v7';
 const SHELL = ['./', './index.html', './style.css', './script.js', './manifest.json', './icon.svg'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
-    e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+    e.waitUntil(
+        caches.open(CACHE)
+            .then(c => c.addAll(SHELL))
+            .then(() => self.skipWaiting())
+    );
 });
 
 self.addEventListener('activate', e => {
@@ -40,7 +44,7 @@ self.addEventListener('fetch', e => {
         return;
     }
 
-    // JSON data: network-first
+    // JSON data: network-first (always try fresh data)
     if (url.pathname.endsWith('.json')) {
         e.respondWith(nf(e.request));
         return;
@@ -52,23 +56,39 @@ self.addEventListener('fetch', e => {
         return;
     }
 
-    // Everything else: network-only
-    e.respondWith(fetch(e.request).catch(() => new Response('Offline', { status: 503 })));
+    // Everything else: network-only with offline fallback
+    e.respondWith(
+        fetch(e.request).catch(() => new Response('Offline', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain' }
+        }))
+    );
 });
 
+// Network-first strategy: try network, fall back to cache
 async function nf(req) {
     try {
         const r = await fetch(req);
-        if (r.ok) { const c = await caches.open(CACHE); c.put(req, r.clone()); }
+        if (r.ok) {
+            const c = await caches.open(CACHE);
+            c.put(req, r.clone());
+        }
         return r;
     } catch (_) {
-        return (await caches.match(req)) || new Response('[]', { headers: { 'Content-Type': 'application/json' } });
+        const cached = await caches.match(req);
+        return cached || new Response('[]', {
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }
 
+// Stale-while-revalidate: return cache immediately, update in background
 async function swr(req) {
     const c = await caches.open(CACHE);
     const cached = await c.match(req);
-    const fp = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => cached);
+    const fp = fetch(req).then(r => {
+        if (r.ok) c.put(req, r.clone());
+        return r;
+    }).catch(() => cached);
     return cached || fp;
 }

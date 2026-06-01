@@ -45,7 +45,7 @@
             <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
             <line x1="12" y1="20" x2="12.01" y2="20" />
         </svg>
-        <span>You are offline — cached data shown</span>
+        <span>You are offline &mdash; cached data shown</span>
     </div>
 
     <!-- Header -->
@@ -54,7 +54,6 @@
             <div class="header-top">
                 <div class="header-text">
                     <h1>
-                        <!-- Logo -->
                         <svg class="logo" width="36" height="36" viewBox="0 0 512 512" aria-hidden="true">
                             <rect width="512" height="512" rx="108" fill="var(--accent)" />
                             <rect x="72" y="365" width="368" height="10" rx="5" fill="var(--header-text)"
@@ -67,7 +66,7 @@
                             <span class="credit">by Researcher Tizar</span>
                         </span>
                     </h1>
-                    <p>Sree Narayanaguru Open University — Self Learning Material</p>
+                    <p>Sree Narayanaguru Open University &mdash; Self Learning Material</p>
                 </div>
                 <div class="header-actions">
                     <kbd class="kbd-hint" aria-hidden="true">/</kbd>
@@ -111,6 +110,22 @@
         </div>
         <div class="controls-row">
             <div class="filters" id="filters" role="group" aria-label="Level filter"></div>
+            <div class="view-controls" id="viewControls">
+                <button class="view-btn" id="expandAll" aria-label="Expand all">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                    Expand
+                </button>
+                <button class="view-btn" id="collapseAll" aria-label="Collapse all">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="18 15 12 9 6 15" />
+                    </svg>
+                    Collapse
+                </button>
+            </div>
         </div>
         <div class="stats" id="stats" aria-live="polite"></div>
     </div>
@@ -155,7 +170,13 @@
         <span>Course PDFs hosted on SGOU's CDN</span>
         <span class="footer-sep">&middot;</span>
         <span class="footer-count" id="downloadCount"></span>
+        <br>
+        <span class="footer-credit">
+            Built by <strong>Researcher Tizar</strong> &mdash;
+            <a href="https://sgou-slm-database.vercel.app/" target="_blank" rel="noopener">SLM Browser</a>
+        </span>
     </footer>
+
 
     <script src="script.js" defer></script>
 </body>

@@ -276,6 +276,7 @@ header p {
   padding-bottom: .5rem;
   box-shadow: 0 2px 0 transparent;
   transition: background .4s, box-shadow .3s;
+  contain: layout style;
 }
 
 .sticky-controls.scrolled {
@@ -422,6 +423,11 @@ header p {
   flex-wrap: wrap;
 }
 
+.view-controls {
+  display: flex;
+  gap: .3rem;
+}
+
 .pill {
   font-family: 'DM Mono', monospace;
   font-size: 12px;
@@ -524,6 +530,7 @@ main {
   max-width: 1200px;
   margin: 5px auto 2rem;
   padding: 0 1rem;
+  contain: layout style;
 }
 
 /* ===========================
@@ -548,7 +555,7 @@ main {
   border-bottom: 1px solid var(--border);
 }
 
-/* Staggered fade-in for search results */
+/* Search result items — start hidden, animated in via IntersectionObserver */
 .search-result-item {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -559,13 +566,14 @@ main {
   align-items: center;
   gap: .7rem;
   transition: border-color .2s, box-shadow .2s, background .4s;
-  /* Animation: start hidden, will be revealed */
+  will-change: opacity, transform;
   opacity: 0;
-  transform: translateY(10px);
+  transform: translateY(12px);
+  contain: content;
 }
 
 .search-result-item.animate-in {
-  animation: searchItemIn .4s var(--ease) forwards;
+  animation: searchItemIn 0.45s var(--ease) forwards;
 }
 
 .search-result-item:hover {
@@ -729,14 +737,12 @@ main {
   flex-wrap: wrap;
 }
 
-/* In search results, group all action buttons */
 .search-result-actions {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: .3rem;
 }
-
 
 .btn-share {
   width: 32px;
@@ -782,34 +788,32 @@ main {
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  /* Only animate non-reveal properties here */
   transition: box-shadow .25s, background .4s, border-color .4s;
+  contain: content;
 }
 
-/* Scroll-reveal: JS adds .js-reveal to body,
-   then each card gets .revealed via IntersectionObserver */
+/* Scroll-reveal: start hidden, reveal via IntersectionObserver */
 .js-reveal .programme-card {
   opacity: 0;
   transform: translateY(16px);
+  will-change: opacity, transform;
 }
 
 .js-reveal .programme-card.revealed {
   opacity: 1;
   transform: translateY(0);
-  min-height: stretch;
 }
 
-/* Apply reveal transition separately to avoid
-   conflicting with hover/expand transitions */
+/* Reveal transition (separate from hover/expand) */
 .js-reveal .programme-card {
   transition: opacity .5s var(--ease), transform .5s var(--ease),
     box-shadow .25s, background .4s, border-color .4s;
 }
 
-/* After reveal completes, remove reveal transition
-   so hover still works normally */
+/* After reveal transition completes, revert to normal transitions */
 .js-reveal .programme-card.revealed.reveal-done {
   transition: box-shadow .25s, background .4s, border-color .4s;
+  will-change: auto;
 }
 
 /* ===========================
@@ -1333,19 +1337,52 @@ footer {
   color: var(--accent);
 }
 
+.footer-credit {
+  display: block;
+  width: 100%;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: .03em;
+  margin-top: .3rem;
+}
+
+.footer-credit a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity .15s;
+}
+
+.footer-credit a:hover {
+  opacity: .8;
+  text-decoration: underline;
+}
+
+
 /* ===========================
    23. ANIMATIONS
    =========================== */
 @keyframes searchItemIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
 
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes spin-path {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-path {
+  animation: spin-path 1s linear infinite;
+  transform-origin: 12px 12px;
 }
 
 /* ===========================
@@ -1367,7 +1404,8 @@ footer {
     transform: none;
   }
 
-  .search-result-item {
+  .search-result-item,
+  .search-result-item.animate-in {
     opacity: 1;
     transform: none;
   }
@@ -1619,6 +1657,7 @@ footer {
   .course-link,
   .btn-download,
   .btn-share,
+  .btn-view,
   .theme-toggle,
   .kbd-hint,
   .offline-bar,
@@ -1641,6 +1680,8 @@ footer {
     border: 1px solid #ccc;
     box-shadow: none;
     margin-bottom: .75rem;
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   .card-body {
