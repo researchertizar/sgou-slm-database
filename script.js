@@ -599,7 +599,7 @@ function renderProgrammes(data, query) {
   <div class="course-info">
     <div class="course-name">${hl(c.name, query)}</div>
     <div class="course-actions">
-      <a class="course-link" href="${ea(c.pdf_url)}" target="_blank" rel="noopener" title="View PDF in browser">
+      <a class="btn-view" href="${ea(c.pdf_url)}" target="_blank" rel="noopener" title="View PDF in browser">
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         View</a>
       <a class="course-link" href="${ea(c.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
