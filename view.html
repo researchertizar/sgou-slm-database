@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>Loading... — SGOU SLM</title>
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .viewer-page {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .viewer-header {
+            background: var(--header-bg);
+            color: var(--header-text);
+            padding: 1rem 1.25rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .viewer-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent));
+        }
+
+        .viewer-brand {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            text-decoration: none;
+            color: var(--header-text);
+            margin-bottom: .6rem;
+        }
+
+        .viewer-brand svg {
+            flex-shrink: 0;
+        }
+
+        .viewer-brand span {
+            font-family: 'DM Serif Display', serif;
+            font-size: 16px;
+        }
+
+        .viewer-info h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(1.1rem, 3.5vw, 1.6rem);
+            font-weight: 400;
+            line-height: 1.3;
+            color: var(--header-text);
+            margin-bottom: .25rem;
+        }
+
+        .viewer-meta {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            color: var(--header-sub);
+            letter-spacing: .04em;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+            align-items: center;
+        }
+
+        .viewer-meta-tag {
+            display: inline-block;
+            padding: .12rem .4rem;
+            border-radius: 3px;
+            font-size: 11px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .viewer-meta-tag.ug {
+            background: rgba(31, 90, 67, .3);
+            color: #6fd4a8;
+        }
+
+        .viewer-meta-tag.pg {
+            background: rgba(94, 51, 112, .3);
+            color: #c77dff;
+        }
+
+        .viewer-meta-tag.fyug {
+            background: rgba(35, 80, 144, .3);
+            color: #6ea8fe;
+        }
+
+        .viewer-actions {
+            display: flex;
+            gap: .4rem;
+            margin-top: .65rem;
+            flex-wrap: wrap;
+        }
+
+        .viewer-actions a,
+        .viewer-actions button {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            padding: .42rem .75rem;
+            border-radius: 5px;
+            border: 1.5px solid var(--accent);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            transition: background .2s, color .2s, transform .1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .viewer-actions .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .viewer-actions .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .viewer-actions .btn-secondary {
+            background: transparent;
+            color: var(--accent);
+        }
+
+        .viewer-actions .btn-secondary:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .viewer-actions .btn-home {
+            background: transparent;
+            color: var(--header-sub);
+            border-color: rgba(255, 255, 255, .15);
+        }
+
+        .viewer-actions .btn-home:hover {
+            color: var(--header-text);
+            border-color: rgba(255, 255, 255, .3);
+        }
+
+        .viewer-actions a:active,
+        .viewer-actions button:active {
+            transform: scale(.95);
+        }
+
+        /* PDF iframe area */
+        .viewer-frame {
+            flex: 1;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .viewer-frame iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            min-height: calc(100vh - 200px);
+            min-height: calc(100dvh - 200px);
+        }
+
+        /* Loading state */
+        .viewer-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            color: var(--ink-muted);
+            font-style: italic;
+            padding: 4rem 1rem;
+            text-align: center;
+            flex: 1;
+        }
+
+        .viewer-loading svg {
+            animation: spin-path 1s linear infinite;
+            color: var(--accent);
+        }
+
+        /* Error state */
+        .viewer-error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: .75rem;
+            color: var(--ink-muted);
+            padding: 4rem 1rem;
+            text-align: center;
+            flex: 1;
+        }
+
+        .viewer-error svg {
+            opacity: .4;
+        }
+
+        .viewer-error a {
+            color: var(--accent);
+            text-decoration: none;
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            border: 1px solid var(--accent);
+            padding: .4rem .8rem;
+            border-radius: 5px;
+            margin-top: .5rem;
+            transition: background .2s, color .2s;
+        }
+
+        .viewer-error a:hover {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .viewer-footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: .65rem 1.25rem;
+            text-align: center;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--ink-muted);
+            letter-spacing: .03em;
+        }
+
+        .viewer-footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .viewer-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Mobile: taller header, smaller iframe */
+        @media (max-width: 600px) {
+            .viewer-frame iframe {
+                min-height: calc(100vh - 280px);
+                min-height: calc(100dvh - 280px);
+            }
+        }
+
+        /* Desktop standalone */
+        @media (display-mode: standalone) {
+            .viewer-header {
+                padding-top: calc(1rem + env(safe-area-inset-top));
+            }
+        }
+    </style>
+</head>
+
+<body class="viewer-page">
+
+    <div class="viewer-header">
+        <a class="viewer-brand" href="./">
+            <svg width="28" height="28" viewBox="0 0 512 512" aria-hidden="true">
+                <rect width="512" height="512" rx="108" fill="var(--accent)" />
+                <rect x="72" y="365" width="368" height="10" rx="5" fill="var(--header-text)" opacity=".4" />
+                <text x="256" y="290" font-family="Georgia,serif" font-size="210" font-weight="bold"
+                    fill="var(--header-text)" text-anchor="middle" dominant-baseline="central">SG</text>
+            </svg>
+            <span>SGOU SLM Browser</span>
+        </a>
+        <div class="viewer-info">
+            <h1 id="courseTitle">Loading...</h1>
+            <div class="viewer-meta" id="courseMeta"></div>
+        </div>
+        <div class="viewer-actions">
+            <a class="btn-primary" id="directDownload" href="#" download>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Download PDF
+            </a>
+            <a class="btn-secondary" id="openDirect" href="#" target="_blank" rel="noopener">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15 3 21 3 21 9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                Open Original
+            </a>
+            <a class="btn-home" href="./">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                Browse All
+            </a>
+        </div>
+    </div>
+
+    <div class="viewer-loading" id="viewerLoading">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" opacity=".3" />
+            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round" />
+        </svg>
+        <span>Loading PDF...</span>
+    </div>
+
+    <div class="viewer-error" id="viewerError" style="display:none;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <p id="errorText">Could not load PDF.</p>
+        <a href="./">Browse All Programmes</a>
+    </div>
+
+    <div class="viewer-frame" id="viewerFrame" style="display:none;">
+        <iframe id="pdfFrame" title="PDF Viewer" loading="lazy"></iframe>
+    </div>
+
+    <div class="viewer-footer">
+        Built by <a href="./">Researcher Tizar</a> &middot;
+        <a href="https://sgou-slm-database.vercel.app/">SGOU SLM Browser</a>
+    </div>
+
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const pdfUrl = params.get('url');
+            const courseName = params.get('name') || 'Course PDF';
+            const courseCode = params.get('code') || '';
+            const progName = params.get('prog') || '';
+            const level = params.get('level') || '';
+
+            const loading = document.getElementById('viewerLoading');
+            const error = document.getElementById('viewerError');
+            const frame = document.getElementById('viewerFrame');
+            const pdfFrame = document.getElementById('pdfFrame');
+            const title = document.getElementById('courseTitle');
+            const meta = document.getElementById('courseMeta');
+            const btnDl = document.getElementById('directDownload');
+            const btnOpen = document.getElementById('openDirect');
+
+            // Update page title
+            document.title = (courseName || 'PDF') + ' — SGOU SLM';
+
+            // Show course info
+            title.textContent = courseName;
+            const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
+            const label = level === 'FYUG' ? '4-Year UG' : level;
+            let metaHTML = '';
+            if (progName) metaHTML += `<span>${progName}</span>`;
+            if (level) metaHTML += `<span class="viewer-meta-tag ${cls}">${label}</span>`;
+            if (courseCode) metaHTML += `<span>Code: ${courseCode}</span>`;
+            meta.innerHTML = metaHTML;
+
+            // Validate URL
+            if (!pdfUrl) {
+                loading.style.display = 'none';
+                error.style.display = 'flex';
+                document.getElementById('errorText').textContent = 'No PDF URL provided.';
+                return;
+            }
+
+            // Set buttons
+            btnDl.href = pdfUrl;
+            btnDl.download = (courseCode ? courseCode + '_' : '') + courseName + '.pdf';
+            btnOpen.href = pdfUrl;
+
+            // Load PDF in iframe
+            pdfFrame.src = pdfUrl;
+            pdfFrame.addEventListener('load', () => {
+                loading.style.display = 'none';
+                frame.style.display = 'flex';
+            });
+            pdfFrame.addEventListener('error', () => {
+                loading.style.display = 'none';
+                error.style.display = 'flex';
+                document.getElementById('errorText').textContent = 'Could not load the PDF. Try downloading directly.';
+            });
+
+            // Timeout fallback (8 seconds)
+            setTimeout(() => {
+                if (loading.style.display !== 'none') {
+                    loading.style.display = 'none';
+                    frame.style.display = 'flex';
+                }
+            }, 8000);
+
+            // Theme sync
+            const saved = localStorage.getItem('sgou-theme');
+            if (saved) document.documentElement.setAttribute('data-theme', saved);
+        })();
+    </script>
+</body>
+
+</html>

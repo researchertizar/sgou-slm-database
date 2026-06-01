@@ -828,27 +828,59 @@ function updateDownloadCount() {
 //  SHARE
 // ===============================
 async function shareContent(name, url) {
-  const credit = '\n\nShared via SGOU SLM Browser by Researcher Tizar\nhttps://sgou-slm-database.vercel.app/';
+  let courseInfo = { programme: '', level: '', code: '', courseName: name, pdfUrl: url };
+  for (const prog of allData) {
+    for (const sem of prog.semesters) {
+      const found = sem.courses.find(c => c.pdf_url === url || c.name === name);
+      if (found) {
+        courseInfo = {
+          programme: prog.programme_name,
+          level: prog.level === 'FYUG' ? '4-Year UG' : prog.level,
+          code: found.code,
+          courseName: found.name,
+          pdfUrl: found.pdf_url
+        };
+        break;
+      }
+    }
+  }
+
+  // Build viewer URL through your website
+  const viewerUrl = 'https://sgou-slm-database.vercel.app/view.html?'
+    + new URLSearchParams({
+        url: courseInfo.pdfUrl,
+        name: courseInfo.courseName,
+        code: courseInfo.code,
+        prog: courseInfo.programme,
+        level: courseInfo.level
+    }).toString();
+
+  const shareText =
+    `${courseInfo.programme} - ${courseInfo.level}\n` +
+    `${courseInfo.courseName} - ${courseInfo.code}\n` +
+    `${viewerUrl}\n\n` +
+    `Shared via SLM Browser\n` +
+    `https://sgou-slm-database.vercel.app/`;
+
   if (navigator.share) {
     try {
       await navigator.share({
-        title: name + ' \u2014 SGOU SLM',
-        text: 'Check out this course: ' + name + credit,
-        url
+        title: courseInfo.courseName + ' \u2014 SGOU SLM',
+        text: shareText,
+        url: viewerUrl
       });
       GA.trackShare(name, 'web_share');
     } catch (_) { }
   } else if (navigator.clipboard) {
     try {
-      await navigator.clipboard.writeText(url + credit);
-      showToast('Link + credits copied');
+      await navigator.clipboard.writeText(shareText);
+      showToast('Copied to clipboard');
       GA.trackShare(name, 'clipboard');
     } catch (_) {
       showToast('Could not copy');
     }
   }
 }
-
 
 // ===============================
 //  COPY TO CLIPBOARD
