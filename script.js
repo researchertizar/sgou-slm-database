@@ -276,7 +276,7 @@ function handleSearch() {
     <button class="btn-share" data-url="${ea(m.course.pdf_url)}" data-name="${ea(m.course.name)}" aria-label="Share">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
     </button>
-    <a class="btn-view" href="${ea(m.course.pdf_url)}" target="_blank" rel="noopener" title="View PDF in browser">
+        <a class="btn-view" href="${ea(buildViewerUrl(m.course.pdf_url, m.course.name, m.course.code, m.prog.programme_name, m.prog.level))}" target="_blank" rel="noopener" title="View PDF">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       View</a>
     <a class="btn-download" href="${ea(m.course.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
@@ -717,7 +717,7 @@ function renderProgrammes(data, query) {
   <div class="course-info">
     <div class="course-name">${hl(c.name, query)}</div>
     <div class="course-actions">
-      <a class="btn-view" href="${ea(c.pdf_url)}" target="_blank" rel="noopener" title="View PDF in browser">
+      <a class="btn-view" href="${ea(buildViewerUrl(c.pdf_url, c.name, c.code, prog.programme_name, prog.level))}" target="_blank" rel="noopener" title="View PDF">
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         View</a>
       <a class="course-link" href="${ea(c.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
@@ -848,11 +848,11 @@ async function shareContent(name, url) {
   // Build viewer URL through your website
   const viewerUrl = 'https://sgou-slm-database.vercel.app/view.html?'
     + new URLSearchParams({
-        url: courseInfo.pdfUrl,
-        name: courseInfo.courseName,
-        code: courseInfo.code,
-        prog: courseInfo.programme,
-        level: courseInfo.level
+      url: courseInfo.pdfUrl,
+      name: courseInfo.courseName,
+      code: courseInfo.code,
+      prog: courseInfo.programme,
+      level: courseInfo.level
     }).toString();
 
   const shareText =
@@ -1057,3 +1057,13 @@ function sanitize(s) {
 
 function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { } }
+
+function buildViewerUrl(pdfUrl, name, code, prog, level) {
+  return './view.html?' + new URLSearchParams({
+    url: pdfUrl || '',
+    name: name || '',
+    code: code || '',
+    prog: prog || '',
+    level: level || ''
+  }).toString();
+}
