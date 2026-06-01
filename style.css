@@ -877,8 +877,7 @@ main {
   color: var(--pg);
 }
 
-.programme-card[data-level="FYUG"] .level-tag,
-.programme-card[data-level="FYUGP"] .level-tag {
+.programme-card[data-level="FYUG"] .level-tag {
   background: var(--fyug-bg);
   color: var(--fyug);
 }
