@@ -781,9 +781,6 @@
 
     <script>
         (function () {
-            // ========================
-            // Parse URL parameters
-            // ========================
             const params = new URLSearchParams(window.location.search);
             const pdfUrl = params.get('url');
             const courseName = params.get('name') || 'Course PDF';
@@ -791,293 +788,87 @@
             const progName = params.get('prog') || '';
             const level = params.get('level') || '';
 
-            // ========================
-            // DOM refs
-            // ========================
-            const topbar = document.getElementById('topbar');
-            const topbarTitle = document.getElementById('topbarTitle');
-            const topbarCode = document.getElementById('topbarCode');
-            const expandToggle = document.getElementById('expandToggle');
-            const loading = document.getElementById('viewerLoading');
-            const errorEl = document.getElementById('viewerError');
-            const errorText = document.getElementById('errorText');
-            const errorDownload = document.getElementById('errorDownload');
-            const iframeWrap = document.getElementById('iframeWrap');
-            const pdfFrame = document.getElementById('pdfFrame');
-            const topbarDlBtn = document.getElementById('topbarDownload');
-            const bottomDlBtn = document.getElementById('bottomDownload');
-            const bottomShareBtn = document.getElementById('bottomShare');
-            const btnCopyLink = document.getElementById('btnCopyLink');
-            const btnOpenDirect = document.getElementById('btnOpenDirect');
-            const detailProg = document.getElementById('detailProg');
-            const detailCourse = document.getElementById('detailCourse');
-            const detailLevel = document.getElementById('detailLevel');
+            // ========================================
+            // PWA REDIRECT: if running inside the app,
+            // redirect to main page's in-app viewer
+            // ========================================
+            const isStandalone = window.matchMedia('(display-mode:standalone)').matches
+                || window.navigator.standalone === true
+                || document.referrer.includes('android-app://');
 
-            // ========================
-            // Set page title
-            // ========================
-            document.title = courseName + (courseCode ? ' (' + courseCode + ')' : '') + ' — SGOU SLM';
-
-            // ========================
-            // Populate compact bar
-            // ========================
-            topbarTitle.textContent = courseName;
-            if (courseCode) {
-                topbarCode.textContent = courseCode;
-            }
-
-            // ========================
-            // Populate details
-            // ========================
-            detailProg.textContent = progName || '—';
-            detailCourse.textContent = courseName + (courseCode ? ' (' + courseCode + ')' : '');
-
-            if (level) {
-                const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
-                const label = level === 'FYUG' ? '4-Year UG' : level;
-                detailLevel.textContent = label;
-                detailLevel.className = 'detail-level ' + cls;
-            } else {
-                detailLevel.style.display = 'none';
-            }
-
-            // Set links
-            if (pdfUrl) {
-                btnOpenDirect.href = pdfUrl;
-                errorDownload.href = pdfUrl;
-            }
-
-            // ========================
-            // Expand / collapse toggle
-            // ========================
-            expandToggle.addEventListener('click', () => {
-                topbar.classList.toggle('expanded');
-            });
-
-            // ========================
-            // VALIDATE URL
-            // ========================
-            if (!pdfUrl) {
-                showError('No PDF URL provided. Check the shared link.');
+            if (isStandalone) {
+                const hash = '/view?' + new URLSearchParams({
+                    url: pdfUrl || '', name: courseName, code: courseCode,
+                    prog: progName, level: level
+                }).toString();
+                window.location.replace('./#' + hash);
                 return;
             }
 
-            // ========================
-            // LOAD PDF (multi-strategy)
-            // ========================
-            loadPDF(pdfUrl);
+            // ========================================
+            // STANDALONE VIEWER (non-PWA browser)
+            // ========================================
+            const loading = document.getElementById('viewerLoading');
+            const errorEl = document.getElementById('viewerError');
+            const errorText = document.getElementById('errorText');
+            const frame = document.getElementById('pdfFrame');
+            const title = document.getElementById('courseTitle');
+            const meta = document.getElementById('courseMeta');
+            const btnDl = document.getElementById('directDownload');
+            const btnOpen = document.getElementById('openDirect');
 
-            function loadPDF(url) {
-                loading.classList.remove('hidden');
-                errorEl.classList.remove('visible');
-                iframeWrap.classList.remove('visible');
+            document.title = (courseName || 'PDF') + ' — SGOU SLM';
+            title.textContent = courseName;
 
-                // Strategy 1: Google Docs Viewer (works everywhere including mobile)
-                const gviewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(url) + '&embedded=true';
+            const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
+            const label = level === 'FYUG' ? '4-Year UG' : level;
+            let metaHTML = '';
+            if (progName) metaHTML += '<span>' + progName + '</span>';
+            if (level) metaHTML += '<span class="viewer-meta-tag ' + cls + '">' + label + '</span>';
+            if (courseCode) metaHTML += '<span>Code: ' + courseCode + '</span>';
+            meta.innerHTML = metaHTML;
 
-                // Strategy 2: Direct iframe (works on desktop)
-                // Strategy 3: <object> fallback
-
-                let loaded = false;
-
-                function onLoaded() {
-                    if (loaded) return;
-                    loaded = true;
-                    loading.classList.add('hidden');
-                    iframeWrap.classList.add('visible');
-                }
-
-                function tryFallback() {
-                    if (loaded) return;
-                    // Try direct URL in iframe
-                    pdfFrame.src = url;
-                }
-
-                // Try Google Docs Viewer first (best mobile support)
-                pdfFrame.src = gviewUrl;
-
-                pdfFrame.addEventListener('load', () => {
-                    onLoaded();
-                });
-
-                pdfFrame.addEventListener('error', () => {
-                    tryFallback();
-                });
-
-                // Timeout: if gview doesn't load in 6s, try direct
-                setTimeout(() => {
-                    if (!loaded) {
-                        pdfFrame.src = url;
-                    }
-                }, 6000);
-
-                // Ultimate timeout: show iframe anyway after 10s
-                setTimeout(() => {
-                    if (!loaded) {
-                        onLoaded();
-                    }
-                }, 10000);
+            if (!pdfUrl) {
+                loading.style.display = 'none';
+                errorEl.style.display = 'flex';
+                errorText.textContent = 'No PDF URL provided.';
+                return;
             }
 
-            function showError(msg) {
-                loading.classList.add('hidden');
-                errorText.textContent = msg;
-                errorEl.classList.add('visible');
+            btnDl.href = pdfUrl;
+            btnDl.download = (courseCode ? courseCode + '_' : '') + courseName + '.pdf';
+            btnOpen.href = pdfUrl;
+            document.getElementById('errorDownload').href = pdfUrl;
+
+            // Load PDF with fallback
+            let loaded = false;
+            function onReady() {
+                if (loaded) return;
+                loaded = true;
+                loading.style.display = 'none';
+                frame.style.display = 'block';
             }
 
-            // ========================
-            // DOWNLOAD (with cross-origin handling)
-            // ========================
-            async function downloadPDF() {
-                const origTopHTML = topbarDlBtn.innerHTML;
-                const origBottomHTML = bottomDlBtn.innerHTML;
+            const gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
+            frame.src = gview;
+            frame.addEventListener('load', onReady);
 
-                topbarDlBtn.classList.add('downloading');
-                bottomDlBtn.classList.add('downloading');
-                showToast('Preparing download\u2026');
+            setTimeout(() => {
+                if (!loaded) { frame.src = pdfUrl; }
+            }, 6000);
 
-                const filename = (courseCode ? courseCode + '_' : '') + courseName.replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+            setTimeout(() => {
+                if (!loaded) onReady();
+            }, 10000);
 
-                let blob = null;
-
-                try {
-                    // Try fetching as blob
-                    const ctrl = new AbortController();
-                    const tmr = setTimeout(() => ctrl.abort(), 20000);
-
-                    try {
-                        const resp = await fetch(pdfUrl, { signal: ctrl.signal, mode: 'cors' });
-                        clearTimeout(tmr);
-                        if (resp.ok) {
-                            blob = await resp.blob();
-                        }
-                    } catch (_) {
-                        clearTimeout(tmr);
-                    }
-
-                    // If CORS blocked, try via proxy
-                    if (!blob) {
-                        try {
-                            const ctrl2 = new AbortController();
-                            const tmr2 = setTimeout(() => ctrl2.abort(), 18000);
-                            const resp = await fetch('/api/download?url=' + encodeURIComponent(pdfUrl), { signal: ctrl2.signal });
-                            clearTimeout(tmr2);
-                            if (resp.ok) {
-                                blob = await resp.blob();
-                            }
-                        } catch (_) { }
-                    }
-                } catch (_) { }
-
-                if (blob && blob.size > 0) {
-                    // Download as blob
-                    const blobUrl = URL.createObjectURL(blob);
-                    triggerDownload(blobUrl, filename);
-                    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
-                    showToast('Download started');
-                } else {
-                    // Fallback: open in new tab (user can save from browser)
-                    window.open(pdfUrl, '_blank');
-                    showToast('PDF opened \u2014 save from your browser');
-                }
-
-                setTimeout(() => {
-                    topbarDlBtn.classList.remove('downloading');
-                    bottomDlBtn.classList.remove('downloading');
-                }, 1500);
-            }
-
-            function triggerDownload(url, filename) {
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.target = '_blank';
-                a.rel = 'noopener';
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => { if (a.parentNode) a.remove(); }, 500);
-            }
-
-            topbarDlBtn.addEventListener('click', downloadPDF);
-            bottomDlBtn.addEventListener('click', downloadPDF);
-
-            // ========================
-            // SHARE
-            // ========================
-            bottomShareBtn.addEventListener('click', async () => {
-                const viewerUrl = window.location.href;
-                const shareText =
-                    (progName ? progName + ' - ' + (level === 'FYUG' ? '4-Year UG' : level) + '\n' : '') +
-                    courseName + (courseCode ? ' - ' + courseCode : '') + '\n' +
-                    viewerUrl + '\n\n' +
-                    'Shared via SLM Browser\n' +
-                    'https://sgou-slm-database.vercel.app/';
-
-                if (navigator.share) {
-                    try {
-                        await navigator.share({
-                            title: courseName + ' \u2014 SGOU SLM',
-                            text: shareText,
-                            url: viewerUrl
-                        });
-                    } catch (_) { }
-                } else if (navigator.clipboard) {
-                    try {
-                        await navigator.clipboard.writeText(shareText);
-                        showToast('Copied to clipboard');
-                    } catch (_) {
-                        showToast('Could not copy');
-                    }
-                }
-            });
-
-            // ========================
-            // COPY LINK
-            // ========================
-            btnCopyLink.addEventListener('click', async () => {
-                try {
-                    if (navigator.clipboard) {
-                        await navigator.clipboard.writeText(window.location.href);
-                    } else {
-                        const ta = document.createElement('textarea');
-                        ta.value = window.location.href;
-                        ta.style.cssText = 'position:fixed;opacity:0';
-                        document.body.appendChild(ta);
-                        ta.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(ta);
-                    }
-                    showToast('Link copied');
-                } catch (_) {
-                    showToast('Could not copy');
-                }
-            });
-
-            // ========================
-            // TOAST
-            // ========================
-            let toastTimer;
-            function showToast(msg, ms = 2200) {
-                const el = document.getElementById('toast');
-                if (!el) return;
-                clearTimeout(toastTimer);
-                el.textContent = msg;
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => el.classList.add('visible'));
-                });
-                toastTimer = setTimeout(() => el.classList.remove('visible'), ms);
-            }
-
-            // ========================
-            // THEME SYNC
-            // ========================
+            // Theme sync
             try {
                 const saved = localStorage.getItem('sgou-theme');
                 if (saved) document.documentElement.setAttribute('data-theme', saved);
             } catch (_) { }
         })();
     </script>
+
 </body>
 
 </html>

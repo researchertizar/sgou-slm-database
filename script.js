@@ -1,5 +1,5 @@
 // ===============================
-//  SGOU Programme Browser (Fixed)
+//  SGOU Programme Browser (URL-Driven SPA)
 // ===============================
 
 let allData = [];
@@ -8,7 +8,7 @@ let isSearching = false;
 let deferredInstallPrompt = null;
 let currentAbort = null;
 let revealObserver = null;
-let searchAbort = null;
+let searchObserver = null;
 
 // ===============================
 //  ANALYTICS
@@ -28,11 +28,274 @@ const GA = {
 };
 
 // ===============================
+//  ROUTER
+// ===============================
+const Router = {
+  init() {
+    window.addEventListener('popstate', () => this.resolve());
+  },
+
+  navigate(path) {
+    const hash = '#' + path;
+    if (window.location.hash === hash) return;
+    history.pushState({ path }, '', hash);
+    this.resolve();
+  },
+
+  resolve() {
+    const raw = window.location.hash.slice(1);
+    if (!raw || raw === '/') { this.onHome(); return; }
+
+    const qIdx = raw.indexOf('?');
+    const path = qIdx >= 0 ? raw.slice(0, qIdx) : raw;
+    const params = new URLSearchParams(qIdx >= 0 ? raw.slice(qIdx + 1) : '');
+
+    if (path === '/view') {
+      this.onView(params);
+    } else if (path === '/search') {
+      this.onSearch(params.get('q') || '', params.get('level') || activeLevel);
+    } else if (path.startsWith('/filter/')) {
+      this.onFilter(decodeURIComponent(path.split('/')[2] || 'ALL'));
+    } else {
+      this.onHome();
+    }
+  },
+
+  onHome() {
+    hideViewerPanel();
+    restoreState('', 'ALL');
+  },
+
+  onSearch(q, level) {
+    hideViewerPanel();
+    restoreState(q, level);
+  },
+
+  onFilter(level) {
+    hideViewerPanel();
+    restoreState($('searchInput')?.value || '', level);
+  },
+
+  onView(params) {
+    showViewerPanel(params);
+  }
+};
+
+// ===============================
+//  VIEWER PANEL
+// ===============================
+function showViewerPanel(params) {
+  const panel = $('viewerPanel');
+  if (!panel) return;
+
+  const pdfUrl = params.get('url') || '';
+  const name = params.get('name') || 'Course PDF';
+  const code = params.get('code') || '';
+  const prog = params.get('prog') || '';
+  const level = params.get('level') || '';
+
+  // Populate info
+  const titleEl = $('viewerPanelTitle');
+  const progEl = $('viewerProgName');
+  const levelEl = $('viewerLevelTag');
+  const codeEl = $('viewerCourseCode');
+
+  if (titleEl) titleEl.textContent = name + (code ? ' \u2014 ' + code : '');
+  if (progEl) progEl.textContent = prog || '\u2014';
+  if (codeEl) codeEl.textContent = code;
+
+  if (levelEl) {
+    if (level) {
+      const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
+      const label = level === 'FYUG' ? '4-Year UG' : level;
+      levelEl.textContent = label;
+      levelEl.className = 'viewer-level-tag ' + cls;
+      levelEl.style.display = '';
+    } else {
+      levelEl.style.display = 'none';
+    }
+  }
+
+  // Store data for download/share
+  panel._data = { url: pdfUrl, name, code, prog, level };
+
+  // Update page title
+  document.title = name + (code ? ' (' + code + ')' : '') + ' \u2014 SGOU SLM';
+
+  // Show the panel
+  document.body.style.overflow = 'hidden';
+  panel.classList.add('visible');
+
+  // Load PDF
+  if (pdfUrl) {
+    loadPdfInViewer(pdfUrl);
+  }
+}
+
+function hideViewerPanel() {
+  const panel = $('viewerPanel');
+  if (!panel || !panel.classList.contains('visible')) return;
+
+  panel.classList.remove('visible');
+  document.body.style.overflow = '';
+  document.title = 'SGOU SLM Browser - By Researcher Tizar';
+
+  // Clear iframe after slide-out animation
+  setTimeout(() => {
+    const frame = $('viewerPanelFrame');
+    if (frame) frame.src = 'about:blank';
+    const ld = $('viewerPanelLoading');
+    if (ld) ld.style.display = '';
+  }, 400);
+}
+
+function loadPdfInViewer(pdfUrl) {
+  const frame = $('viewerPanelFrame');
+  const ld = $('viewerPanelLoading');
+  if (!frame) return;
+
+  if (ld) ld.style.display = '';
+  let loaded = false;
+
+  function onReady() {
+    if (loaded) return;
+    loaded = true;
+    if (ld) ld.style.display = 'none';
+  }
+
+  // Google Docs Viewer (best mobile support)
+  const gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
+  frame.onload = onReady;
+  frame.src = gview;
+
+  // Fallback: direct URL after 6s
+  setTimeout(() => {
+    if (!loaded) {
+      frame.onload = onReady;
+      frame.src = pdfUrl;
+    }
+  }, 6000);
+
+  // Ultimate: force show after 10s
+  setTimeout(onReady, 10000);
+}
+
+async function viewerDownload() {
+  const panel = $('viewerPanel');
+  if (!panel || !panel._data) return;
+
+  const { url, name, code } = panel._data;
+  if (!url) return;
+
+  const btn = $('viewerPanelDownload');
+  if (btn) btn.classList.add('downloading');
+  showToast('Preparing download\u2026');
+
+  const filename = (code ? code + '_' : '') + name.replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+  let blob = null;
+
+  try {
+    try {
+      const ctrl = new AbortController();
+      const tmr = setTimeout(() => ctrl.abort(), 18000);
+      const resp = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tmr);
+      if (resp.ok) blob = await resp.blob();
+    } catch (_) { }
+
+    if (!blob) {
+      try {
+        const resp = await fetch('/api/download?url=' + encodeURIComponent(url));
+        if (resp.ok) blob = await resp.blob();
+      } catch (_) { }
+    }
+  } catch (_) { }
+
+  if (blob && blob.size > 0) {
+    const blobUrl = URL.createObjectURL(blob);
+    triggerDownload(blobUrl, filename);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    showToast('Download started');
+    incrementDownloadCount();
+  } else {
+    window.open(url, '_blank');
+    showToast('PDF opened \u2014 save from your browser');
+  }
+
+  GA.trackDownload(code || 'unknown', filename, blob ? 'fetch' : 'new_tab');
+  if (btn) setTimeout(() => btn.classList.remove('downloading'), 1500);
+}
+
+async function viewerShare() {
+  const panel = $('viewerPanel');
+  if (!panel || !panel._data) return;
+
+  const { url, name, code, prog, level } = panel._data;
+
+  // External share URL (view.html for non-app users)
+  const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+  const shareUrl = base + 'view.html?' + new URLSearchParams({
+    url, name, code, prog, level
+  }).toString();
+
+  const shareText =
+    (prog ? prog + ' - ' + (level === 'FYUG' ? '4-Year UG' : level) + '\n' : '') +
+    name + (code ? ' - ' + code : '') + '\n' +
+    shareUrl + '\n\n' +
+    'Shared via SLM Browser\n' +
+    base;
+
+  if (navigator.share) {
+    try { await navigator.share({ title: name + ' \u2014 SGOU SLM', text: shareText, url: shareUrl }); } catch (_) { }
+  } else if (navigator.clipboard) {
+    try { await navigator.clipboard.writeText(shareText); showToast('Copied to clipboard'); } catch (_) { showToast('Could not copy'); }
+  }
+}
+
+// ===============================
+//  STATE SYNC (URL <-> UI)
+// ===============================
+function syncUrlFromState() {
+  const q = ($('searchInput')?.value || '').trim();
+  if (q) {
+    Router.navigate('/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(activeLevel));
+  } else if (activeLevel !== 'ALL') {
+    Router.navigate('/filter/' + encodeURIComponent(activeLevel));
+  } else {
+    Router.navigate('/');
+  }
+}
+
+function restoreState(query, level) {
+  const input = $('searchInput');
+  const currentQ = (input?.value || '').trim();
+  const queryChanged = currentQ !== query;
+  const levelChanged = activeLevel !== level;
+
+  // Skip if nothing changed and content is already rendered
+  if (!queryChanged && !levelChanged && $('grid')?.querySelector('.programme-card:not(.skeleton-card)')) return;
+
+  if (input && queryChanged) input.value = query;
+
+  const clear = $('searchClear');
+  if (clear) clear.classList.toggle('visible', query.length > 0);
+
+  if (levelChanged) {
+    activeLevel = level;
+    document.querySelectorAll('.pill').forEach(p =>
+      p.classList.toggle('active', p.dataset.level === activeLevel));
+  }
+
+  handleSearch();
+}
+
+// ===============================
 //  BOOT
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
   showSkeletons();
   initTheme();
+  Router.init();
   loadData();
   initSearch();
   initDelegation();
@@ -43,30 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initInstallPrompt();
   initOfflineDetection();
   updateDownloadCount();
-  handleDeepLinks();
 });
-
-// ===============================
-//  DEEP LINKS (PWA shortcuts + URL params)
-// ===============================
-function handleDeepLinks() {
-  const params = new URLSearchParams(window.location.search);
-  const action = params.get('action');
-  const filter = params.get('filter');
-
-  if (action === 'search') {
-    requestAnimationFrame(() => {
-      const inp = $('searchInput');
-      if (inp) { inp.focus(); inp.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-    });
-  }
-
-  if (filter && ['UG', 'PG', 'FYUG'].includes(filter)) {
-    activeLevel = filter;
-    // Will be applied once data loads — stored and applied in loadData success
-    window._pendingFilter = filter;
-  }
-}
 
 // ===============================
 //  SKELETONS
@@ -82,7 +322,7 @@ function showSkeletons() {
 }
 
 // ===============================
-//  DATA LOADING (with sorting)
+//  DATA LOADING
 // ===============================
 async function loadData() {
   if (currentAbort) currentAbort.abort();
@@ -92,7 +332,6 @@ async function loadData() {
     try {
       const r = await fetch(u, { signal: currentAbort.signal });
       if (!r.ok) continue;
-
       const raw = await r.json();
       if (!Array.isArray(raw)) throw new Error('Data is not an array');
 
@@ -113,17 +352,13 @@ async function loadData() {
         a.programme_name.localeCompare(b.programme_name, 'en', { sensitivity: 'base' })
       );
 
-      // Apply pending deep-link filter
-      if (window._pendingFilter) {
-        activeLevel = window._pendingFilter;
-        delete window._pendingFilter;
-        document.querySelectorAll('.pill').forEach(p =>
-          p.classList.toggle('active', p.dataset.level === activeLevel));
-      }
-
       buildFilters();
       renderProgrammes(allData);
       updateStats(allData);
+
+      // Resolve URL after data is loaded
+      Router.resolve();
+
       currentAbort = null;
       return;
     } catch (err) {
@@ -171,7 +406,7 @@ function syncMeta() {
 }
 
 // ===============================
-//  SEARCH (with debounce & animations)
+//  SEARCH
 // ===============================
 function initSearch() {
   const input = $('searchInput');
@@ -183,11 +418,13 @@ function initSearch() {
 
   input.addEventListener('input', () => {
     hideRecent();
-    // Debounce the actual search render
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(handleSearch, 120);
 
-    // Debounce analytics separately
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      handleSearch();
+      syncUrlFromState();
+    }, 120);
+
     clearTimeout(analyticsTimer);
     const q = input.value.toLowerCase().trim();
     if (q.length >= 2) {
@@ -196,7 +433,6 @@ function initSearch() {
       }, 1500);
     }
 
-    // Immediate clear-button visibility update
     if (clear) clear.classList.toggle('visible', q.length > 0);
   });
 
@@ -207,6 +443,7 @@ function initSearch() {
     input.value = '';
     clear.classList.remove('visible');
     handleSearch();
+    syncUrlFromState();
     input.focus();
   });
 }
@@ -232,7 +469,6 @@ function handleSearch() {
     if (!results) return;
     results.classList.add('active');
 
-    // Build matches efficiently
     const matches = [];
     const seen = new Set();
     filtered.forEach(prog => {
@@ -263,8 +499,9 @@ function handleSearch() {
         matches.map((m, i) => {
           const lv = m.prog.level;
           const cls = lv === 'PG' ? 'pg' : lv === 'UG' ? 'ug' : 'fyug';
-          const label = lv === 'FYUG' ? 'FYUG' : lv;
+          const label = lv === 'FYUG' ? '4-Year UG' : lv;
           const fn = sanitize(m.course.code + '_' + m.course.name) + '.pdf';
+          const viewerHash = buildViewerHash(m.course.pdf_url, m.course.name, m.course.code, m.prog.programme_name, m.prog.level);
           return `<div class="search-result-item" data-idx="${i}">
   <span class="search-result-level ${cls}">${label}</span>
   <div class="search-result-body">
@@ -276,7 +513,7 @@ function handleSearch() {
     <button class="btn-share" data-url="${ea(m.course.pdf_url)}" data-name="${ea(m.course.name)}" aria-label="Share">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
     </button>
-        <a class="btn-view" href="${ea(buildViewerUrl(m.course.pdf_url, m.course.name, m.course.code, m.prog.programme_name, m.prog.level))}" target="_blank" rel="noopener" title="View PDF">
+    <a class="btn-view" href="#${ea(viewerHash)}" title="View PDF">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       View</a>
     <a class="btn-download" href="${ea(m.course.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
@@ -286,7 +523,6 @@ function handleSearch() {
 </div>`;
         }).join('');
 
-      // Trigger staggered entrance animation using rAF + IntersectionObserver
       animateSearchResults();
     }
 
@@ -307,16 +543,12 @@ function handleSearch() {
 // ===============================
 //  SEARCH RESULTS ANIMATION
 // ===============================
-let searchObserver = null;
-
 function animateSearchResults() {
-  // Disconnect previous observer if any
   if (searchObserver) { searchObserver.disconnect(); searchObserver = null; }
 
   const items = document.querySelectorAll('.search-result-item');
   if (!items.length) return;
 
-  // Use IntersectionObserver for scroll-aware staggered reveal
   if ('IntersectionObserver' in window) {
     let stagger = 0;
     searchObserver = new IntersectionObserver((entries) => {
@@ -336,7 +568,6 @@ function animateSearchResults() {
 
     items.forEach(item => searchObserver.observe(item));
   } else {
-    // Fallback: just show them
     items.forEach(item => item.classList.add('animate-in'));
   }
 }
@@ -369,7 +600,7 @@ function showRecent() {
 function hideRecent() { $('recentSearches')?.classList.remove('visible'); }
 
 // ===============================
-//  FILTERS (with programme counts)
+//  FILTERS
 // ===============================
 function buildFilters() {
   const levels = [...new Set(allData.map(p => p.level))].sort();
@@ -396,6 +627,14 @@ function mkPill(label, level, active, count) {
 // ===============================
 function initDelegation() {
   document.addEventListener('click', e => {
+    // Hash-based navigation links (a[href^="#/"])
+    const navLink = e.target.closest('a[href^="#/"]');
+    if (navLink) {
+      e.preventDefault();
+      Router.navigate(navLink.getAttribute('href').slice(1));
+      return;
+    }
+
     // Card header toggle
     const hdr = e.target.closest('.card-header');
     if (hdr?.closest('.programme-card')) {
@@ -432,7 +671,7 @@ function initDelegation() {
     const cl = e.target.closest('.course-link');
     if (cl) { e.preventDefault(); downloadPDF(cl.href, cl.dataset.fname, null); return; }
 
-    // Copy course code on click
+    // Copy course code
     const code = e.target.closest('.search-result-code[data-code]');
     if (code) {
       copyToClipboard(code.dataset.code);
@@ -444,7 +683,7 @@ function initDelegation() {
     const rp = e.target.closest('.recent-pill');
     if (rp) {
       const inp = $('searchInput');
-      if (inp) { inp.value = rp.dataset.q; handleSearch(); }
+      if (inp) { inp.value = rp.dataset.q; handleSearch(); syncUrlFromState(); }
       return;
     }
 
@@ -456,20 +695,24 @@ function initDelegation() {
         p.classList.toggle('active', p.dataset.level === activeLevel));
       GA.trackFilter(activeLevel);
       handleSearch();
+      syncUrlFromState();
       return;
     }
 
     // Expand all
-    if (e.target.closest('#expandAll')) {
-      expandAll();
-      return;
-    }
+    if (e.target.closest('#expandAll')) { expandAll(); return; }
 
     // Collapse all
-    if (e.target.closest('#collapseAll')) {
-      collapseAll();
-      return;
-    }
+    if (e.target.closest('#collapseAll')) { collapseAll(); return; }
+
+    // Viewer back
+    if (e.target.closest('#viewerBack')) { history.back(); return; }
+
+    // Viewer download
+    if (e.target.closest('#viewerPanelDownload')) { viewerDownload(); return; }
+
+    // Viewer share
+    if (e.target.closest('#viewerPanelShare')) { viewerShare(); return; }
   });
 }
 
@@ -482,7 +725,6 @@ function toggleCard(card) {
 
   if (card.classList.contains('open')) {
     body.style.maxHeight = body.scrollHeight + 'px';
-    // Force reflow
     void body.offsetHeight;
     body.style.maxHeight = '0px';
     card.classList.remove('open');
@@ -516,11 +758,9 @@ function toggleCard(card) {
 // ===============================
 function expandAll() {
   GA.trackEngagement('expand_all');
-  const cards = document.querySelectorAll('.programme-card:not(.open)');
-  cards.forEach((card, i) => {
+  document.querySelectorAll('.programme-card:not(.open)').forEach((card, i) => {
     const body = card.querySelector('.card-body');
     if (!body) return;
-    // Stagger opening for smooth visual
     setTimeout(() => {
       card.classList.add('open');
       body.setAttribute('aria-hidden', 'false');
@@ -584,12 +824,20 @@ function initKeyboard() {
     }
 
     if (e.key === 'Escape') {
+      // Close viewer first
+      const panel = $('viewerPanel');
+      if (panel?.classList.contains('visible')) {
+        history.back();
+        return;
+      }
+
       const inp = $('searchInput');
       if (document.activeElement === inp) {
         if (inp.value) {
           inp.value = '';
           $('searchClear')?.classList.remove('visible');
           handleSearch();
+          syncUrlFromState();
         } else {
           inp.blur();
         }
@@ -601,10 +849,9 @@ function initKeyboard() {
 }
 
 // ===============================
-//  SCROLL REVEAL (performant)
+//  SCROLL REVEAL
 // ===============================
 function initScrollReveal() {
-  // Clean up previous observer
   if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
 
   document.body.classList.add('js-reveal');
@@ -615,7 +862,6 @@ function initScrollReveal() {
   }
 
   revealObserver = new IntersectionObserver((entries) => {
-    // Batch process: stagger only within each intersection batch
     let batchDelay = 0;
     entries.forEach(entry => {
       if (entry.isIntersecting) {
@@ -623,7 +869,6 @@ function initScrollReveal() {
         requestAnimationFrame(() => {
           card.style.transitionDelay = batchDelay + 'ms';
           card.classList.add('revealed');
-          // After transition completes, clean up delay for hover/expand transitions
           const cleanup = () => {
             card.style.transitionDelay = '0ms';
             card.classList.add('reveal-done');
@@ -679,7 +924,7 @@ function initBackToTop() {
 }
 
 // ===============================
-//  RENDER CARDS (sorted)
+//  RENDER CARDS
 // ===============================
 function renderProgrammes(data, query) {
   const grid = $('grid');
@@ -692,15 +937,14 @@ function renderProgrammes(data, query) {
     return;
   }
 
-  // Build HTML in one shot
-  const html = data.map((prog, idx) => {
+  grid.innerHTML = data.map((prog, idx) => {
     const sems = prog.semesters;
     const total = sems.reduce((a, s) => a + s.courses.length, 0);
     const lv = prog.level === 'FYUG' ? 'FYUG' : prog.level;
 
     return `<div class="programme-card" data-level="${lv}" data-idx="${idx}" role="listitem">
       <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
-        <span class="level-tag">${prog.level === 'FYUG' ? 'FYUG' : prog.level}</span>
+        <span class="level-tag">${prog.level === 'FYUG' ? '4-Year UG' : prog.level}</span>
         <h2>${hl(prog.programme_name, query)}</h2>
         <div class="meta">${sems.length} sem &middot; ${total} courses</div>
         <span class="toggle-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -712,12 +956,13 @@ function renderProgrammes(data, query) {
         ${sems.map((s, si) => `<div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
           ${s.courses.map(c => {
       const fn = sanitize(c.code + '_' + c.name) + '.pdf';
+      const viewerHash = buildViewerHash(c.pdf_url, c.name, c.code, prog.programme_name, prog.level);
       return `<div class="course-item">
   <span class="course-code">${c.code}</span>
   <div class="course-info">
     <div class="course-name">${hl(c.name, query)}</div>
     <div class="course-actions">
-      <a class="btn-view" href="${ea(buildViewerUrl(c.pdf_url, c.name, c.code, prog.programme_name, prog.level))}" target="_blank" rel="noopener" title="View PDF">
+      <a class="btn-view" href="#${ea(viewerHash)}" title="View PDF">
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         View</a>
       <a class="course-link" href="${ea(c.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
@@ -732,7 +977,6 @@ function renderProgrammes(data, query) {
     </div>`;
   }).join('');
 
-  grid.innerHTML = html;
   initScrollReveal();
 }
 
@@ -805,7 +1049,7 @@ function triggerDownload(url, filename) {
 }
 
 // ===============================
-//  DOWNLOAD COUNTER (localStorage)
+//  DOWNLOAD COUNTER
 // ===============================
 function incrementDownloadCount() {
   try {
@@ -845,30 +1089,26 @@ async function shareContent(name, url) {
     }
   }
 
-  // Build viewer URL through your website
-  const viewerUrl = 'https://sgou-slm-database.vercel.app/view.html?'
-    + new URLSearchParams({
-      url: courseInfo.pdfUrl,
-      name: courseInfo.courseName,
-      code: courseInfo.code,
-      prog: courseInfo.programme,
-      level: courseInfo.level
-    }).toString();
+  // External share URL (view.html for recipients without the app)
+  const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+  const shareUrl = base + 'view.html?' + new URLSearchParams({
+    url: courseInfo.pdfUrl,
+    name: courseInfo.courseName,
+    code: courseInfo.code,
+    prog: courseInfo.programme,
+    level: courseInfo.level
+  }).toString();
 
   const shareText =
     `${courseInfo.programme} - ${courseInfo.level}\n` +
     `${courseInfo.courseName} - ${courseInfo.code}\n` +
-    `${viewerUrl}\n\n` +
+    `${shareUrl}\n\n` +
     `Shared via SLM Browser\n` +
-    `https://sgou-slm-database.vercel.app/`;
+    base;
 
   if (navigator.share) {
     try {
-      await navigator.share({
-        title: courseInfo.courseName + ' \u2014 SGOU SLM',
-        text: shareText,
-        url: viewerUrl
-      });
+      await navigator.share({ title: courseInfo.courseName + ' \u2014 SGOU SLM', text: shareText, url: shareUrl });
       GA.trackShare(name, 'web_share');
     } catch (_) { }
   } else if (navigator.clipboard) {
@@ -939,14 +1179,13 @@ function registerServiceWorker() {
 }
 
 // ===============================
-//  PWA: INSTALL PROMPT (enhanced)
+//  PWA: INSTALL PROMPT
 // ===============================
 function initInstallPrompt() {
   const banner = $('installBanner');
   const installBtn = $('installBtn');
   const dismissBtn = $('installDismiss');
 
-  // --- Auto-detect: already installed ---
   const isStandalone = window.matchMedia('(display-mode:standalone)').matches
     || window.navigator.standalone === true
     || document.referrer.includes('android-app://');
@@ -954,28 +1193,21 @@ function initInstallPrompt() {
   if (isStandalone) {
     safeSet('sgou-pwa-installed', '1');
     banner?.classList.remove('visible');
-    return; // Already installed, nothing to do
+    return;
   }
 
-  // Check if user previously dismissed (within this session or persisted)
   const dismissed = safeGet('sgou-install-dismissed');
   const installed = safeGet('sgou-pwa-installed');
-
-  // If the app was previously detected as installed, don't show
   if (installed) return;
 
-  // Listen for the browser's install prompt
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredInstallPrompt = e;
-
-    // Show banner after a brief delay (unless dismissed)
     if (!dismissed && banner) {
       setTimeout(() => banner.classList.add('visible'), 2500);
     }
   });
 
-  // Detect successful installation via event
   window.addEventListener('appinstalled', () => {
     safeSet('sgou-pwa-installed', '1');
     banner?.classList.remove('visible');
@@ -984,32 +1216,25 @@ function initInstallPrompt() {
     GA.trackInstall('appinstalled_event');
   });
 
-  // Install button click
   installBtn?.addEventListener('click', async () => {
     if (!deferredInstallPrompt) {
-      // Fallback: if no prompt available, guide user
       showToast('Use your browser\'s install option');
       return;
     }
     banner?.classList.remove('visible');
     deferredInstallPrompt.prompt();
     const { outcome } = await deferredInstallPrompt.userChoice;
-    if (outcome === 'accepted') {
-      safeSet('sgou-pwa-installed', '1');
-      showToast('App installed!');
-    }
+    if (outcome === 'accepted') safeSet('sgou-pwa-installed', '1');
     GA.trackInstall(outcome);
     deferredInstallPrompt = null;
   });
 
-  // Dismiss button
   dismissBtn?.addEventListener('click', () => {
     banner?.classList.remove('visible');
     safeSet('sgou-install-dismissed', '1');
     GA.trackInstall('dismissed');
   });
 
-  // Also detect display-mode changes (user installs via other means)
   window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
     if (e.matches) {
       safeSet('sgou-pwa-installed', '1');
@@ -1055,11 +1280,8 @@ function sanitize(s) {
   return String(s).replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').substring(0, 80);
 }
 
-function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
-function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { } }
-
-function buildViewerUrl(pdfUrl, name, code, prog, level) {
-  return './view.html?' + new URLSearchParams({
+function buildViewerHash(pdfUrl, name, code, prog, level) {
+  return '/view?' + new URLSearchParams({
     url: pdfUrl || '',
     name: name || '',
     code: code || '',
@@ -1067,3 +1289,6 @@ function buildViewerUrl(pdfUrl, name, code, prog, level) {
     level: level || ''
   }).toString();
 }
+
+function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
+function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { } }

@@ -1,5 +1,5 @@
-const CACHE = 'sgou-v7';
-const SHELL = ['./', './index.html', './style.css', './script.js', './manifest.json', './icon.svg'];
+const CACHE = 'sgou-v8';
+const SHELL = ['./', './index.html', './style.css', './script.js', './manifest.json', './icon.svg', './view.html'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
