@@ -257,7 +257,7 @@ async function viewerShare() {
   if (!panel?._data) return;
 
   const { code, name, prog, level } = panel._data;
-  const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+  const base = location.pathname.replace(/\/[^\/]*$/, '/');
   const extUrl = base + 'view.html#' + encodeURIComponent(code || name);
 
   const text =
@@ -1061,7 +1061,7 @@ async function shareContent(name, url) {
   }
 
   // Clean share URL — just the course code
-  const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
+  const base = location.pathname.replace(/\/[^\/]*$/, '/');
   const extUrl = base + 'view.html#' + encodeURIComponent(info.code || info.courseName);
 
   const text =
