@@ -876,7 +876,7 @@
                 titleEl.textContent = name;
 
                 var cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
-                var label = level === 'FYUG' ? '4-Year UG' : level;
+                var label = level === 'FYUG' ? 'FYUG' : level;
                 var m = '';
                 if (prog) m += '<span>' + escHtml(prog) + '</span>';
                 if (level) m += '<span class="viewer-meta-tag ' + cls + '">' + label + '</span>';

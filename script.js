@@ -146,7 +146,7 @@ function showViewerPanel(params) {
 
   if (lEl) {
     if (level) {
-      lEl.textContent = level === 'FYUG' ? '4-Year UG' : level;
+      lEl.textContent = level === 'FYUG' ? 'FYUG' : level;
       lEl.className = 'viewer-level-tag ' + (level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug');
       lEl.style.display = '';
     } else {
@@ -261,7 +261,7 @@ async function viewerShare() {
   const extUrl = base + 'view.html#' + encodeURIComponent(code || name);
 
   const text =
-    (prog ? prog + ' - ' + (level === 'FYUG' ? '4-Year UG' : level) + '\n' : '') +
+    (prog ? prog + ' - ' + (level === 'FYUG' ? 'FYUG' : level) + '\n' : '') +
     name + (code ? ' - ' + code : '') + '\n' +
     extUrl + '\n\n' +
     'Shared via SLM Browser\n' + base;
@@ -520,7 +520,7 @@ function handleSearch() {
         matches.map((m, i) => {
           const lv = m.prog.level;
           const cls = lv === 'PG' ? 'pg' : lv === 'UG' ? 'ug' : 'fyug';
-          const label = lv === 'FYUG' ? '4-Year UG' : lv;
+          const label = lv === 'FYUG' ? 'FYUG' : lv;
           const fn = sanitize(m.course.code + '_' + m.course.name) + '.pdf';
           const vh = buildViewerHash(m.course.pdf_url, m.course.name, m.course.code, m.prog.programme_name, m.prog.level);
           return `<div class="search-result-item" data-idx="${i}">
@@ -924,7 +924,7 @@ function renderProgrammes(data, query) {
 
     return `<div class="programme-card" data-level="${prog.level === 'FYUG' ? 'FYUG' : prog.level}" data-idx="${idx}" role="listitem">
       <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
-        <span class="level-tag">${prog.level === 'FYUG' ? '4-Year UG' : prog.level}</span>
+        <span class="level-tag">${prog.level === 'FYUG' ? 'FYUG' : prog.level}</span>
         <h2>${hl(prog.programme_name, query)}</h2>
         <div class="meta">${sems.length} sem &middot; ${total} courses</div>
         <span class="toggle-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
@@ -1051,7 +1051,7 @@ async function shareContent(name, url) {
       if (found) {
         info = {
           programme: prog.programme_name,
-          level: prog.level === 'FYUG' ? '4-Year UG' : prog.level,
+          level: prog.level === 'FYUG' ? 'FYUG' : prog.level,
           code: found.code,
           courseName: found.name,
           pdfUrl: found.pdf_url
