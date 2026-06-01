@@ -263,8 +263,7 @@ async function viewerShare() {
   const text =
     (prog ? prog + ' - ' + (level === 'FYUG' ? 'FYUG' : level) + '\n' : '') +
     name + (code ? ' - ' + code : '') + '\n' +
-    extUrl + '\n\n' +
-    'Shared via SLM Browser\n' + base;
+    extUrl;
 
   if (navigator.share) {
     try { await navigator.share({ title: name + ' \u2014 SGOU SLM', text, url: extUrl }); } catch (_) { }
@@ -1068,8 +1067,7 @@ async function shareContent(name, url) {
   const text =
     `${info.programme} - ${info.level}\n` +
     `${info.courseName} - ${info.code}\n` +
-    `${extUrl}\n\n` +
-    `Shared via SLM Browser\n` + base;
+    `${extUrl}`;
 
   if (navigator.share) {
     try { await navigator.share({ title: info.courseName + ' \u2014 SGOU SLM', text, url: extUrl }); GA.trackShare(name, 'web_share'); } catch (_) { }
