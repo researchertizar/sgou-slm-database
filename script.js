@@ -61,43 +61,62 @@ const Router = {
   },
 
   resolve() {
-    if (!allData.length) return;          // data not ready yet
+    if (!allData.length) return;
 
     const raw = window.location.hash.slice(1);
 
-    // Home
     if (!raw || raw === '/') {
       hideViewerPanel();
       restoreState('', 'ALL');
       return;
     }
 
-    // Parse /path?key=val
     const qIdx = raw.indexOf('?');
     const path = qIdx >= 0 ? raw.slice(0, qIdx) : raw;
     const params = new URLSearchParams(qIdx >= 0 ? raw.slice(qIdx + 1) : '');
 
-    // View
-    if (path === '/view') {
+    if (path.startsWith('/view/')) {
+      const code = decodeURIComponent(path.split('/')[2] || '');
+      if (code) {
+        // Look up full course info from data
+        let found = null;
+        for (const prog of allData) {
+          for (const sem of prog.semesters) {
+            const c = sem.courses.find(c => c.code === code || c.name === code);
+            if (c) {
+              found = {
+                url: c.pdf_url,
+                name: c.name,
+                code: c.code,
+                prog: prog.programme_name,
+                level: prog.level
+              };
+              break;
+            }
+          }
+          if (found) break;
+        }
+        if (found) {
+          showViewerPanel(new URLSearchParams(found));
+          return;
+        }
+      }
+      // Fallback: try legacy query params
       showViewerPanel(params);
       return;
     }
 
-    // Anything else → hide viewer, restore content
     hideViewerPanel();
 
     if (path === '/search') {
-      restoreState(
-        params.get('q') || '',
-        params.get('level') || activeLevel
-      );
+      restoreState(params.get('q') || '', params.get('level') || activeLevel);
     } else if (path.startsWith('/filter/')) {
-      const lv = decodeURIComponent(path.split('/')[2] || 'ALL');
-      restoreState($('searchInput')?.value || '', lv);
+      restoreState($('searchInput')?.value || '', decodeURIComponent(path.split('/')[2] || 'ALL'));
     } else {
       restoreState('', 'ALL');
     }
   }
+
 };
 
 // ===============================
@@ -237,9 +256,9 @@ async function viewerShare() {
   const panel = $('viewerPanel');
   if (!panel?._data) return;
 
-  const { url, name, code, prog, level } = panel._data;
+  const { code, name, prog, level } = panel._data;
   const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
-  const extUrl = base + 'view.html?' + new URLSearchParams({ url, name, code, prog, level }).toString();
+  const extUrl = base + 'view.html#' + encodeURIComponent(code || name);
 
   const text =
     (prog ? prog + ' - ' + (level === 'FYUG' ? '4-Year UG' : level) + '\n' : '') +
@@ -253,6 +272,7 @@ async function viewerShare() {
     try { await navigator.clipboard.writeText(text); showToast('Copied to clipboard'); } catch (_) { showToast('Could not copy'); }
   }
 }
+
 
 // ===============================
 //  STATE SYNC
@@ -1032,20 +1052,24 @@ async function shareContent(name, url) {
         info = {
           programme: prog.programme_name,
           level: prog.level === 'FYUG' ? '4-Year UG' : prog.level,
-          code: found.code, courseName: found.name, pdfUrl: found.pdf_url
+          code: found.code,
+          courseName: found.name,
+          pdfUrl: found.pdf_url
         };
         break;
       }
     }
   }
 
+  // Clean share URL — just the course code
   const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
-  const extUrl = base + 'view.html?' + new URLSearchParams({
-    url: info.pdfUrl, name: info.courseName, code: info.code, prog: info.programme, level: info.level
-  }).toString();
+  const extUrl = base + 'view.html#' + encodeURIComponent(info.code || info.courseName);
 
   const text =
-    `${info.programme} - ${info.level}\n${info.courseName} - ${info.code}\n${extUrl}\n\nShared via SLM Browser\n${base}`;
+    `${info.programme} - ${info.level}\n` +
+    `${info.courseName} - ${info.code}\n` +
+    `${extUrl}\n\n` +
+    `Shared via SLM Browser\n` + base;
 
   if (navigator.share) {
     try { await navigator.share({ title: info.courseName + ' \u2014 SGOU SLM', text, url: extUrl }); GA.trackShare(name, 'web_share'); } catch (_) { }
@@ -1053,6 +1077,7 @@ async function shareContent(name, url) {
     try { await navigator.clipboard.writeText(text); showToast('Copied to clipboard'); GA.trackShare(name, 'clipboard'); } catch (_) { showToast('Could not copy'); }
   }
 }
+
 
 // ===============================
 //  COPY TO CLIPBOARD
@@ -1174,10 +1199,10 @@ function ea(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
 function sanitize(s) { return String(s).replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').substring(0, 80); }
 
 function buildViewerHash(pdfUrl, name, code, prog, level) {
-  return '/view?' + new URLSearchParams({
-    url: pdfUrl || '', name: name || '', code: code || '', prog: prog || '', level: level || ''
-  }).toString();
+  // Only use course code — it's unique, URL stays clean
+  return '/view/' + encodeURIComponent(code || name);
 }
+
 
 function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { } }

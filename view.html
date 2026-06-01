@@ -781,32 +781,17 @@
 
     <script>
         (function () {
+            var hash = window.location.hash.slice(1);
             var params = new URLSearchParams(window.location.search);
+
+            // Support both: #COURSECODE (new clean) and ?url=...&name=... (legacy)
+            var courseCode = decodeURIComponent(hash || '');
             var pdfUrl = params.get('url') || '';
-            var name = params.get('name') || 'Course PDF';
-            var code = params.get('code') || '';
+            var name = params.get('name') || '';
+            var code = params.get('code') || courseCode;
             var prog = params.get('prog') || '';
             var level = params.get('level') || '';
 
-            // ============================================
-            // PWA AUTO-REDIRECT: if running inside installed
-            // app, go to main page's in-app viewer instead
-            // ============================================
-            var isStandalone = window.matchMedia('(display-mode:standalone)').matches
-                || window.navigator.standalone === true
-                || document.referrer.indexOf('android-app://') !== -1;
-
-            if (isStandalone) {
-                var hash = '/view?' + new URLSearchParams({
-                    url: pdfUrl, name: name, code: code, prog: prog, level: level
-                }).toString();
-                window.location.replace('./#' + hash);
-                return;
-            }
-
-            // ============================================
-            // STANDALONE VIEWER (non-PWA / desktop browser)
-            // ============================================
             var loading = document.getElementById('viewerLoading');
             var errorEl = document.getElementById('viewerError');
             var errorTxt = document.getElementById('errorText');
@@ -815,46 +800,126 @@
             var metaEl = document.getElementById('courseMeta');
             var dlBtn = document.getElementById('directDownload');
             var openBtn = document.getElementById('openDirect');
-            var errDl = document.getElementById('errorDownload');
 
-            document.title = (name || 'PDF') + ' — SGOU SLM';
-            titleEl.textContent = name;
+            // ============================================
+            // PWA AUTO-REDIRECT
+            // ============================================
+            var isStandalone = window.matchMedia('(display-mode:standalone)').matches
+                || window.navigator.standalone === true;
 
-            var cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
-            var label = level === 'FYUG' ? '4-Year UG' : level;
-            var m = '';
-            if (prog) m += '<span>' + prog + '</span>';
-            if (level) m += '<span class="viewer-meta-tag ' + cls + '">' + label + '</span>';
-            if (code) m += '<span>Code: ' + code + '</span>';
-            metaEl.innerHTML = m;
-
-            if (!pdfUrl) {
-                loading.style.display = 'none';
-                errorEl.style.display = 'flex';
-                errorTxt.textContent = 'No PDF URL provided.';
+            if (isStandalone && courseCode) {
+                window.location.replace('./#/view/' + encodeURIComponent(courseCode));
                 return;
             }
 
-            dlBtn.href = pdfUrl;
-            dlBtn.download = (code ? code + '_' : '') + name.replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
-            openBtn.href = pdfUrl;
-            if (errDl) errDl.href = pdfUrl;
+            // ============================================
+            // If we have a course code but no PDF URL,
+            // load data to look up the course
+            // ============================================
+            if (courseCode && !pdfUrl) {
+                titleEl.textContent = 'Loading...';
+                var dataUrls = ['./sgou_slm_data.json', './data.json'];
+                var idx = 0;
 
-            var done = false;
-            function ready() {
-                if (done) return;
-                done = true;
-                loading.style.display = 'none';
-                frame.style.display = 'block';
+                function tryLoad() {
+                    if (idx >= dataUrls.length) {
+                        showError('Course data could not be loaded.');
+                        return;
+                    }
+                    fetch(dataUrls[idx])
+                        .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+                        .then(function (data) {
+                            var found = null;
+                            data.forEach(function (p) {
+                                (p.semesters || []).forEach(function (s) {
+                                    (s.courses || []).forEach(function (c) {
+                                        if (c.code === courseCode || c.name === courseCode) {
+                                            found = {
+                                                pdfUrl: c.pdf_url,
+                                                name: c.name,
+                                                code: c.code,
+                                                prog: p.programme_name,
+                                                level: p.level
+                                            };
+                                        }
+                                    });
+                                });
+                            });
+
+                            if (!found) {
+                                showError('Course "' + courseCode + '" not found.');
+                                return;
+                            }
+
+                            // Populate UI
+                            name = found.name;
+                            code = found.code;
+                            prog = found.prog;
+                            level = found.level;
+                            pdfUrl = found.pdfUrl;
+
+                            showCourse();
+                        })
+                        .catch(function () { idx++; tryLoad(); });
+                }
+
+                tryLoad();
+            } else if (pdfUrl) {
+                // Legacy URL with query params, or direct PDF URL
+                showCourse();
+            } else {
+                showError('No course code or PDF URL provided.');
             }
 
-            var gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
-            frame.src = gview;
-            frame.addEventListener('load', ready);
+            function showCourse() {
+                document.title = (name || 'PDF') + ' — SGOU SLM';
+                titleEl.textContent = name;
 
-            setTimeout(function () { if (!done) frame.src = pdfUrl; }, 5000);
-            setTimeout(ready, 9000);
+                var cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
+                var label = level === 'FYUG' ? '4-Year UG' : level;
+                var m = '';
+                if (prog) m += '<span>' + escHtml(prog) + '</span>';
+                if (level) m += '<span class="viewer-meta-tag ' + cls + '">' + label + '</span>';
+                if (code) m += '<span>Code: ' + escHtml(code) + '</span>';
+                metaEl.innerHTML = m;
 
+                dlBtn.href = pdfUrl;
+                dlBtn.download = (code ? code + '_' : '') + name.replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+                openBtn.href = pdfUrl;
+                var errDl = document.getElementById('errorDownload');
+                if (errDl) errDl.href = pdfUrl;
+
+                loadPDF(pdfUrl);
+            }
+
+            function loadPDF(url) {
+                var done = false;
+                function ready() {
+                    if (done) return;
+                    done = true;
+                    loading.style.display = 'none';
+                    frame.style.display = 'block';
+                }
+
+                var gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(url) + '&embedded=true';
+                frame.src = gview;
+                frame.addEventListener('load', ready);
+
+                setTimeout(function () { if (!done) frame.src = url; }, 5000);
+                setTimeout(ready, 9000);
+            }
+
+            function showError(msg) {
+                loading.style.display = 'none';
+                errorTxt.textContent = msg;
+                errorEl.style.display = 'flex';
+            }
+
+            function escHtml(s) {
+                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            // Theme sync
             try {
                 var saved = localStorage.getItem('sgou-theme');
                 if (saved) document.documentElement.setAttribute('data-theme', saved);
