@@ -1,5 +1,5 @@
 // ===============================
-//  SGOU Programme Browser (URL-Driven SPA)
+//  SGOU Programme Browser — URL-Driven SPA
 // ===============================
 
 let allData = [];
@@ -9,6 +9,8 @@ let deferredInstallPrompt = null;
 let currentAbort = null;
 let revealObserver = null;
 let searchObserver = null;
+let hidePanelTimer = null;
+let viewerNavLock = false;
 
 // ===============================
 //  ANALYTICS
@@ -33,6 +35,15 @@ const GA = {
 const Router = {
   init() {
     window.addEventListener('popstate', () => this.resolve());
+
+    // If loaded with a deep-link hash, place a home entry behind it
+    // so pressing Back from the viewer always returns to home
+    const h = window.location.hash;
+    if (h && h.length > 2 && h !== '#/') {
+      const current = h.slice(1);
+      history.replaceState({ path: '/' }, '', '#/');
+      history.pushState({ path: current }, '', '#' + current);
+    }
   },
 
   navigate(path) {
@@ -42,42 +53,50 @@ const Router = {
     this.resolve();
   },
 
-  resolve() {
-    const raw = window.location.hash.slice(1);
-    if (!raw || raw === '/') { this.onHome(); return; }
+  // Update URL bar only (no resolve, no re-render)
+  updateUrl(path) {
+    const hash = '#' + path;
+    if (window.location.hash === hash) return;
+    history.replaceState({ path }, '', hash);
+  },
 
+  resolve() {
+    if (!allData.length) return;          // data not ready yet
+
+    const raw = window.location.hash.slice(1);
+
+    // Home
+    if (!raw || raw === '/') {
+      hideViewerPanel();
+      restoreState('', 'ALL');
+      return;
+    }
+
+    // Parse /path?key=val
     const qIdx = raw.indexOf('?');
     const path = qIdx >= 0 ? raw.slice(0, qIdx) : raw;
     const params = new URLSearchParams(qIdx >= 0 ? raw.slice(qIdx + 1) : '');
 
+    // View
     if (path === '/view') {
-      this.onView(params);
-    } else if (path === '/search') {
-      this.onSearch(params.get('q') || '', params.get('level') || activeLevel);
-    } else if (path.startsWith('/filter/')) {
-      this.onFilter(decodeURIComponent(path.split('/')[2] || 'ALL'));
-    } else {
-      this.onHome();
+      showViewerPanel(params);
+      return;
     }
-  },
 
-  onHome() {
+    // Anything else → hide viewer, restore content
     hideViewerPanel();
-    restoreState('', 'ALL');
-  },
 
-  onSearch(q, level) {
-    hideViewerPanel();
-    restoreState(q, level);
-  },
-
-  onFilter(level) {
-    hideViewerPanel();
-    restoreState($('searchInput')?.value || '', level);
-  },
-
-  onView(params) {
-    showViewerPanel(params);
+    if (path === '/search') {
+      restoreState(
+        params.get('q') || '',
+        params.get('level') || activeLevel
+      );
+    } else if (path.startsWith('/filter/')) {
+      const lv = decodeURIComponent(path.split('/')[2] || 'ALL');
+      restoreState($('searchInput')?.value || '', lv);
+    } else {
+      restoreState('', 'ALL');
+    }
   }
 };
 
@@ -88,64 +107,58 @@ function showViewerPanel(params) {
   const panel = $('viewerPanel');
   if (!panel) return;
 
+  clearTimeout(hidePanelTimer);
+
   const pdfUrl = params.get('url') || '';
   const name = params.get('name') || 'Course PDF';
   const code = params.get('code') || '';
   const prog = params.get('prog') || '';
   const level = params.get('level') || '';
 
-  // Populate info
-  const titleEl = $('viewerPanelTitle');
-  const progEl = $('viewerProgName');
-  const levelEl = $('viewerLevelTag');
-  const codeEl = $('viewerCourseCode');
+  // Populate UI
+  const tEl = $('viewerPanelTitle');
+  const pEl = $('viewerProgName');
+  const lEl = $('viewerLevelTag');
+  const cEl = $('viewerCourseCode');
 
-  if (titleEl) titleEl.textContent = name + (code ? ' \u2014 ' + code : '');
-  if (progEl) progEl.textContent = prog || '\u2014';
-  if (codeEl) codeEl.textContent = code;
+  if (tEl) tEl.textContent = name + (code ? ' \u2014 ' + code : '');
+  if (pEl) pEl.textContent = prog || '\u2014';
+  if (cEl) cEl.textContent = code;
 
-  if (levelEl) {
+  if (lEl) {
     if (level) {
-      const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
-      const label = level === 'FYUG' ? '4-Year UG' : level;
-      levelEl.textContent = label;
-      levelEl.className = 'viewer-level-tag ' + cls;
-      levelEl.style.display = '';
+      lEl.textContent = level === 'FYUG' ? '4-Year UG' : level;
+      lEl.className = 'viewer-level-tag ' + (level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug');
+      lEl.style.display = '';
     } else {
-      levelEl.style.display = 'none';
+      lEl.style.display = 'none';
     }
   }
 
-  // Store data for download/share
+  // Store for download / share
   panel._data = { url: pdfUrl, name, code, prog, level };
 
-  // Update page title
   document.title = name + (code ? ' (' + code + ')' : '') + ' \u2014 SGOU SLM';
-
-  // Show the panel
   document.body.style.overflow = 'hidden';
   panel.classList.add('visible');
 
-  // Load PDF
-  if (pdfUrl) {
-    loadPdfInViewer(pdfUrl);
-  }
+  if (pdfUrl) loadPdfInViewer(pdfUrl);
 }
 
 function hideViewerPanel() {
   const panel = $('viewerPanel');
   if (!panel || !panel.classList.contains('visible')) return;
 
+  clearTimeout(hidePanelTimer);
   panel.classList.remove('visible');
   document.body.style.overflow = '';
   document.title = 'SGOU SLM Browser - By Researcher Tizar';
 
-  // Clear iframe after slide-out animation
-  setTimeout(() => {
+  hidePanelTimer = setTimeout(() => {
     const frame = $('viewerPanelFrame');
-    if (frame) frame.src = 'about:blank';
+    if (frame) frame.removeAttribute('src');
     const ld = $('viewerPanelLoading');
-    if (ld) ld.style.display = '';
+    if (ld) ld.classList.remove('hidden');
   }, 400);
 }
 
@@ -154,133 +167,125 @@ function loadPdfInViewer(pdfUrl) {
   const ld = $('viewerPanelLoading');
   if (!frame) return;
 
-  if (ld) ld.style.display = '';
-  let loaded = false;
+  if (ld) ld.classList.remove('hidden');
+  let done = false;
 
-  function onReady() {
-    if (loaded) return;
-    loaded = true;
-    if (ld) ld.style.display = 'none';
+  function ready() {
+    if (done) return;
+    done = true;
+    if (ld) ld.classList.add('hidden');
   }
 
-  // Google Docs Viewer (best mobile support)
+  frame.onload = ready;
+
+  // Best mobile support: Google Docs Viewer
   const gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
-  frame.onload = onReady;
   frame.src = gview;
 
-  // Fallback: direct URL after 6s
-  setTimeout(() => {
-    if (!loaded) {
-      frame.onload = onReady;
-      frame.src = pdfUrl;
-    }
-  }, 6000);
+  // Fallback after 5s: direct URL
+  setTimeout(() => { if (!done) frame.src = pdfUrl; }, 5000);
 
-  // Ultimate: force show after 10s
-  setTimeout(onReady, 10000);
+  // Force-show after 9s
+  setTimeout(ready, 9000);
 }
 
 async function viewerDownload() {
   const panel = $('viewerPanel');
-  if (!panel || !panel._data) return;
+  if (!panel?._data?.url) return;
 
   const { url, name, code } = panel._data;
-  if (!url) return;
-
   const btn = $('viewerPanelDownload');
   if (btn) btn.classList.add('downloading');
   showToast('Preparing download\u2026');
 
-  const filename = (code ? code + '_' : '') + name.replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+  const fn = (code ? code + '_' : '') + sanitize(name) + '.pdf';
   let blob = null;
 
+  // Try direct fetch
   try {
-    try {
-      const ctrl = new AbortController();
-      const tmr = setTimeout(() => ctrl.abort(), 18000);
-      const resp = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(tmr);
-      if (resp.ok) blob = await resp.blob();
-    } catch (_) { }
-
-    if (!blob) {
-      try {
-        const resp = await fetch('/api/download?url=' + encodeURIComponent(url));
-        if (resp.ok) blob = await resp.blob();
-      } catch (_) { }
-    }
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 18000);
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (r.ok) blob = await r.blob();
   } catch (_) { }
 
+  // Try proxy
+  if (!blob) {
+    try {
+      const r = await fetch('/api/download?url=' + encodeURIComponent(url));
+      if (r.ok) blob = await r.blob();
+    } catch (_) { }
+  }
+
   if (blob && blob.size > 0) {
-    const blobUrl = URL.createObjectURL(blob);
-    triggerDownload(blobUrl, filename);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    const u = URL.createObjectURL(blob);
+    triggerDownload(u, fn);
+    setTimeout(() => URL.revokeObjectURL(u), 15000);
     showToast('Download started');
     incrementDownloadCount();
   } else {
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener');
     showToast('PDF opened \u2014 save from your browser');
   }
 
-  GA.trackDownload(code || 'unknown', filename, blob ? 'fetch' : 'new_tab');
-  if (btn) setTimeout(() => btn.classList.remove('downloading'), 1500);
+  GA.trackDownload(code || 'unknown', fn, blob ? 'fetch' : 'new_tab');
+  if (btn) setTimeout(() => btn.classList.remove('downloading'), 1200);
 }
 
 async function viewerShare() {
   const panel = $('viewerPanel');
-  if (!panel || !panel._data) return;
+  if (!panel?._data) return;
 
   const { url, name, code, prog, level } = panel._data;
-
-  // External share URL (view.html for non-app users)
   const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
-  const shareUrl = base + 'view.html?' + new URLSearchParams({
-    url, name, code, prog, level
-  }).toString();
+  const extUrl = base + 'view.html?' + new URLSearchParams({ url, name, code, prog, level }).toString();
 
-  const shareText =
+  const text =
     (prog ? prog + ' - ' + (level === 'FYUG' ? '4-Year UG' : level) + '\n' : '') +
     name + (code ? ' - ' + code : '') + '\n' +
-    shareUrl + '\n\n' +
-    'Shared via SLM Browser\n' +
-    base;
+    extUrl + '\n\n' +
+    'Shared via SLM Browser\n' + base;
 
   if (navigator.share) {
-    try { await navigator.share({ title: name + ' \u2014 SGOU SLM', text: shareText, url: shareUrl }); } catch (_) { }
+    try { await navigator.share({ title: name + ' \u2014 SGOU SLM', text, url: extUrl }); } catch (_) { }
   } else if (navigator.clipboard) {
-    try { await navigator.clipboard.writeText(shareText); showToast('Copied to clipboard'); } catch (_) { showToast('Could not copy'); }
+    try { await navigator.clipboard.writeText(text); showToast('Copied to clipboard'); } catch (_) { showToast('Could not copy'); }
   }
 }
 
 // ===============================
-//  STATE SYNC (URL <-> UI)
+//  STATE SYNC
 // ===============================
 function syncUrlFromState() {
   const q = ($('searchInput')?.value || '').trim();
+  let path;
   if (q) {
-    Router.navigate('/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(activeLevel));
+    path = '/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(activeLevel);
   } else if (activeLevel !== 'ALL') {
-    Router.navigate('/filter/' + encodeURIComponent(activeLevel));
+    path = '/filter/' + encodeURIComponent(activeLevel);
   } else {
-    Router.navigate('/');
+    path = '/';
   }
+  Router.updateUrl(path);
 }
 
 function restoreState(query, level) {
   const input = $('searchInput');
-  const currentQ = (input?.value || '').trim();
-  const queryChanged = currentQ !== query;
-  const levelChanged = activeLevel !== level;
+  if (!input) return;
 
-  // Skip if nothing changed and content is already rendered
-  if (!queryChanged && !levelChanged && $('grid')?.querySelector('.programme-card:not(.skeleton-card)')) return;
+  const curQ = input.value.trim();
+  const qChanged = curQ !== query;
+  const lChanged = activeLevel !== level;
 
-  if (input && queryChanged) input.value = query;
+  // Nothing to change and UI already correct → skip
+  if (!qChanged && !lChanged) return;
 
-  const clear = $('searchClear');
-  if (clear) clear.classList.toggle('visible', query.length > 0);
+  if (qChanged) input.value = query;
+  const cl = $('searchClear');
+  if (cl) cl.classList.toggle('visible', query.length > 0);
 
-  if (levelChanged) {
+  if (lChanged) {
     activeLevel = level;
     document.querySelectorAll('.pill').forEach(p =>
       p.classList.toggle('active', p.dataset.level === activeLevel));
@@ -333,7 +338,7 @@ async function loadData() {
       const r = await fetch(u, { signal: currentAbort.signal });
       if (!r.ok) continue;
       const raw = await r.json();
-      if (!Array.isArray(raw)) throw new Error('Data is not an array');
+      if (!Array.isArray(raw)) throw new Error('Not an array');
 
       allData = raw
         .filter(p => p && p.programme_name && Array.isArray(p.semesters))
@@ -356,7 +361,7 @@ async function loadData() {
       renderProgrammes(allData);
       updateStats(allData);
 
-      // Resolve URL after data is loaded
+      // Now that data exists, resolve whatever the URL says
       Router.resolve();
 
       currentAbort = null;
@@ -413,12 +418,10 @@ function initSearch() {
   const clear = $('searchClear');
   if (!input) return;
 
-  let searchTimer;
-  let analyticsTimer;
+  let searchTimer, analyticsTimer;
 
   input.addEventListener('input', () => {
     hideRecent();
-
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
       handleSearch();
@@ -432,7 +435,6 @@ function initSearch() {
         GA.trackSearch(q, document.querySelectorAll('.search-result-item').length);
       }, 1500);
     }
-
     if (clear) clear.classList.toggle('visible', q.length > 0);
   });
 
@@ -452,7 +454,6 @@ function handleSearch() {
   const input = $('searchInput');
   const clear = $('searchClear');
   const q = (input?.value || '').toLowerCase().trim();
-
   if (clear) clear.classList.toggle('visible', q.length > 0);
 
   let filtered = allData;
@@ -501,7 +502,7 @@ function handleSearch() {
           const cls = lv === 'PG' ? 'pg' : lv === 'UG' ? 'ug' : 'fyug';
           const label = lv === 'FYUG' ? '4-Year UG' : lv;
           const fn = sanitize(m.course.code + '_' + m.course.name) + '.pdf';
-          const viewerHash = buildViewerHash(m.course.pdf_url, m.course.name, m.course.code, m.prog.programme_name, m.prog.level);
+          const vh = buildViewerHash(m.course.pdf_url, m.course.name, m.course.code, m.prog.programme_name, m.prog.level);
           return `<div class="search-result-item" data-idx="${i}">
   <span class="search-result-level ${cls}">${label}</span>
   <div class="search-result-body">
@@ -513,7 +514,7 @@ function handleSearch() {
     <button class="btn-share" data-url="${ea(m.course.pdf_url)}" data-name="${ea(m.course.name)}" aria-label="Share">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
     </button>
-    <a class="btn-view" href="#${ea(viewerHash)}" title="View PDF">
+    <a class="btn-view" href="#${ea(vh)}" title="View PDF">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       View</a>
     <a class="btn-download" href="${ea(m.course.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
@@ -545,7 +546,6 @@ function handleSearch() {
 // ===============================
 function animateSearchResults() {
   if (searchObserver) { searchObserver.disconnect(); searchObserver = null; }
-
   const items = document.querySelectorAll('.search-result-item');
   if (!items.length) return;
 
@@ -554,18 +554,14 @@ function animateSearchResults() {
     searchObserver = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          const item = entry.target;
-          const delay = stagger;
+          const el = entry.target;
+          const d = stagger;
           stagger = Math.min(stagger + 35, 250);
-          requestAnimationFrame(() => {
-            item.style.transitionDelay = delay + 'ms';
-            item.classList.add('animate-in');
-          });
-          searchObserver.unobserve(item);
+          requestAnimationFrame(() => { el.style.transitionDelay = d + 'ms'; el.classList.add('animate-in'); });
+          searchObserver.unobserve(el);
         }
       });
     }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
-
     items.forEach(item => searchObserver.observe(item));
   } else {
     items.forEach(item => item.classList.add('animate-in'));
@@ -579,8 +575,7 @@ function saveRecent(q) {
   if (!q || q.length < 2) return;
   try {
     let r = JSON.parse(localStorage.getItem('sgou-recent') || '[]');
-    r = r.filter(x => x !== q);
-    r.unshift(q);
+    r = r.filter(x => x !== q); r.unshift(q);
     localStorage.setItem('sgou-recent', JSON.stringify(r.slice(0, 5)));
   } catch (_) { }
 }
@@ -609,8 +604,7 @@ function buildFilters() {
   el.innerHTML = '';
   el.appendChild(mkPill('All', 'ALL', activeLevel === 'ALL', allData.length));
   levels.forEach(lv => {
-    const count = allData.filter(p => p.level === lv).length;
-    el.appendChild(mkPill(lv, lv, activeLevel === lv, count));
+    el.appendChild(mkPill(lv, lv, activeLevel === lv, allData.filter(p => p.level === lv).length));
   });
 }
 
@@ -627,7 +621,19 @@ function mkPill(label, level, active, count) {
 // ===============================
 function initDelegation() {
   document.addEventListener('click', e => {
-    // Hash-based navigation links (a[href^="#/"])
+
+    // ---- Viewer panel buttons (check FIRST, before anything else) ----
+    if (e.target.closest('#viewerBack')) {
+      if (viewerNavLock) return;
+      viewerNavLock = true;
+      history.back();                    // popstate → resolve → hideViewerPanel
+      setTimeout(() => { viewerNavLock = false; }, 600);
+      return;
+    }
+    if (e.target.closest('#viewerPanelDownload')) { viewerDownload(); return; }
+    if (e.target.closest('#viewerPanelShare')) { viewerShare(); return; }
+
+    // ---- Hash-based nav links ----
     const navLink = e.target.closest('a[href^="#/"]');
     if (navLink) {
       e.preventDefault();
@@ -635,18 +641,17 @@ function initDelegation() {
       return;
     }
 
-    // Card header toggle
+    // ---- Card header toggle ----
     const hdr = e.target.closest('.card-header');
     if (hdr?.closest('.programme-card')) {
       const card = hdr.closest('.programme-card');
-      if (!card.classList.contains('open')) {
+      if (!card.classList.contains('open'))
         GA.trackCardOpen((card.querySelector('h2')?.textContent || '').trim());
-      }
       toggleCard(card);
       return;
     }
 
-    // Semester tab
+    // ---- Semester tab ----
     const tab = e.target.closest('.sem-tab');
     if (tab) {
       const card = tab.closest('.programme-card');
@@ -659,27 +664,23 @@ function initDelegation() {
       return;
     }
 
-    // Download
+    // ---- Download ----
     const dl = e.target.closest('.btn-download');
     if (dl) { e.preventDefault(); downloadPDF(dl.href, dl.dataset.fname, dl); return; }
 
-    // Share
+    // ---- Share ----
     const sh = e.target.closest('.btn-share');
     if (sh) { e.preventDefault(); shareContent(sh.dataset.name, sh.dataset.url); return; }
 
-    // Course link
+    // ---- Course link (in card) ----
     const cl = e.target.closest('.course-link');
     if (cl) { e.preventDefault(); downloadPDF(cl.href, cl.dataset.fname, null); return; }
 
-    // Copy course code
+    // ---- Copy course code ----
     const code = e.target.closest('.search-result-code[data-code]');
-    if (code) {
-      copyToClipboard(code.dataset.code);
-      showToast('Code copied: ' + code.dataset.code);
-      return;
-    }
+    if (code) { copyToClipboard(code.dataset.code); showToast('Code copied: ' + code.dataset.code); return; }
 
-    // Recent pill
+    // ---- Recent pill ----
     const rp = e.target.closest('.recent-pill');
     if (rp) {
       const inp = $('searchInput');
@@ -687,7 +688,7 @@ function initDelegation() {
       return;
     }
 
-    // Filter pill
+    // ---- Filter pill ----
     const fp = e.target.closest('.pill');
     if (fp) {
       activeLevel = fp.dataset.level;
@@ -699,20 +700,9 @@ function initDelegation() {
       return;
     }
 
-    // Expand all
+    // ---- Expand / Collapse ----
     if (e.target.closest('#expandAll')) { expandAll(); return; }
-
-    // Collapse all
     if (e.target.closest('#collapseAll')) { collapseAll(); return; }
-
-    // Viewer back
-    if (e.target.closest('#viewerBack')) { history.back(); return; }
-
-    // Viewer download
-    if (e.target.closest('#viewerPanelDownload')) { viewerDownload(); return; }
-
-    // Viewer share
-    if (e.target.closest('#viewerPanelShare')) { viewerShare(); return; }
   });
 }
 
@@ -735,27 +725,19 @@ function toggleCard(card) {
     body.setAttribute('aria-hidden', 'false');
     body.style.maxHeight = body.scrollHeight + 'px';
     card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
-
     const onEnd = () => {
       if (card.classList.contains('open')) body.style.maxHeight = 'none';
       body.removeEventListener('transitionend', onEnd);
     };
     body.addEventListener('transitionend', onEnd);
-
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        const r = card.getBoundingClientRect();
-        if (r.bottom > window.innerHeight + 40) {
-          window.scrollTo({ top: window.scrollY + r.top - 72, behavior: 'smooth' });
-        }
-      }, 350);
-    });
+    requestAnimationFrame(() => setTimeout(() => {
+      const r = card.getBoundingClientRect();
+      if (r.bottom > window.innerHeight + 40)
+        window.scrollTo({ top: window.scrollY + r.top - 72, behavior: 'smooth' });
+    }, 350));
   }
 }
 
-// ===============================
-//  EXPAND / COLLAPSE ALL
-// ===============================
 function expandAll() {
   GA.trackEngagement('expand_all');
   document.querySelectorAll('.programme-card:not(.open)').forEach((card, i) => {
@@ -824,26 +806,13 @@ function initKeyboard() {
     }
 
     if (e.key === 'Escape') {
-      // Close viewer first
       const panel = $('viewerPanel');
-      if (panel?.classList.contains('visible')) {
-        history.back();
-        return;
-      }
-
+      if (panel?.classList.contains('visible')) { history.back(); return; }
       const inp = $('searchInput');
       if (document.activeElement === inp) {
-        if (inp.value) {
-          inp.value = '';
-          $('searchClear')?.classList.remove('visible');
-          handleSearch();
-          syncUrlFromState();
-        } else {
-          inp.blur();
-        }
-      } else {
-        collapseAll();
-      }
+        if (inp.value) { inp.value = ''; $('searchClear')?.classList.remove('visible'); handleSearch(); syncUrlFromState(); }
+        else inp.blur();
+      } else collapseAll();
     }
   });
 }
@@ -853,7 +822,6 @@ function initKeyboard() {
 // ===============================
 function initScrollReveal() {
   if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
-
   document.body.classList.add('js-reveal');
 
   if (!('IntersectionObserver' in window)) {
@@ -862,21 +830,17 @@ function initScrollReveal() {
   }
 
   revealObserver = new IntersectionObserver((entries) => {
-    let batchDelay = 0;
+    let d = 0;
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const card = entry.target;
         requestAnimationFrame(() => {
-          card.style.transitionDelay = batchDelay + 'ms';
+          card.style.transitionDelay = d + 'ms';
           card.classList.add('revealed');
-          const cleanup = () => {
-            card.style.transitionDelay = '0ms';
-            card.classList.add('reveal-done');
-            card.removeEventListener('transitionend', cleanup);
-          };
-          card.addEventListener('transitionend', cleanup);
+          const clean = () => { card.style.transitionDelay = '0ms'; card.classList.add('reveal-done'); card.removeEventListener('transitionend', clean); };
+          card.addEventListener('transitionend', clean);
         });
-        batchDelay += 50;
+        d = Math.min(d + 50, 300);
         revealObserver.unobserve(card);
       }
     });
@@ -910,10 +874,7 @@ function initBackToTop() {
   let ticking = false;
   window.addEventListener('scroll', () => {
     if (!ticking) {
-      requestAnimationFrame(() => {
-        btn.classList.toggle('visible', window.scrollY > 500);
-        ticking = false;
-      });
+      requestAnimationFrame(() => { btn.classList.toggle('visible', window.scrollY > 500); ticking = false; });
       ticking = true;
     }
   }, { passive: true });
@@ -940,9 +901,8 @@ function renderProgrammes(data, query) {
   grid.innerHTML = data.map((prog, idx) => {
     const sems = prog.semesters;
     const total = sems.reduce((a, s) => a + s.courses.length, 0);
-    const lv = prog.level === 'FYUG' ? 'FYUG' : prog.level;
 
-    return `<div class="programme-card" data-level="${lv}" data-idx="${idx}" role="listitem">
+    return `<div class="programme-card" data-level="${prog.level === 'FYUG' ? 'FYUG' : prog.level}" data-idx="${idx}" role="listitem">
       <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
         <span class="level-tag">${prog.level === 'FYUG' ? '4-Year UG' : prog.level}</span>
         <h2>${hl(prog.programme_name, query)}</h2>
@@ -956,13 +916,13 @@ function renderProgrammes(data, query) {
         ${sems.map((s, si) => `<div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
           ${s.courses.map(c => {
       const fn = sanitize(c.code + '_' + c.name) + '.pdf';
-      const viewerHash = buildViewerHash(c.pdf_url, c.name, c.code, prog.programme_name, prog.level);
+      const vh = buildViewerHash(c.pdf_url, c.name, c.code, prog.programme_name, prog.level);
       return `<div class="course-item">
   <span class="course-code">${c.code}</span>
   <div class="course-info">
     <div class="course-name">${hl(c.name, query)}</div>
     <div class="course-actions">
-      <a class="btn-view" href="#${ea(viewerHash)}" title="View PDF">
+      <a class="btn-view" href="#${ea(vh)}" title="View PDF">
         <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         View</a>
       <a class="course-link" href="${ea(c.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
@@ -1001,28 +961,24 @@ async function downloadPDF(url, filename, btnEl) {
     if (origin !== location.origin) {
       try {
         const ctrl = new AbortController();
-        const tmr = setTimeout(() => ctrl.abort(), 18000);
-        const resp = await fetch(`/api/download?url=${encodeURIComponent(url)}`, { signal: ctrl.signal });
-        clearTimeout(tmr);
-        if (resp.ok) { blob = await resp.blob(); method = 'proxy'; }
+        const t = setTimeout(() => ctrl.abort(), 18000);
+        const r = await fetch('/api/download?url=' + encodeURIComponent(url), { signal: ctrl.signal });
+        clearTimeout(t);
+        if (r.ok) { blob = await r.blob(); method = 'proxy'; }
       } catch (_) { }
-
       if (!blob) {
-        try {
-          const resp = await fetch(url);
-          if (resp.ok) { blob = await resp.blob(); method = 'fetch'; }
-        } catch (_) { }
+        try { const r = await fetch(url); if (r.ok) { blob = await r.blob(); method = 'fetch'; } } catch (_) { }
       }
     } else {
-      const resp = await fetch(url);
-      if (resp.ok) { blob = await resp.blob(); method = 'fetch'; }
+      const r = await fetch(url);
+      if (r.ok) { blob = await r.blob(); method = 'fetch'; }
     }
   } catch (_) { }
 
   if (blob && blob.size > 0) {
-    const blobUrl = URL.createObjectURL(blob);
-    triggerDownload(blobUrl, filename);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    const u = URL.createObjectURL(blob);
+    triggerDownload(u, filename);
+    setTimeout(() => URL.revokeObjectURL(u), 10000);
     showToast('Download started');
     incrementDownloadCount();
   } else {
@@ -1030,12 +986,8 @@ async function downloadPDF(url, filename, btnEl) {
     showToast('PDF opened \u2014 save from your browser');
   }
 
-  const code = filename?.replace(/\.pdf$/i, '') || 'unknown';
-  GA.trackDownload(code, filename, method);
-
-  if (btnEl) {
-    setTimeout(() => { btnEl.classList.remove('downloading'); if (origHTML) btnEl.innerHTML = origHTML; }, 1500);
-  }
+  GA.trackDownload(filename?.replace(/\.pdf$/i, '') || 'unknown', filename, method);
+  if (btnEl) setTimeout(() => { btnEl.classList.remove('downloading'); if (origHTML) btnEl.innerHTML = origHTML; }, 1500);
 }
 
 function triggerDownload(url, filename) {
@@ -1072,53 +1024,33 @@ function updateDownloadCount() {
 //  SHARE
 // ===============================
 async function shareContent(name, url) {
-  let courseInfo = { programme: '', level: '', code: '', courseName: name, pdfUrl: url };
+  let info = { programme: '', level: '', code: '', courseName: name, pdfUrl: url };
   for (const prog of allData) {
     for (const sem of prog.semesters) {
       const found = sem.courses.find(c => c.pdf_url === url || c.name === name);
       if (found) {
-        courseInfo = {
+        info = {
           programme: prog.programme_name,
           level: prog.level === 'FYUG' ? '4-Year UG' : prog.level,
-          code: found.code,
-          courseName: found.name,
-          pdfUrl: found.pdf_url
+          code: found.code, courseName: found.name, pdfUrl: found.pdf_url
         };
         break;
       }
     }
   }
 
-  // External share URL (view.html for recipients without the app)
   const base = location.origin + location.pathname.replace(/\/[^\/]*$/, '/');
-  const shareUrl = base + 'view.html?' + new URLSearchParams({
-    url: courseInfo.pdfUrl,
-    name: courseInfo.courseName,
-    code: courseInfo.code,
-    prog: courseInfo.programme,
-    level: courseInfo.level
+  const extUrl = base + 'view.html?' + new URLSearchParams({
+    url: info.pdfUrl, name: info.courseName, code: info.code, prog: info.programme, level: info.level
   }).toString();
 
-  const shareText =
-    `${courseInfo.programme} - ${courseInfo.level}\n` +
-    `${courseInfo.courseName} - ${courseInfo.code}\n` +
-    `${shareUrl}\n\n` +
-    `Shared via SLM Browser\n` +
-    base;
+  const text =
+    `${info.programme} - ${info.level}\n${info.courseName} - ${info.code}\n${extUrl}\n\nShared via SLM Browser\n${base}`;
 
   if (navigator.share) {
-    try {
-      await navigator.share({ title: courseInfo.courseName + ' \u2014 SGOU SLM', text: shareText, url: shareUrl });
-      GA.trackShare(name, 'web_share');
-    } catch (_) { }
+    try { await navigator.share({ title: info.courseName + ' \u2014 SGOU SLM', text, url: extUrl }); GA.trackShare(name, 'web_share'); } catch (_) { }
   } else if (navigator.clipboard) {
-    try {
-      await navigator.clipboard.writeText(shareText);
-      showToast('Copied to clipboard');
-      GA.trackShare(name, 'clipboard');
-    } catch (_) {
-      showToast('Could not copy');
-    }
+    try { await navigator.clipboard.writeText(text); showToast('Copied to clipboard'); GA.trackShare(name, 'clipboard'); } catch (_) { showToast('Could not copy'); }
   }
 }
 
@@ -1132,8 +1064,7 @@ async function copyToClipboard(text) {
       const ta = document.createElement('textarea');
       ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
       document.body.appendChild(ta); ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      document.execCommand('copy'); document.body.removeChild(ta);
     }
   } catch (_) { }
 }
@@ -1158,9 +1089,7 @@ function showToast(msg, ms = 2200) {
   if (!el) return;
   clearTimeout(toastTimer);
   el.textContent = msg;
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => el.classList.add('visible'));
-  });
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
   toastTimer = setTimeout(() => el.classList.remove('visible'), ms);
 }
 
@@ -1179,68 +1108,42 @@ function registerServiceWorker() {
 }
 
 // ===============================
-//  PWA: INSTALL PROMPT
+//  PWA: INSTALL
 // ===============================
 function initInstallPrompt() {
   const banner = $('installBanner');
-  const installBtn = $('installBtn');
-  const dismissBtn = $('installDismiss');
-
   const isStandalone = window.matchMedia('(display-mode:standalone)').matches
     || window.navigator.standalone === true
     || document.referrer.includes('android-app://');
 
-  if (isStandalone) {
-    safeSet('sgou-pwa-installed', '1');
-    banner?.classList.remove('visible');
-    return;
-  }
-
-  const dismissed = safeGet('sgou-install-dismissed');
-  const installed = safeGet('sgou-pwa-installed');
-  if (installed) return;
+  if (isStandalone) { safeSet('sgou-pwa-installed', '1'); banner?.classList.remove('visible'); return; }
+  if (safeGet('sgou-pwa-installed') || safeGet('sgou-install-dismissed')) return;
 
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredInstallPrompt = e;
-    if (!dismissed && banner) {
-      setTimeout(() => banner.classList.add('visible'), 2500);
-    }
+    e.preventDefault(); deferredInstallPrompt = e;
+    if (banner) setTimeout(() => banner.classList.add('visible'), 2500);
   });
 
   window.addEventListener('appinstalled', () => {
-    safeSet('sgou-pwa-installed', '1');
-    banner?.classList.remove('visible');
-    deferredInstallPrompt = null;
-    showToast('App installed successfully!');
-    GA.trackInstall('appinstalled_event');
+    safeSet('sgou-pwa-installed', '1'); banner?.classList.remove('visible');
+    deferredInstallPrompt = null; showToast('App installed!'); GA.trackInstall('accepted');
   });
 
-  installBtn?.addEventListener('click', async () => {
-    if (!deferredInstallPrompt) {
-      showToast('Use your browser\'s install option');
-      return;
-    }
+  $('installBtn')?.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) { showToast('Use your browser\'s install option'); return; }
     banner?.classList.remove('visible');
     deferredInstallPrompt.prompt();
     const { outcome } = await deferredInstallPrompt.userChoice;
     if (outcome === 'accepted') safeSet('sgou-pwa-installed', '1');
-    GA.trackInstall(outcome);
-    deferredInstallPrompt = null;
+    GA.trackInstall(outcome); deferredInstallPrompt = null;
   });
 
-  dismissBtn?.addEventListener('click', () => {
-    banner?.classList.remove('visible');
-    safeSet('sgou-install-dismissed', '1');
-    GA.trackInstall('dismissed');
+  $('installDismiss')?.addEventListener('click', () => {
+    banner?.classList.remove('visible'); safeSet('sgou-install-dismissed', '1'); GA.trackInstall('dismissed');
   });
 
-  window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-    if (e.matches) {
-      safeSet('sgou-pwa-installed', '1');
-      banner?.classList.remove('visible');
-      showToast('App installed successfully!');
-    }
+  window.matchMedia('(display-mode:standalone)').addEventListener('change', (e) => {
+    if (e.matches) { safeSet('sgou-pwa-installed', '1'); banner?.classList.remove('visible'); showToast('App installed!'); }
   });
 }
 
@@ -1263,30 +1166,16 @@ function $(sel) { return document.getElementById(sel) || document.querySelector(
 
 function hl(t, q) {
   if (!q) return t;
-  return t.replace(new RegExp(`(${er(q.trim())})`, 'gi'), '<mark>$1</mark>');
+  return t.replace(new RegExp('(' + er(q.trim()) + ')', 'gi'), '<mark>$1</mark>');
 }
-
 function er(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function ea(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-}
-
-function sanitize(s) {
-  return String(s).replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').substring(0, 80);
-}
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function ea(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+function sanitize(s) { return String(s).replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').substring(0, 80); }
 
 function buildViewerHash(pdfUrl, name, code, prog, level) {
   return '/view?' + new URLSearchParams({
-    url: pdfUrl || '',
-    name: name || '',
-    code: code || '',
-    prog: prog || '',
-    level: level || ''
+    url: pdfUrl || '', name: name || '', code: code || '', prog: prog || '', level: level || ''
   }).toString();
 }
 

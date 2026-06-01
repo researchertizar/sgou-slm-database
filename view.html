@@ -781,93 +781,87 @@
 
     <script>
         (function () {
-            const params = new URLSearchParams(window.location.search);
-            const pdfUrl = params.get('url');
-            const courseName = params.get('name') || 'Course PDF';
-            const courseCode = params.get('code') || '';
-            const progName = params.get('prog') || '';
-            const level = params.get('level') || '';
+            var params = new URLSearchParams(window.location.search);
+            var pdfUrl = params.get('url') || '';
+            var name = params.get('name') || 'Course PDF';
+            var code = params.get('code') || '';
+            var prog = params.get('prog') || '';
+            var level = params.get('level') || '';
 
-            // ========================================
-            // PWA REDIRECT: if running inside the app,
-            // redirect to main page's in-app viewer
-            // ========================================
-            const isStandalone = window.matchMedia('(display-mode:standalone)').matches
+            // ============================================
+            // PWA AUTO-REDIRECT: if running inside installed
+            // app, go to main page's in-app viewer instead
+            // ============================================
+            var isStandalone = window.matchMedia('(display-mode:standalone)').matches
                 || window.navigator.standalone === true
-                || document.referrer.includes('android-app://');
+                || document.referrer.indexOf('android-app://') !== -1;
 
             if (isStandalone) {
-                const hash = '/view?' + new URLSearchParams({
-                    url: pdfUrl || '', name: courseName, code: courseCode,
-                    prog: progName, level: level
+                var hash = '/view?' + new URLSearchParams({
+                    url: pdfUrl, name: name, code: code, prog: prog, level: level
                 }).toString();
                 window.location.replace('./#' + hash);
                 return;
             }
 
-            // ========================================
-            // STANDALONE VIEWER (non-PWA browser)
-            // ========================================
-            const loading = document.getElementById('viewerLoading');
-            const errorEl = document.getElementById('viewerError');
-            const errorText = document.getElementById('errorText');
-            const frame = document.getElementById('pdfFrame');
-            const title = document.getElementById('courseTitle');
-            const meta = document.getElementById('courseMeta');
-            const btnDl = document.getElementById('directDownload');
-            const btnOpen = document.getElementById('openDirect');
+            // ============================================
+            // STANDALONE VIEWER (non-PWA / desktop browser)
+            // ============================================
+            var loading = document.getElementById('viewerLoading');
+            var errorEl = document.getElementById('viewerError');
+            var errorTxt = document.getElementById('errorText');
+            var frame = document.getElementById('pdfFrame');
+            var titleEl = document.getElementById('courseTitle');
+            var metaEl = document.getElementById('courseMeta');
+            var dlBtn = document.getElementById('directDownload');
+            var openBtn = document.getElementById('openDirect');
+            var errDl = document.getElementById('errorDownload');
 
-            document.title = (courseName || 'PDF') + ' — SGOU SLM';
-            title.textContent = courseName;
+            document.title = (name || 'PDF') + ' — SGOU SLM';
+            titleEl.textContent = name;
 
-            const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
-            const label = level === 'FYUG' ? '4-Year UG' : level;
-            let metaHTML = '';
-            if (progName) metaHTML += '<span>' + progName + '</span>';
-            if (level) metaHTML += '<span class="viewer-meta-tag ' + cls + '">' + label + '</span>';
-            if (courseCode) metaHTML += '<span>Code: ' + courseCode + '</span>';
-            meta.innerHTML = metaHTML;
+            var cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
+            var label = level === 'FYUG' ? '4-Year UG' : level;
+            var m = '';
+            if (prog) m += '<span>' + prog + '</span>';
+            if (level) m += '<span class="viewer-meta-tag ' + cls + '">' + label + '</span>';
+            if (code) m += '<span>Code: ' + code + '</span>';
+            metaEl.innerHTML = m;
 
             if (!pdfUrl) {
                 loading.style.display = 'none';
                 errorEl.style.display = 'flex';
-                errorText.textContent = 'No PDF URL provided.';
+                errorTxt.textContent = 'No PDF URL provided.';
                 return;
             }
 
-            btnDl.href = pdfUrl;
-            btnDl.download = (courseCode ? courseCode + '_' : '') + courseName + '.pdf';
-            btnOpen.href = pdfUrl;
-            document.getElementById('errorDownload').href = pdfUrl;
+            dlBtn.href = pdfUrl;
+            dlBtn.download = (code ? code + '_' : '') + name.replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+            openBtn.href = pdfUrl;
+            if (errDl) errDl.href = pdfUrl;
 
-            // Load PDF with fallback
-            let loaded = false;
-            function onReady() {
-                if (loaded) return;
-                loaded = true;
+            var done = false;
+            function ready() {
+                if (done) return;
+                done = true;
                 loading.style.display = 'none';
                 frame.style.display = 'block';
             }
 
-            const gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
+            var gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
             frame.src = gview;
-            frame.addEventListener('load', onReady);
+            frame.addEventListener('load', ready);
 
-            setTimeout(() => {
-                if (!loaded) { frame.src = pdfUrl; }
-            }, 6000);
+            setTimeout(function () { if (!done) frame.src = pdfUrl; }, 5000);
+            setTimeout(ready, 9000);
 
-            setTimeout(() => {
-                if (!loaded) onReady();
-            }, 10000);
-
-            // Theme sync
             try {
-                const saved = localStorage.getItem('sgou-theme');
+                var saved = localStorage.getItem('sgou-theme');
                 if (saved) document.documentElement.setAttribute('data-theme', saved);
             } catch (_) { }
         })();
     </script>
+
 
 </body>
 
