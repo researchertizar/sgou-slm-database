@@ -11,220 +11,419 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
-        .viewer-page {
-            min-height: 100vh;
-            min-height: 100dvh;
+        :root {
+            --bg: #f5f0e8;
+            --bg-deep: #ebe4d6;
+            --surface: #ffffff;
+            --surface-hover: #faf7f1;
+            --accent: #b8432f;
+            --accent-hover: #9e3824;
+            --accent-light: #d4654f;
+            --ink: #1a1714;
+            --ink-soft: #4a4540;
+            --ink-muted: #6b6358;
+            --border: #d6cfc2;
+            --border-light: #e2ddd4;
+            --ug: #1f5a43;
+            --pg: #5e3370;
+            --fyug: #235090;
+            --ug-bg: rgba(31, 90, 67, 0.12);
+            --pg-bg: rgba(94, 51, 112, .12);
+            --fyug-bg: rgba(35, 80, 144, .12);
+            --shadow-sm: 0 1px 3px rgba(26, 23, 20, .06);
+            --shadow: 0 2px 10px rgba(26, 23, 20, .08);
+            --shadow-lg: 0 8px 30px rgba(26, 23, 20, .12);
+            --header-bg: #1a1714;
+            --header-text: #f5f0e8;
+            --header-sub: #a09888;
+            --toast-bg: #1a1714;
+            --toast-text: #f5f0e8;
+            --focus-ring: rgba(184, 67, 47, .35);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --ease: cubic-bezier(.22, 1, .36, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0e0d0c;
+            --bg-deep: #171614;
+            --surface: #1c1b19;
+            --surface-hover: #252420;
+            --accent: #e06b52;
+            --accent-hover: #f08a72;
+            --accent-light: #f08a72;
+            --ink: #ece8e0;
+            --ink-soft: #b0a898;
+            --ink-muted: #8a8278;
+            --border: #302e2a;
+            --border-light: #282622;
+            --ug: #008552;
+            --pg: #9102ce;
+            --fyug: #0354c5;
+            --ug-bg: rgba(31, 90, 67, .25);
+            --pg-bg: rgba(94, 51, 112, .25);
+            --fyug-bg: rgba(35, 80, 144, .25);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .2);
+            --shadow: 0 2px 10px rgba(0, 0, 0, .3);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, .4);
+            --header-bg: #080706;
+            --header-text: #ece8e0;
+            --header-sub: #8a8278;
+            --toast-bg: #ece8e0;
+            --toast-text: #0e0d0c;
+            --focus-ring: rgba(224, 107, 82, .35);
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--ink);
+            height: 100%;
+            height: 100dvh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .viewer-header {
+        /* ===========================
+           COMPACT TOPBAR
+           =========================== */
+        .topbar {
             background: var(--header-bg);
             color: var(--header-text);
-            padding: 1rem 1.25rem;
             position: relative;
-            z-index: 10;
+            z-index: 100;
+            flex-shrink: 0;
+            transition: background .3s;
         }
 
-        .viewer-header::after {
+        .topbar::after {
             content: '';
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 2px;
             background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent));
         }
 
-        .viewer-brand {
+        /* Always-visible compact bar */
+        .topbar-compact {
             display: flex;
             align-items: center;
             gap: .5rem;
-            text-decoration: none;
-            color: var(--header-text);
-            margin-bottom: .6rem;
+            padding: .45rem .75rem;
         }
 
-        .viewer-brand svg {
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            text-decoration: none;
+            color: var(--header-text);
             flex-shrink: 0;
         }
 
-        .viewer-brand span {
-            font-family: 'DM Serif Display', serif;
-            font-size: 16px;
+        .topbar-brand svg {
+            width: 22px;
+            height: 22px;
         }
 
-        .viewer-info h1 {
+        .topbar-brand span {
             font-family: 'DM Serif Display', serif;
-            font-size: clamp(1.1rem, 3.5vw, 1.6rem);
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .topbar-title {
+            flex: 1;
+            min-width: 0;
+            font-family: 'DM Serif Display', serif;
+            font-size: 13px;
             font-weight: 400;
-            line-height: 1.3;
             color: var(--header-text);
-            margin-bottom: .25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
         }
 
-        .viewer-meta {
+        .topbar-code {
             font-family: 'DM Mono', monospace;
-            font-size: 12px;
+            font-size: 10px;
             color: var(--header-sub);
-            letter-spacing: .04em;
-            display: flex;
-            flex-wrap: wrap;
-            gap: .35rem;
-            align-items: center;
-        }
-
-        .viewer-meta-tag {
-            display: inline-block;
-            padding: .12rem .4rem;
+            background: rgba(255, 255, 255, .08);
+            padding: .1rem .3rem;
             border-radius: 3px;
-            font-size: 11px;
-            letter-spacing: .06em;
-            text-transform: uppercase;
+            letter-spacing: .04em;
+            flex-shrink: 0;
+            display: none;
         }
 
-        .viewer-meta-tag.ug {
-            background: rgba(31, 90, 67, .3);
-            color: #6fd4a8;
-        }
-
-        .viewer-meta-tag.pg {
-            background: rgba(94, 51, 112, .3);
-            color: #c77dff;
-        }
-
-        .viewer-meta-tag.fyug {
-            background: rgba(35, 80, 144, .3);
-            color: #6ea8fe;
-        }
-
-        .viewer-actions {
+        .topbar-actions {
             display: flex;
-            gap: .4rem;
-            margin-top: .65rem;
-            flex-wrap: wrap;
-        }
-
-        .viewer-actions a,
-        .viewer-actions button {
-            font-family: 'DM Mono', monospace;
-            font-size: 12px;
-            font-weight: 500;
-            letter-spacing: .05em;
-            text-transform: uppercase;
-            padding: .42rem .75rem;
-            border-radius: 5px;
-            border: 1.5px solid var(--accent);
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
             align-items: center;
-            gap: .3rem;
-            transition: background .2s, color .2s, transform .1s;
-            -webkit-tap-highlight-color: transparent;
+            gap: .25rem;
+            flex-shrink: 0;
         }
 
-        .viewer-actions .btn-primary {
+        .topbar-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: rgba(255, 255, 255, .05);
+            color: var(--header-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .15s, border-color .15s, transform .1s;
+            -webkit-tap-highlight-color: transparent;
+            text-decoration: none;
+            font-size: 0;
+        }
+
+        .topbar-btn:hover {
+            background: rgba(255, 255, 255, .15);
+            border-color: rgba(255, 255, 255, .25);
+        }
+
+        .topbar-btn:active {
+            transform: scale(.9);
+        }
+
+        .topbar-btn.accent-btn {
             background: var(--accent);
+            border-color: var(--accent);
             color: #fff;
         }
 
-        .viewer-actions .btn-primary:hover {
+        .topbar-btn.accent-btn:hover {
             background: var(--accent-hover);
             border-color: var(--accent-hover);
         }
 
-        .viewer-actions .btn-secondary {
-            background: transparent;
-            color: var(--accent);
+        .topbar-btn.accent-btn.downloading {
+            opacity: .6;
+            pointer-events: none;
         }
 
-        .viewer-actions .btn-secondary:hover {
-            background: var(--accent);
-            color: #fff;
+        .expand-toggle {
+            width: 30px;
+            height: 30px;
         }
 
-        .viewer-actions .btn-home {
-            background: transparent;
+        .expand-toggle svg {
+            transition: transform .25s var(--ease);
+        }
+
+        .topbar.expanded .expand-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        /* Expandable detail panel */
+        .topbar-details {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .3s var(--ease);
+        }
+
+        .topbar.expanded .topbar-details {
+            max-height: 200px;
+        }
+
+        .topbar-details-inner {
+            padding: .5rem .75rem .65rem;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            flex-wrap: wrap;
+            margin-bottom: .3rem;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
             color: var(--header-sub);
-            border-color: rgba(255, 255, 255, .15);
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            flex-shrink: 0;
         }
 
-        .viewer-actions .btn-home:hover {
+        .detail-value {
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
             color: var(--header-text);
+            word-break: break-all;
+        }
+
+        .detail-level {
+            display: inline-block;
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: .1rem .35rem;
+            border-radius: 3px;
+        }
+
+        .detail-level.ug {
+            background: rgba(31, 90, 67, .35);
+            color: #6fd4a8;
+        }
+
+        .detail-level.pg {
+            background: rgba(94, 51, 112, .35);
+            color: #c77dff;
+        }
+
+        .detail-level.fyug {
+            background: rgba(35, 80, 144, .35);
+            color: #6ea8fe;
+        }
+
+        .detail-actions {
+            display: flex;
+            gap: .3rem;
+            margin-top: .45rem;
+            flex-wrap: wrap;
+        }
+
+        .detail-btn {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: .32rem .6rem;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, .15);
+            background: rgba(255, 255, 255, .06);
+            color: var(--header-text);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            text-decoration: none;
+            transition: background .15s, border-color .15s, transform .1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .detail-btn:hover {
+            background: rgba(255, 255, 255, .15);
             border-color: rgba(255, 255, 255, .3);
         }
 
-        .viewer-actions a:active,
-        .viewer-actions button:active {
+        .detail-btn:active {
             transform: scale(.95);
         }
 
-        /* PDF iframe area */
-        .viewer-frame {
+        /* ===========================
+           PDF VIEWER (full remaining space)
+           =========================== */
+        .viewer-area {
             flex: 1;
-            background: var(--bg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .viewer-frame iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            min-height: calc(100vh - 200px);
-            min-height: calc(100dvh - 200px);
-        }
-
-        /* Loading state */
-        .viewer-loading {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1rem;
-            color: var(--ink-muted);
-            font-style: italic;
-            padding: 4rem 1rem;
-            text-align: center;
-            flex: 1;
+            min-height: 0;
+            position: relative;
+            background: var(--bg);
         }
 
-        .viewer-loading svg {
-            animation: spin-path 1s linear infinite;
-            color: var(--accent);
-        }
-
-        /* Error state */
-        .viewer-error {
+        /* Loading */
+        .viewer-loading {
+            position: absolute;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: .75rem;
             color: var(--ink-muted);
-            padding: 4rem 1rem;
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            letter-spacing: .04em;
+            z-index: 10;
+            background: var(--bg);
+        }
+
+        .viewer-loading.hidden {
+            display: none;
+        }
+
+        .loading-spinner {
+            width: 28px;
+            height: 28px;
+            border: 2.5px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error */
+        .viewer-error {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: .6rem;
+            color: var(--ink-muted);
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
             text-align: center;
-            flex: 1;
+            padding: 2rem;
+            background: var(--bg);
+            z-index: 20;
+        }
+
+        .viewer-error.visible {
+            display: flex;
         }
 
         .viewer-error svg {
-            opacity: .4;
+            opacity: .35;
         }
 
         .viewer-error a {
             color: var(--accent);
             text-decoration: none;
-            font-family: 'DM Mono', monospace;
-            font-size: 13px;
+            font-size: 12px;
             border: 1px solid var(--accent);
-            padding: .4rem .8rem;
-            border-radius: 5px;
-            margin-top: .5rem;
+            padding: .35rem .7rem;
+            border-radius: 4px;
+            margin-top: .3rem;
             transition: background .2s, color .2s;
         }
 
@@ -233,119 +432,358 @@
             color: #fff;
         }
 
-        .viewer-footer {
+        /* iframe wrapper */
+        .iframe-wrap {
+            flex: 1;
+            min-height: 0;
+            display: none;
+        }
+
+        .iframe-wrap.visible {
+            display: block;
+        }
+
+        .iframe-wrap iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        /* Object fallback */
+        .iframe-wrap object {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* ===========================
+           BOTTOM BAR (mobile quick actions)
+           =========================== */
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .3rem;
+            padding: .4rem .75rem;
             background: var(--surface);
             border-top: 1px solid var(--border);
-            padding: .65rem 1.25rem;
-            text-align: center;
+            flex-shrink: 0;
+            z-index: 50;
+            padding-bottom: calc(.4rem + env(safe-area-inset-bottom));
+        }
+
+        .bottom-btn {
             font-family: 'DM Mono', monospace;
             font-size: 11px;
-            color: var(--ink-muted);
-            letter-spacing: .03em;
-        }
-
-        .viewer-footer a {
-            color: var(--accent);
+            font-weight: 500;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            padding: .4rem .7rem;
+            border-radius: 5px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--ink);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
             text-decoration: none;
+            transition: background .15s, color .15s, border-color .15s, transform .1s;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .viewer-footer a:hover {
-            text-decoration: underline;
+        .bottom-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
-        /* Mobile: taller header, smaller iframe */
-        @media (max-width: 600px) {
-            .viewer-frame iframe {
-                min-height: calc(100vh - 280px);
-                min-height: calc(100dvh - 280px);
+        .bottom-btn:active {
+            transform: scale(.95);
+        }
+
+        .bottom-btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .bottom-btn.primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .bottom-btn.primary.downloading {
+            opacity: .6;
+            pointer-events: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 4.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: var(--toast-bg);
+            color: var(--toast-text);
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            letter-spacing: .04em;
+            padding: .5rem 1rem;
+            border-radius: 6px;
+            box-shadow: var(--shadow-lg);
+            opacity: 0;
+            transition: opacity .3s var(--ease), transform .3s var(--ease);
+            z-index: 10001;
+            pointer-events: none;
+            white-space: nowrap;
+            max-width: 88vw;
+            text-overflow: ellipsis;
+            overflow: hidden;
+        }
+
+        .toast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ===========================
+           RESPONSIVE: TABLET+
+           =========================== */
+        @media (min-width: 768px) {
+            .topbar-code {
+                display: inline-block;
+            }
+
+            .topbar-title {
+                font-size: 14px;
+            }
+
+            .topbar-compact {
+                padding: .5rem 1rem;
+            }
+
+            .topbar-details-inner {
+                padding: .6rem 1rem .75rem;
+            }
+
+            .bottom-bar {
+                padding: .5rem 1rem;
             }
         }
 
-        /* Desktop standalone */
+        /* ===========================
+           RESPONSIVE: LANDSCAPE
+           =========================== */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .topbar-compact {
+                padding: .3rem .75rem;
+            }
+
+            .topbar-brand svg {
+                width: 18px;
+                height: 18px;
+            }
+
+            .topbar-brand span {
+                display: none;
+            }
+
+            .bottom-bar {
+                padding: .25rem .75rem;
+            }
+
+            .bottom-btn {
+                padding: .3rem .55rem;
+                font-size: 10px;
+            }
+        }
+
+        /* ===========================
+           PWA STANDALONE
+           =========================== */
         @media (display-mode: standalone) {
-            .viewer-header {
-                padding-top: calc(1rem + env(safe-area-inset-top));
+            .topbar-compact {
+                padding-top: calc(.45rem + env(safe-area-inset-top));
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Print */
+        @media print {
+
+            .topbar,
+            .bottom-bar,
+            .viewer-loading,
+            .viewer-error,
+            .toast {
+                display: none !important;
+            }
+
+            .iframe-wrap {
+                display: block !important;
+            }
+
+            .viewer-area {
+                position: static;
             }
         }
     </style>
 </head>
 
-<body class="viewer-page">
+<body>
 
-    <div class="viewer-header">
-        <a class="viewer-brand" href="./">
-            <svg width="28" height="28" viewBox="0 0 512 512" aria-hidden="true">
-                <rect width="512" height="512" rx="108" fill="var(--accent)" />
-                <rect x="72" y="365" width="368" height="10" rx="5" fill="var(--header-text)" opacity=".4" />
-                <text x="256" y="290" font-family="Georgia,serif" font-size="210" font-weight="bold"
-                    fill="var(--header-text)" text-anchor="middle" dominant-baseline="central">SG</text>
+    <!-- ============ COMPACT TOPBAR ============ -->
+    <div class="topbar" id="topbar">
+        <div class="topbar-compact">
+            <a class="topbar-brand" href="./">
+                <svg viewBox="0 0 512 512" aria-hidden="true">
+                    <rect width="512" height="512" rx="108" fill="var(--accent)" />
+                    <rect x="72" y="365" width="368" height="10" rx="5" fill="#fff" opacity=".4" />
+                    <text x="256" y="290" font-family="Georgia,serif" font-size="210" font-weight="bold" fill="#fff"
+                        text-anchor="middle" dominant-baseline="central">SG</text>
+                </svg>
+                <span>SLM Browser</span>
+            </a>
+
+            <span class="topbar-title" id="topbarTitle">Loading...</span>
+            <span class="topbar-code" id="topbarCode"></span>
+
+            <div class="topbar-actions">
+                <button class="topbar-btn accent-btn" id="topbarDownload" aria-label="Download PDF"
+                    title="Download PDF">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                </button>
+                <button class="topbar-btn expand-toggle" id="expandToggle" aria-label="Show details"
+                    title="Show details">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="topbar-details" id="topbarDetails">
+            <div class="topbar-details-inner">
+                <div class="detail-row">
+                    <span class="detail-label">Programme</span>
+                    <span class="detail-value" id="detailProg"></span>
+                    <span class="detail-level" id="detailLevel"></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Course</span>
+                    <span class="detail-value" id="detailCourse"></span>
+                </div>
+                <div class="detail-actions">
+                    <a class="detail-btn" id="btnOpenDirect" href="#" target="_blank" rel="noopener">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                            <polyline points="15 3 21 3 21 9" />
+                            <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                        Open Original
+                    </a>
+                    <a class="detail-btn" href="./">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                        Browse All
+                    </a>
+                    <button class="detail-btn" id="btnCopyLink">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                        </svg>
+                        Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ PDF VIEWER ============ -->
+    <div class="viewer-area">
+        <div class="viewer-loading" id="viewerLoading">
+            <div class="loading-spinner"></div>
+            <span>Loading PDF...</span>
+        </div>
+
+        <div class="viewer-error" id="viewerError">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <span>SGOU SLM Browser</span>
+            <p id="errorText">Could not load PDF.</p>
+            <a id="errorDownload" href="#" target="_blank" rel="noopener">Download Directly</a>
+        </div>
+
+        <div class="iframe-wrap" id="iframeWrap">
+            <iframe id="pdfFrame" title="PDF Viewer" loading="eager"></iframe>
+        </div>
+    </div>
+
+    <!-- ============ BOTTOM BAR ============ -->
+    <div class="bottom-bar">
+        <a class="bottom-btn" href="./">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+            Browse
         </a>
-        <div class="viewer-info">
-            <h1 id="courseTitle">Loading...</h1>
-            <div class="viewer-meta" id="courseMeta"></div>
-        </div>
-        <div class="viewer-actions">
-            <a class="btn-primary" id="directDownload" href="#" download>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                Download PDF
-            </a>
-            <a class="btn-secondary" id="openDirect" href="#" target="_blank" rel="noopener">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-                Open Original
-            </a>
-            <a class="btn-home" href="./">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                </svg>
-                Browse All
-            </a>
-        </div>
+        <button class="bottom-btn primary" id="bottomDownload">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download
+        </button>
+        <button class="bottom-btn" id="bottomShare">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            Share
+        </button>
     </div>
 
-    <div class="viewer-loading" id="viewerLoading">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10" opacity=".3" />
-            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round" />
-        </svg>
-        <span>Loading PDF...</span>
-    </div>
-
-    <div class="viewer-error" id="viewerError" style="display:none;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-        </svg>
-        <p id="errorText">Could not load PDF.</p>
-        <a href="./">Browse All Programmes</a>
-    </div>
-
-    <div class="viewer-frame" id="viewerFrame" style="display:none;">
-        <iframe id="pdfFrame" title="PDF Viewer" loading="lazy"></iframe>
-    </div>
-
-    <div class="viewer-footer">
-        Built by <a href="./">Researcher Tizar</a> &middot;
-        <a href="https://sgou-slm-database.vercel.app/">SGOU SLM Browser</a>
-    </div>
+    <!-- Toast -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <script>
         (function () {
+            // ========================
+            // Parse URL parameters
+            // ========================
             const params = new URLSearchParams(window.location.search);
             const pdfUrl = params.get('url');
             const courseName = params.get('name') || 'Course PDF';
@@ -353,64 +791,291 @@
             const progName = params.get('prog') || '';
             const level = params.get('level') || '';
 
+            // ========================
+            // DOM refs
+            // ========================
+            const topbar = document.getElementById('topbar');
+            const topbarTitle = document.getElementById('topbarTitle');
+            const topbarCode = document.getElementById('topbarCode');
+            const expandToggle = document.getElementById('expandToggle');
             const loading = document.getElementById('viewerLoading');
-            const error = document.getElementById('viewerError');
-            const frame = document.getElementById('viewerFrame');
+            const errorEl = document.getElementById('viewerError');
+            const errorText = document.getElementById('errorText');
+            const errorDownload = document.getElementById('errorDownload');
+            const iframeWrap = document.getElementById('iframeWrap');
             const pdfFrame = document.getElementById('pdfFrame');
-            const title = document.getElementById('courseTitle');
-            const meta = document.getElementById('courseMeta');
-            const btnDl = document.getElementById('directDownload');
-            const btnOpen = document.getElementById('openDirect');
+            const topbarDlBtn = document.getElementById('topbarDownload');
+            const bottomDlBtn = document.getElementById('bottomDownload');
+            const bottomShareBtn = document.getElementById('bottomShare');
+            const btnCopyLink = document.getElementById('btnCopyLink');
+            const btnOpenDirect = document.getElementById('btnOpenDirect');
+            const detailProg = document.getElementById('detailProg');
+            const detailCourse = document.getElementById('detailCourse');
+            const detailLevel = document.getElementById('detailLevel');
 
-            // Update page title
-            document.title = (courseName || 'PDF') + ' — SGOU SLM';
+            // ========================
+            // Set page title
+            // ========================
+            document.title = courseName + (courseCode ? ' (' + courseCode + ')' : '') + ' — SGOU SLM';
 
-            // Show course info
-            title.textContent = courseName;
-            const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
-            const label = level === 'FYUG' ? '4-Year UG' : level;
-            let metaHTML = '';
-            if (progName) metaHTML += `<span>${progName}</span>`;
-            if (level) metaHTML += `<span class="viewer-meta-tag ${cls}">${label}</span>`;
-            if (courseCode) metaHTML += `<span>Code: ${courseCode}</span>`;
-            meta.innerHTML = metaHTML;
+            // ========================
+            // Populate compact bar
+            // ========================
+            topbarTitle.textContent = courseName;
+            if (courseCode) {
+                topbarCode.textContent = courseCode;
+            }
 
-            // Validate URL
+            // ========================
+            // Populate details
+            // ========================
+            detailProg.textContent = progName || '—';
+            detailCourse.textContent = courseName + (courseCode ? ' (' + courseCode + ')' : '');
+
+            if (level) {
+                const cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
+                const label = level === 'FYUG' ? '4-Year UG' : level;
+                detailLevel.textContent = label;
+                detailLevel.className = 'detail-level ' + cls;
+            } else {
+                detailLevel.style.display = 'none';
+            }
+
+            // Set links
+            if (pdfUrl) {
+                btnOpenDirect.href = pdfUrl;
+                errorDownload.href = pdfUrl;
+            }
+
+            // ========================
+            // Expand / collapse toggle
+            // ========================
+            expandToggle.addEventListener('click', () => {
+                topbar.classList.toggle('expanded');
+            });
+
+            // ========================
+            // VALIDATE URL
+            // ========================
             if (!pdfUrl) {
-                loading.style.display = 'none';
-                error.style.display = 'flex';
-                document.getElementById('errorText').textContent = 'No PDF URL provided.';
+                showError('No PDF URL provided. Check the shared link.');
                 return;
             }
 
-            // Set buttons
-            btnDl.href = pdfUrl;
-            btnDl.download = (courseCode ? courseCode + '_' : '') + courseName + '.pdf';
-            btnOpen.href = pdfUrl;
+            // ========================
+            // LOAD PDF (multi-strategy)
+            // ========================
+            loadPDF(pdfUrl);
 
-            // Load PDF in iframe
-            pdfFrame.src = pdfUrl;
-            pdfFrame.addEventListener('load', () => {
-                loading.style.display = 'none';
-                frame.style.display = 'flex';
-            });
-            pdfFrame.addEventListener('error', () => {
-                loading.style.display = 'none';
-                error.style.display = 'flex';
-                document.getElementById('errorText').textContent = 'Could not load the PDF. Try downloading directly.';
-            });
+            function loadPDF(url) {
+                loading.classList.remove('hidden');
+                errorEl.classList.remove('visible');
+                iframeWrap.classList.remove('visible');
 
-            // Timeout fallback (8 seconds)
-            setTimeout(() => {
-                if (loading.style.display !== 'none') {
-                    loading.style.display = 'none';
-                    frame.style.display = 'flex';
+                // Strategy 1: Google Docs Viewer (works everywhere including mobile)
+                const gviewUrl = 'https://docs.google.com/gview?url=' + encodeURIComponent(url) + '&embedded=true';
+
+                // Strategy 2: Direct iframe (works on desktop)
+                // Strategy 3: <object> fallback
+
+                let loaded = false;
+
+                function onLoaded() {
+                    if (loaded) return;
+                    loaded = true;
+                    loading.classList.add('hidden');
+                    iframeWrap.classList.add('visible');
                 }
-            }, 8000);
 
-            // Theme sync
-            const saved = localStorage.getItem('sgou-theme');
-            if (saved) document.documentElement.setAttribute('data-theme', saved);
+                function tryFallback() {
+                    if (loaded) return;
+                    // Try direct URL in iframe
+                    pdfFrame.src = url;
+                }
+
+                // Try Google Docs Viewer first (best mobile support)
+                pdfFrame.src = gviewUrl;
+
+                pdfFrame.addEventListener('load', () => {
+                    onLoaded();
+                });
+
+                pdfFrame.addEventListener('error', () => {
+                    tryFallback();
+                });
+
+                // Timeout: if gview doesn't load in 6s, try direct
+                setTimeout(() => {
+                    if (!loaded) {
+                        pdfFrame.src = url;
+                    }
+                }, 6000);
+
+                // Ultimate timeout: show iframe anyway after 10s
+                setTimeout(() => {
+                    if (!loaded) {
+                        onLoaded();
+                    }
+                }, 10000);
+            }
+
+            function showError(msg) {
+                loading.classList.add('hidden');
+                errorText.textContent = msg;
+                errorEl.classList.add('visible');
+            }
+
+            // ========================
+            // DOWNLOAD (with cross-origin handling)
+            // ========================
+            async function downloadPDF() {
+                const origTopHTML = topbarDlBtn.innerHTML;
+                const origBottomHTML = bottomDlBtn.innerHTML;
+
+                topbarDlBtn.classList.add('downloading');
+                bottomDlBtn.classList.add('downloading');
+                showToast('Preparing download\u2026');
+
+                const filename = (courseCode ? courseCode + '_' : '') + courseName.replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+
+                let blob = null;
+
+                try {
+                    // Try fetching as blob
+                    const ctrl = new AbortController();
+                    const tmr = setTimeout(() => ctrl.abort(), 20000);
+
+                    try {
+                        const resp = await fetch(pdfUrl, { signal: ctrl.signal, mode: 'cors' });
+                        clearTimeout(tmr);
+                        if (resp.ok) {
+                            blob = await resp.blob();
+                        }
+                    } catch (_) {
+                        clearTimeout(tmr);
+                    }
+
+                    // If CORS blocked, try via proxy
+                    if (!blob) {
+                        try {
+                            const ctrl2 = new AbortController();
+                            const tmr2 = setTimeout(() => ctrl2.abort(), 18000);
+                            const resp = await fetch('/api/download?url=' + encodeURIComponent(pdfUrl), { signal: ctrl2.signal });
+                            clearTimeout(tmr2);
+                            if (resp.ok) {
+                                blob = await resp.blob();
+                            }
+                        } catch (_) { }
+                    }
+                } catch (_) { }
+
+                if (blob && blob.size > 0) {
+                    // Download as blob
+                    const blobUrl = URL.createObjectURL(blob);
+                    triggerDownload(blobUrl, filename);
+                    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+                    showToast('Download started');
+                } else {
+                    // Fallback: open in new tab (user can save from browser)
+                    window.open(pdfUrl, '_blank');
+                    showToast('PDF opened \u2014 save from your browser');
+                }
+
+                setTimeout(() => {
+                    topbarDlBtn.classList.remove('downloading');
+                    bottomDlBtn.classList.remove('downloading');
+                }, 1500);
+            }
+
+            function triggerDownload(url, filename) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => { if (a.parentNode) a.remove(); }, 500);
+            }
+
+            topbarDlBtn.addEventListener('click', downloadPDF);
+            bottomDlBtn.addEventListener('click', downloadPDF);
+
+            // ========================
+            // SHARE
+            // ========================
+            bottomShareBtn.addEventListener('click', async () => {
+                const viewerUrl = window.location.href;
+                const shareText =
+                    (progName ? progName + ' - ' + (level === 'FYUG' ? '4-Year UG' : level) + '\n' : '') +
+                    courseName + (courseCode ? ' - ' + courseCode : '') + '\n' +
+                    viewerUrl + '\n\n' +
+                    'Shared via SLM Browser\n' +
+                    'https://sgou-slm-database.vercel.app/';
+
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: courseName + ' \u2014 SGOU SLM',
+                            text: shareText,
+                            url: viewerUrl
+                        });
+                    } catch (_) { }
+                } else if (navigator.clipboard) {
+                    try {
+                        await navigator.clipboard.writeText(shareText);
+                        showToast('Copied to clipboard');
+                    } catch (_) {
+                        showToast('Could not copy');
+                    }
+                }
+            });
+
+            // ========================
+            // COPY LINK
+            // ========================
+            btnCopyLink.addEventListener('click', async () => {
+                try {
+                    if (navigator.clipboard) {
+                        await navigator.clipboard.writeText(window.location.href);
+                    } else {
+                        const ta = document.createElement('textarea');
+                        ta.value = window.location.href;
+                        ta.style.cssText = 'position:fixed;opacity:0';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(ta);
+                    }
+                    showToast('Link copied');
+                } catch (_) {
+                    showToast('Could not copy');
+                }
+            });
+
+            // ========================
+            // TOAST
+            // ========================
+            let toastTimer;
+            function showToast(msg, ms = 2200) {
+                const el = document.getElementById('toast');
+                if (!el) return;
+                clearTimeout(toastTimer);
+                el.textContent = msg;
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => el.classList.add('visible'));
+                });
+                toastTimer = setTimeout(() => el.classList.remove('visible'), ms);
+            }
+
+            // ========================
+            // THEME SYNC
+            // ========================
+            try {
+                const saved = localStorage.getItem('sgou-theme');
+                if (saved) document.documentElement.setAttribute('data-theme', saved);
+            } catch (_) { }
         })();
     </script>
 </body>
