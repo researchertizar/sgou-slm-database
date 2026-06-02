@@ -257,8 +257,8 @@ async function viewerShare() {
   if (!panel?._data) return;
 
   const { code, name, prog, level } = panel._data;
-  const base = location.pathname;
-  const extUrl = base + '/view.html#' + encodeURIComponent(code || name);
+  const base = location.pathname.replace(/\/[^\/]*$/, '/');
+  const extUrl = base + 'view.html#' + encodeURIComponent(code || name);
 
   const text =
     (prog ? prog + ' - ' + (level === 'FYUG' ? 'FYUG' : level) + '\n' : '') +
@@ -1061,8 +1061,8 @@ async function shareContent(name, url) {
   }
 
   // Clean share URL — just the course code
-  const base = location.pathname;
-  const extUrl = base + '/view.html#' + encodeURIComponent(info.code || info.courseName);
+  const base = location.pathname.replace(/\/[^\/]*$/, '/');
+  const extUrl = base + 'view.html#' + encodeURIComponent(info.code || info.courseName);
 
   const text =
     `${info.programme} - ${info.level}\n` +
