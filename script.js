@@ -257,21 +257,33 @@ async function viewerShare() {
   if (!panel?._data) return;
 
   const { code, name, prog, level } = panel._data;
-  const base = location.pathname.replace(/\/[^\/]*$/, '/');
-  const extUrl = base + 'view.html#' + encodeURIComponent(code || name);
+
+  const siteUrl = location.origin + '/';
+  const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(code || name);
+  const lv = level === 'FYUG' ? 'FYUG' : level;
 
   const text =
-    (prog ? prog + ' - ' + (level === 'FYUG' ? 'FYUG' : level) + '\n' : '') +
+    (prog ? prog + ' - ' + lv + '\n' : '') +
     name + (code ? ' - ' + code : '') + '\n' +
-    extUrl;
+    viewUrl + '\n\n' +
+    'Shared via SLM Browser\n' +
+    siteUrl;
 
   if (navigator.share) {
-    try { await navigator.share({ title: name + ' \u2014 SGOU SLM', text, url: extUrl }); } catch (_) { }
+    try {
+      await navigator.share({ title: name + ' \u2014 SGOU SLM', text });
+      GA.trackShare(code || name, 'web_share');
+    } catch (_) { }
   } else if (navigator.clipboard) {
-    try { await navigator.clipboard.writeText(text); showToast('Copied to clipboard'); } catch (_) { showToast('Could not copy'); }
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard');
+      GA.trackShare(code || name, 'clipboard');
+    } catch (_) {
+      showToast('Could not copy');
+    }
   }
 }
-
 
 // ===============================
 //  STATE SYNC
@@ -1060,22 +1072,32 @@ async function shareContent(name, url) {
     }
   }
 
-  // Clean share URL — just the course code
-  const base = location.pathname.replace(/\/[^\/]*$/, '/');
-  const extUrl = base + 'view.html#' + encodeURIComponent(info.code || info.courseName);
+  const siteUrl = location.origin + '/';
+  const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(info.code || info.courseName);
 
   const text =
     `${info.programme} - ${info.level}\n` +
     `${info.courseName} - ${info.code}\n` +
-    `${extUrl}`;
+    `${viewUrl}\n\n` +
+    `Shared via SLM Browser\n` +
+    siteUrl;
 
   if (navigator.share) {
-    try { await navigator.share({ title: info.courseName + ' \u2014 SGOU SLM', text, url: extUrl }); GA.trackShare(name, 'web_share'); } catch (_) { }
+    try {
+      // text only — no separate url field to avoid duplication
+      await navigator.share({ title: info.courseName + ' \u2014 SGOU SLM', text });
+      GA.trackShare(name, 'web_share');
+    } catch (_) { }
   } else if (navigator.clipboard) {
-    try { await navigator.clipboard.writeText(text); showToast('Copied to clipboard'); GA.trackShare(name, 'clipboard'); } catch (_) { showToast('Could not copy'); }
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast('Copied to clipboard');
+      GA.trackShare(name, 'clipboard');
+    } catch (_) {
+      showToast('Could not copy');
+    }
   }
 }
-
 
 // ===============================
 //  COPY TO CLIPBOARD
