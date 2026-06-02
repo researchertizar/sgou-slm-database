@@ -1139,34 +1139,82 @@ function initInstallPrompt() {
     || window.navigator.standalone === true
     || document.referrer.includes('android-app://');
 
-  if (isStandalone) { safeSet('sgou-pwa-installed', '1'); banner?.classList.remove('visible'); return; }
-  if (safeGet('sgou-pwa-installed') || safeGet('sgou-install-dismissed')) return;
+  // Already installed
+  if (isStandalone) {
+    safeSet('sgou-pwa-installed', '1');
+    banner?.classList.remove('visible');
+    GA.trackInstall('already_installed');
+    return;
+  }
 
+  if (safeGet('sgou-pwa-installed')) {
+    GA.trackInstall('previously_installed');
+    return;
+  }
+
+  if (safeGet('sgou-install-dismissed')) return;
+
+  // Browser fired the install prompt
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); deferredInstallPrompt = e;
-    if (banner) setTimeout(() => banner.classList.add('visible'), 2500);
+    e.preventDefault();
+    deferredInstallPrompt = e;
+
+    GA.trackInstall('prompt_available');
+
+    if (banner) {
+      setTimeout(() => {
+        banner.classList.add('visible');
+        GA.trackInstall('banner_shown');
+      }, 2500);
+    }
   });
 
+  // App was successfully installed
   window.addEventListener('appinstalled', () => {
-    safeSet('sgou-pwa-installed', '1'); banner?.classList.remove('visible');
-    deferredInstallPrompt = null; showToast('App installed!'); GA.trackInstall('accepted');
+    safeSet('sgou-pwa-installed', '1');
+    banner?.classList.remove('visible');
+    deferredInstallPrompt = null;
+    showToast('App installed!');
+    GA.trackInstall('appinstalled_event');
   });
 
+  // Install button clicked
   $('installBtn')?.addEventListener('click', async () => {
-    if (!deferredInstallPrompt) { showToast('Use your browser\'s install option'); return; }
+    if (!deferredInstallPrompt) {
+      showToast('Use your browser\'s install option');
+      GA.trackInstall('no_prompt_fallback');
+      return;
+    }
+
     banner?.classList.remove('visible');
     deferredInstallPrompt.prompt();
+
     const { outcome } = await deferredInstallPrompt.userChoice;
-    if (outcome === 'accepted') safeSet('sgou-pwa-installed', '1');
-    GA.trackInstall(outcome); deferredInstallPrompt = null;
+
+    if (outcome === 'accepted') {
+      safeSet('sgou-pwa-installed', '1');
+      showToast('App installed!');
+    }
+
+    GA.trackInstall('user_choice_' + outcome);
+    deferredInstallPrompt = null;
   });
 
+  // Dismiss button clicked
   $('installDismiss')?.addEventListener('click', () => {
-    banner?.classList.remove('visible'); safeSet('sgou-install-dismissed', '1'); GA.trackInstall('dismissed');
+    banner?.classList.remove('visible');
+    safeSet('sgou-install-dismissed', '1');
+    GA.trackInstall('banner_dismissed');
   });
 
-  window.matchMedia('(display-mode:standalone)').addEventListener('change', (e) => {
-    if (e.matches) { safeSet('sgou-pwa-installed', '1'); banner?.classList.remove('visible'); showToast('App installed!'); }
+  // Standalone mode detected (installed via other means)
+  window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
+    if (e.matches) {
+      safeSet('sgou-pwa-installed', '1');
+      banner?.classList.remove('visible');
+      showToast('App installed!');
+      GA.trackInstall('display_mode_change');
+    }
   });
 }
 
