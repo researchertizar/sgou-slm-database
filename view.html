@@ -782,10 +782,9 @@
     <script>
         (function () {
             var hash = window.location.hash.slice(1);
+            var courseCode = decodeURIComponent(hash || '');
             var params = new URLSearchParams(window.location.search);
 
-            // Support both: #COURSECODE (clean) and ?url=...&name=... (legacy)
-            var courseCode = decodeURIComponent(hash || '');
             var pdfUrl = params.get('url') || '';
             var name = params.get('name') || '';
             var code = params.get('code') || courseCode;
@@ -813,41 +812,38 @@
             }
 
             // ============================================
-            // If we have a course code but no PDF URL,
-            // load data to look up the course
+            // Resolve course from data if we only have a code
             // ============================================
             if (courseCode && !pdfUrl) {
                 titleEl.textContent = 'Loading\u2026';
 
-                // Use absolute URLs so it works regardless of deployment path
-                var dataUrls = [
-                    location.origin + '/sgou_slm_data.json',
-                    location.origin + '/data.json'
-                ];
-
-                tryNext(0);
-
+                var dataPaths = ['/sgou_slm_data.json', '/data.json'];
+                tryFetch(0);
             } else if (pdfUrl) {
                 showCourse();
             } else {
                 showError('No course code or PDF URL provided.');
             }
 
-            function tryNext(idx) {
-                if (idx >= dataUrls.length) {
-                    showError('Course "' + courseCode + '" could not be found. Data unavailable.');
+            function tryFetch(i) {
+                if (i >= dataPaths.length) {
+                    showError('Could not load course data for "' + courseCode + '".');
                     return;
                 }
 
-                fetch(dataUrls[idx])
+                // Use relative paths — works on any deployment
+                fetch(dataPaths[i], { cache: 'no-cache' })
                     .then(function (r) {
                         if (!r.ok) throw new Error('HTTP ' + r.status);
-                        // Verify it's actually JSON, not an HTML error page
-                        var ct = r.headers.get('content-type') || '';
-                        if (ct.indexOf('json') === -1 && ct.indexOf('octet') === -1) {
+                        return r.text();
+                    })
+                    .then(function (text) {
+                        // Guard: Vercel SPA may return HTML instead of JSON
+                        var trimmed = text.trim();
+                        if (trimmed.charAt(0) !== '[' && trimmed.charAt(0) !== '{') {
                             throw new Error('Not JSON');
                         }
-                        return r.json();
+                        return JSON.parse(trimmed);
                     })
                     .then(function (data) {
                         if (!Array.isArray(data)) throw new Error('Not an array');
@@ -883,7 +879,7 @@
                         showCourse();
                     })
                     .catch(function () {
-                        tryNext(idx + 1);
+                        tryFetch(i + 1);
                     });
             }
 
@@ -905,7 +901,7 @@
                 metaEl.innerHTML = m;
 
                 dlBtn.href = pdfUrl;
-                dlBtn.download = (code ? code + '_' : '') + (name || 'document').replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+                dlBtn.download = (code ? code + '_' : '') + (name || 'doc').replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
                 openBtn.href = pdfUrl;
                 var errDl = document.getElementById('errorDownload');
                 if (errDl) errDl.href = pdfUrl;
@@ -913,20 +909,59 @@
                 loadPDF(pdfUrl);
             }
 
+            // Multi-strategy PDF loader
+            var loadTimers = [];
+
             function loadPDF(url) {
+                loadTimers.forEach(function (t) { clearTimeout(t); });
+                loadTimers = [];
+                frame.onload = null;
+
+                loading.style.display = '';
+                loading.innerHTML = '<div class="loading-spinner"></div><span>Loading PDF\u2026</span>';
+                frame.style.display = 'none';
+
                 var done = false;
+                var step = 0;
+                var strategies = [
+                    { url: 'https://docs.google.com/gview?url=' + encodeURIComponent(url) + '&embedded=true', timeout: 14000 },
+                    { url: url, timeout: 10000 }
+                ];
+
                 function ready() {
                     if (done) return;
                     done = true;
+                    loadTimers.forEach(function (t) { clearTimeout(t); });
+                    loadTimers = [];
                     loading.style.display = 'none';
                     frame.style.display = 'block';
                 }
 
-                var gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(url) + '&embedded=true';
-                frame.src = gview;
-                frame.addEventListener('load', ready);
-                setTimeout(function () { if (!done) frame.src = url; }, 5000);
-                setTimeout(ready, 9000);
+                function runStep() {
+                    if (step >= strategies.length) {
+                        showFallback(url);
+                        return;
+                    }
+                    frame.onload = ready;
+                    frame.src = strategies[step].url;
+                    var tid = setTimeout(function () {
+                        if (!done) { step++; runStep(); }
+                    }, strategies[step].timeout);
+                    loadTimers.push(tid);
+                }
+
+                runStep();
+            }
+
+            function showFallback(url) {
+                loading.innerHTML =
+                    '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+                    '<span style="text-align:center;max-width:260px">PDF viewer could not load this file.</span>' +
+                    '<div style="display:flex;gap:.35rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">' +
+                    '<a href="' + escA(url) + '" download class="btn-view" style="text-decoration:none;padding:.42rem .85rem;font-size:12px">Download</a>' +
+                    '<button onclick="location.reload()" class="btn-view" style="padding:.42rem .85rem;font-size:12px;cursor:pointer;background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:5px">Retry</button>' +
+                    '<a href="' + escA(url) + '" target="_blank" rel="noopener" class="btn-view" style="text-decoration:none;padding:.42rem .85rem;font-size:12px">New Tab</a>' +
+                    '</div>';
             }
 
             function showError(msg) {
@@ -935,15 +970,10 @@
                 errorEl.style.display = 'flex';
             }
 
-            function escH(s) {
-                return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            }
+            function escH(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+            function escA(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
 
-            // Theme sync
-            try {
-                var saved = localStorage.getItem('sgou-theme');
-                if (saved) document.documentElement.setAttribute('data-theme', saved);
-            } catch (_) { }
+            try { var t = localStorage.getItem('sgou-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (_) { }
         })();
     </script>
 

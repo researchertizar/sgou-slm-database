@@ -36,15 +36,25 @@ const Router = {
   init() {
     window.addEventListener('popstate', () => this.resolve());
 
-    // If loaded with a deep-link hash, place a home entry behind it
-    // so pressing Back from the viewer always returns to home
-    const h = window.location.hash;
-    if (h && h.length > 2 && h !== '#/') {
-      const current = h.slice(1);
+    const h = window.location.hash.slice(1);
+
+    if (!h || h === '/') return;
+
+    // Deep link with SPA routes (#/view/CODE, #/search, etc.)
+    if (h.startsWith('/')) {
       history.replaceState({ path: '/' }, '', '#/');
-      history.pushState({ path: current }, '', '#' + current);
+      history.pushState({ path: h }, '', '#' + h);
+      return;
     }
-  },
+
+    // Bare course code deep link (#B21ES01AC)
+    // Push a home entry behind it so Back goes to home
+    if (/^[A-Z]/.test(h)) {
+      history.replaceState({ path: '/' }, '', '#/');
+      history.pushState({ path: h }, '', '#' + h);
+    }
+  }
+  ,
 
   navigate(path) {
     const hash = '#' + path;
@@ -75,33 +85,15 @@ const Router = {
     const path = qIdx >= 0 ? raw.slice(0, qIdx) : raw;
     const params = new URLSearchParams(qIdx >= 0 ? raw.slice(qIdx + 1) : '');
 
+    // /view/CODE — standard SPA viewer route
     if (path.startsWith('/view/')) {
       const code = decodeURIComponent(path.split('/')[2] || '');
-      if (code) {
-        // Look up full course info from data
-        let found = null;
-        for (const prog of allData) {
-          for (const sem of prog.semesters) {
-            const c = sem.courses.find(c => c.code === code || c.name === code);
-            if (c) {
-              found = {
-                url: c.pdf_url,
-                name: c.name,
-                code: c.code,
-                prog: prog.programme_name,
-                level: prog.level
-              };
-              break;
-            }
-          }
-          if (found) break;
-        }
-        if (found) {
-          showViewerPanel(new URLSearchParams(found));
-          return;
-        }
+      const found = code ? findCourse(code) : null;
+      if (found) {
+        showViewerPanel(new URLSearchParams(found));
+        return;
       }
-      // Fallback: try legacy query params
+      // Fallback to query params (legacy)
       showViewerPanel(params);
       return;
     }
@@ -112,10 +104,21 @@ const Router = {
       restoreState(params.get('q') || '', params.get('level') || activeLevel);
     } else if (path.startsWith('/filter/')) {
       restoreState($('searchInput')?.value || '', decodeURIComponent(path.split('/')[2] || 'ALL'));
+    } else if (/^[A-Z]/.test(path) && !path.includes('/')) {
+      // Bare course code: #B21ES01AC
+      // Happens when view.html#CODE gets intercepted by PWA/Vercel
+      const code = decodeURIComponent(path);
+      const found = findCourse(code);
+      if (found) {
+        showViewerPanel(new URLSearchParams(found));
+        return;
+      }
+      restoreState('', 'ALL');
     } else {
       restoreState('', 'ALL');
     }
   }
+
 
 };
 
@@ -1267,6 +1270,24 @@ function buildViewerHash(pdfUrl, name, code, prog, level) {
   return '/view/' + encodeURIComponent(code || name);
 }
 
-
 function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { } }
+
+function findCourse(code) {
+  if (!code) return null;
+  for (const prog of allData) {
+    for (const sem of prog.semesters) {
+      const c = sem.courses.find(c => c.code === code);
+      if (c) {
+        return {
+          url: c.pdf_url,
+          name: c.name,
+          code: c.code,
+          prog: prog.programme_name,
+          level: prog.level
+        };
+      }
+    }
+  }
+  return null;
+}
