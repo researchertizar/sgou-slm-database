@@ -265,9 +265,7 @@ async function viewerShare() {
   const text =
     (prog ? prog + ' - ' + lv + '\n' : '') +
     name + (code ? ' - ' + code : '') + '\n' +
-    viewUrl + '\n\n' +
-    'Shared via SLM Browser\n' +
-    siteUrl;
+    viewUrl;
 
   if (navigator.share) {
     try {
@@ -1078,9 +1076,7 @@ async function shareContent(name, url) {
   const text =
     `${info.programme} - ${info.level}\n` +
     `${info.courseName} - ${info.code}\n` +
-    `${viewUrl}\n\n` +
-    `Shared via SLM Browser\n` +
-    siteUrl;
+    `${viewUrl}`;
 
   if (navigator.share) {
     try {
