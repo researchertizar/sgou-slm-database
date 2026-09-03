@@ -1,4 +1,4 @@
-const CACHE = 'sgou-v9';
+const CACHE = 'sgou-v13';
 const SHELL = ['./', './index.html', './style.css', './script.js', './manifest.json', './icon.svg', './view.html'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 

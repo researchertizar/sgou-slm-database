@@ -1,781 +1,1301 @@
-// ===============================
-//  SGOU Programme Browser — URL-Driven SPA
-// ===============================
+/**
+ * ============================================================================
+ *  SGOU SLM Browser — Production Application Core (S.O.L.I.D Architecture)
+ * ============================================================================
+ *  Author: Researcher Tizar
+ *  Institution: Sree Narayana Guru Open University (SGOU)
+ *  
+ *  Architecture adheres to S.O.L.I.D principles:
+ *   - S (Single Responsibility): Each service has one clear domain of concern.
+ *   - O (Open/Closed): Strategy-based download & search handlers extendable without mutation.
+ *   - L (Liskov Substitution): Polymorphic storage and fallback abstractions.
+ *   - I (Interface Segregation): Discrete, minimal parameter passing between layers.
+ *   - D (Dependency Inversion): UI controllers depend on abstract service layers.
+ * ============================================================================
+ */
 
-let allData = [];
-let activeLevel = 'ALL';
-let isSearching = false;
-let deferredInstallPrompt = null;
-let currentAbort = null;
-let revealObserver = null;
-let searchObserver = null;
-let hidePanelTimer = null;
-let viewerNavLock = false;
+'use strict';
 
-// ===============================
-//  ANALYTICS
-// ===============================
-const GA = {
-  event(name, params) {
-    try { if (typeof gtag === 'function') gtag('event', name, params || {}); } catch (_) { }
-  },
-  trackSearch(q, n) { this.event('search', { search_term: q, custom_result_count: n }); },
-  trackDownload(c, n, m) { this.event('file_download', { file_name: c + '.pdf', file_extension: 'pdf', link_text: n, link_url: m, custom_course_code: c }); },
-  trackFilter(lv) { this.event('filter_change', { filter_type: 'level', filter_value: lv }); },
-  trackTheme(t) { this.event('theme_change', { new_theme: t }); },
-  trackShare(n, m) { this.event('share', { method: m, content_type: 'pdf_link', item_id: n }); },
-  trackCardOpen(n) { this.event('select_content', { content_type: 'programme_card', item_id: n }); },
-  trackInstall(o) { this.event('app_install', { method: 'beforeinstallprompt', outcome: o }); },
-  trackEngagement(a) { this.event('engagement_action', { action: a }); }
-};
+// ============================================================================
+//  1. UTILITIES & SECURITY SANITIZERS
+// ============================================================================
 
-// ===============================
-//  ROUTER
-// ===============================
-const Router = {
-  init() {
-    window.addEventListener('popstate', () => this.resolve());
+/**
+ * Fast document query selector shortcut.
+ * @param {string} id - Element ID or selector
+ * @returns {HTMLElement|null}
+ */
+const $ = (id) => document.getElementById(id) || document.querySelector(id);
 
-    const h = window.location.hash.slice(1);
-
-    if (!h || h === '/') return;
-
-    // Deep link with SPA routes (#/view/CODE, #/search, etc.)
-    if (h.startsWith('/')) {
-      history.replaceState({ path: '/' }, '', '#/');
-      history.pushState({ path: h }, '', '#' + h);
-      return;
-    }
-
-    // Bare course code deep link (#B21ES01AC)
-    // Push a home entry behind it so Back goes to home
-    if (/^[A-Z]/.test(h)) {
-      history.replaceState({ path: '/' }, '', '#/');
-      history.pushState({ path: h }, '', '#' + h);
-    }
-  }
-  ,
-
-  navigate(path) {
-    const hash = '#' + path;
-    if (window.location.hash === hash) return;
-    history.pushState({ path }, '', hash);
-    this.resolve();
-  },
-
-  // Update URL bar only (no resolve, no re-render)
-  updateUrl(path) {
-    const hash = '#' + path;
-    if (window.location.hash === hash) return;
-    history.replaceState({ path }, '', hash);
-  },
-
-  resolve() {
-    if (!allData.length) return;
-
-    const raw = window.location.hash.slice(1);
-
-    if (!raw || raw === '/') {
-      hideViewerPanel();
-      restoreState('', 'ALL');
-      return;
-    }
-
-    const qIdx = raw.indexOf('?');
-    const path = qIdx >= 0 ? raw.slice(0, qIdx) : raw;
-    const params = new URLSearchParams(qIdx >= 0 ? raw.slice(qIdx + 1) : '');
-
-    // /view/CODE — standard SPA viewer route
-    if (path.startsWith('/view/')) {
-      const code = decodeURIComponent(path.split('/')[2] || '');
-      const found = code ? findCourse(code) : null;
-      if (found) {
-        showViewerPanel(new URLSearchParams(found));
-        return;
-      }
-      // Fallback to query params (legacy)
-      showViewerPanel(params);
-      return;
-    }
-
-    hideViewerPanel();
-
-    if (path === '/search') {
-      restoreState(params.get('q') || '', params.get('level') || activeLevel);
-    } else if (path.startsWith('/filter/')) {
-      restoreState($('searchInput')?.value || '', decodeURIComponent(path.split('/')[2] || 'ALL'));
-    } else if (/^[A-Z]/.test(path) && !path.includes('/')) {
-      // Bare course code: #B21ES01AC
-      // Happens when view.html#CODE gets intercepted by PWA/Vercel
-      const code = decodeURIComponent(path);
-      const found = findCourse(code);
-      if (found) {
-        showViewerPanel(new URLSearchParams(found));
-        return;
-      }
-      restoreState('', 'ALL');
-    } else {
-      restoreState('', 'ALL');
-    }
-  }
-
-
-};
-
-// ===============================
-//  VIEWER PANEL
-// ===============================
-function showViewerPanel(params) {
-  const panel = $('viewerPanel');
-  if (!panel) return;
-
-  clearTimeout(hidePanelTimer);
-
-  const pdfUrl = params.get('url') || '';
-  const name = params.get('name') || 'Course PDF';
-  const code = params.get('code') || '';
-  const prog = params.get('prog') || '';
-  const level = params.get('level') || '';
-
-  // Populate UI
-  const tEl = $('viewerPanelTitle');
-  const pEl = $('viewerProgName');
-  const lEl = $('viewerLevelTag');
-  const cEl = $('viewerCourseCode');
-
-  if (tEl) tEl.textContent = name + (code ? ' \u2014 ' + code : '');
-  if (pEl) pEl.textContent = prog || '\u2014';
-  if (cEl) cEl.textContent = code;
-
-  if (lEl) {
-    if (level) {
-      lEl.textContent = level === 'FYUG' ? 'FYUG' : level;
-      lEl.className = 'viewer-level-tag ' + (level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug');
-      lEl.style.display = '';
-    } else {
-      lEl.style.display = 'none';
-    }
-  }
-
-  // Store for download / share
-  panel._data = { url: pdfUrl, name, code, prog, level };
-
-  document.title = name + (code ? ' (' + code + ')' : '') + ' \u2014 SGOU SLM';
-  document.body.style.overflow = 'hidden';
-  panel.classList.add('visible');
-
-  if (pdfUrl) loadPdfInViewer(pdfUrl);
+/**
+ * HTML entities escaper for safe DOM text injection (XSS Prevention).
+ * @param {*} s - Value to escape
+ * @returns {string} Safe HTML string
+ */
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
-function hideViewerPanel() {
-  const panel = $('viewerPanel');
-  if (!panel || !panel.classList.contains('visible')) return;
-
-  clearTimeout(hidePanelTimer);
-  panel.classList.remove('visible');
-  document.body.style.overflow = '';
-  document.title = 'SGOU SLM Browser - By Researcher Tizar';
-
-  hidePanelTimer = setTimeout(() => {
-    const frame = $('viewerPanelFrame');
-    if (frame) frame.removeAttribute('src');
-    const ld = $('viewerPanelLoading');
-    if (ld) ld.classList.remove('hidden');
-  }, 400);
+/**
+ * Attribute escaper for safe attribute values (XSS Prevention).
+ * @param {*} s - Value to escape
+ * @returns {string} Safe attribute string
+ */
+function ea(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
-function loadPdfInViewer(pdfUrl) {
-  const frame = $('viewerPanelFrame');
-  const ld = $('viewerPanelLoading');
-  if (!frame) return;
-
-  if (ld) ld.classList.remove('hidden');
-  let done = false;
-
-  function ready() {
-    if (done) return;
-    done = true;
-    if (ld) ld.classList.add('hidden');
-  }
-
-  frame.onload = ready;
-
-  // Best mobile support: Google Docs Viewer
-  const gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
-  frame.src = gview;
-
-  // Fallback after 5s: direct URL
-  setTimeout(() => { if (!done) frame.src = pdfUrl; }, 5000);
-
-  // Force-show after 9s
-  setTimeout(ready, 9000);
+/**
+ * Regex special character escaper.
+ * @param {string} s - Input string
+ * @returns {string}
+ */
+function er(s) {
+  return String(s ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-async function viewerDownload() {
-  const panel = $('viewerPanel');
-  if (!panel?._data?.url) return;
+/**
+ * Highlights search keyword hits within text safely.
+ * @param {string} text - Raw content
+ * @param {string} query - Search term
+ * @returns {string} HTML with <mark> tags
+ */
+function hl(text, query) {
+  if (!query) return esc(text);
+  const qClean = er(query.trim());
+  if (!qClean) return esc(text);
+  const regex = new RegExp('(' + qClean + ')', 'gi');
+  return esc(text).replace(regex, '<mark>$1</mark>');
+}
 
-  const { url, name, code } = panel._data;
-  const btn = $('viewerPanelDownload');
-  if (btn) btn.classList.add('downloading');
-  showToast('Preparing download\u2026');
+/**
+ * Sanitizes filename string against path traversal and control characters.
+ * @param {string} s - Raw filename
+ * @returns {string} Clean alphanumeric filename
+ */
+function sanitize(s) {
+  return String(s ?? '')
+    .replace(/[^a-zA-Z0-9_\- ]/g, '')
+    .replace(/\s+/g, '_')
+    .substring(0, 80);
+}
 
-  const fn = (code ? code + '_' : '') + sanitize(name) + '.pdf';
-  let blob = null;
-
-  // Try direct fetch
+/**
+ * Copies text safely to clipboard with fallback.
+ * @param {string} text - Text to copy
+ * @returns {Promise<boolean>}
+ */
+async function copyToClipboard(text) {
   try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 18000);
-    const r = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(t);
-    if (r.ok) blob = await r.blob();
-  } catch (_) { }
-
-  // Try proxy
-  if (!blob) {
-    try {
-      const r = await fetch('/api/download?url=' + encodeURIComponent(url));
-      if (r.ok) blob = await r.blob();
-    } catch (_) { }
-  }
-
-  if (blob && blob.size > 0) {
-    const u = URL.createObjectURL(blob);
-    triggerDownload(u, fn);
-    setTimeout(() => URL.revokeObjectURL(u), 15000);
-    showToast('Download started');
-    incrementDownloadCount();
-  } else {
-    window.open(url, '_blank', 'noopener');
-    showToast('PDF opened \u2014 save from your browser');
-  }
-
-  GA.trackDownload(code || 'unknown', fn, blob ? 'fetch' : 'new_tab');
-  if (btn) setTimeout(() => btn.classList.remove('downloading'), 1200);
-}
-
-async function viewerShare() {
-  const panel = $('viewerPanel');
-  if (!panel?._data) return;
-
-  const { code, name, prog, level } = panel._data;
-
-  const siteUrl = location.origin + '/';
-  const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(code || name);
-  const lv = level === 'FYUG' ? 'FYUG' : level;
-
-  const text =
-    (prog ? prog + ' - ' + lv + '\n' : '') +
-    name + (code ? ' - ' + code : '') + '\n' +
-    viewUrl;
-
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: name + ' \u2014 SGOU SLM', text });
-      GA.trackShare(code || name, 'web_share');
-    } catch (_) { }
-  } else if (navigator.clipboard) {
-    try {
+    if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard');
-      GA.trackShare(code || name, 'clipboard');
-    } catch (_) {
-      showToast('Could not copy');
+      return true;
     }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;left:-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
   }
 }
 
-// ===============================
-//  STATE SYNC
-// ===============================
-function syncUrlFromState() {
-  const q = ($('searchInput')?.value || '').trim();
-  let path;
-  if (q) {
-    path = '/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(activeLevel);
-  } else if (activeLevel !== 'ALL') {
-    path = '/filter/' + encodeURIComponent(activeLevel);
-  } else {
-    path = '/';
-  }
-  Router.updateUrl(path);
-}
+// Device & Environment detection
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_ANDROID = /Android/i.test(navigator.userAgent);
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname) || location.protocol === 'file:';
 
-function restoreState(query, level) {
-  const input = $('searchInput');
-  if (!input) return;
+// ============================================================================
+//  2. STORAGE SERVICE (S.O.L.I.D: Single Responsibility)
+// ============================================================================
 
-  const curQ = input.value.trim();
-  const qChanged = curQ !== query;
-  const lChanged = activeLevel !== level;
-
-  // Nothing to change and UI already correct → skip
-  if (!qChanged && !lChanged) return;
-
-  if (qChanged) input.value = query;
-  const cl = $('searchClear');
-  if (cl) cl.classList.toggle('visible', query.length > 0);
-
-  if (lChanged) {
-    activeLevel = level;
-    document.querySelectorAll('.pill').forEach(p =>
-      p.classList.toggle('active', p.dataset.level === activeLevel));
+/**
+ * Resilient storage manager with in-memory fallback if quota is exceeded
+ * or private browsing prevents disk access.
+ */
+class StorageService {
+  constructor() {
+    this._memoryStore = new Map();
   }
 
-  handleSearch();
-}
-
-// ===============================
-//  BOOT
-// ===============================
-document.addEventListener('DOMContentLoaded', () => {
-  showSkeletons();
-  initTheme();
-  Router.init();
-  loadData();
-  initSearch();
-  initDelegation();
-  initKeyboard();
-  initStickyShadow();
-  initBackToTop();
-  registerServiceWorker();
-  initInstallPrompt();
-  initOfflineDetection();
-  updateDownloadCount();
-});
-
-// ===============================
-//  SKELETONS
-// ===============================
-function showSkeletons() {
-  const g = $('grid');
-  if (!g) return;
-  g.innerHTML = Array.from({ length: 6 }, () =>
-    `<div class="programme-card skeleton-card"><div class="card-header">
-      <div class="skel skel-tag"></div><div class="skel skel-title"></div><div class="skel skel-meta"></div>
-    </div></div>`
-  ).join('');
-}
-
-// ===============================
-//  DATA LOADING
-// ===============================
-async function loadData() {
-  if (currentAbort) currentAbort.abort();
-  currentAbort = new AbortController();
-
-  for (const u of ['./sgou_slm_data.json', './data.json']) {
+  get(key, defaultValue = null) {
     try {
-      const r = await fetch(u, { signal: currentAbort.signal });
-      if (!r.ok) continue;
-      const raw = await r.json();
-      if (!Array.isArray(raw)) throw new Error('Not an array');
-
-      allData = raw
-        .filter(p => p && p.programme_name && Array.isArray(p.semesters))
-        .map(p => ({
-          ...p,
-          programme_name: String(p.programme_name || '').trim(),
-          level: String(p.level || 'UG').trim(),
-          semesters: (p.semesters || []).map(s => ({
-            ...s,
-            semester: String(s.semester || '').trim(),
-            courses: Array.isArray(s.courses) ? s.courses : []
-          }))
-        }));
-
-      allData.sort((a, b) =>
-        a.programme_name.localeCompare(b.programme_name, 'en', { sensitivity: 'base' })
-      );
-
-      buildFilters();
-      renderProgrammes(allData);
-      updateStats(allData);
-
-      // Now that data exists, resolve whatever the URL says
-      Router.resolve();
-
-      currentAbort = null;
-      return;
-    } catch (err) {
-      if (err.name === 'AbortError') return;
+      const val = localStorage.getItem(key);
+      return val !== null ? val : defaultValue;
+    } catch {
+      return this._memoryStore.has(key) ? this._memoryStore.get(key) : defaultValue;
     }
   }
 
-  const g = $('grid');
-  if (g) g.innerHTML = `<div class="empty-state">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-    Could not load data. Place <code>sgou_slm_data.json</code> alongside this file.</div>`;
-}
-
-// ===============================
-//  THEME
-// ===============================
-function initTheme() {
-  const saved = safeGet('sgou-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
-  else if (window.matchMedia('(prefers-color-scheme:dark)').matches)
-    document.documentElement.setAttribute('data-theme', 'dark');
-  syncMeta();
-
-  $('themeToggle')?.addEventListener('click', () => {
-    const next = docTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    safeSet('sgou-theme', next);
-    syncMeta();
-    GA.trackTheme(next);
-  });
-
-  window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', e => {
-    if (!safeGet('sgou-theme')) {
-      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-      syncMeta();
+  set(key, value) {
+    try {
+      localStorage.setItem(key, String(value));
+    } catch {
+      this._memoryStore.set(key, String(value));
     }
-  });
-}
+  }
 
-function docTheme() { return document.documentElement.getAttribute('data-theme'); }
-
-function syncMeta() {
-  const m = $('meta[name="theme-color"]');
-  if (m) m.setAttribute('content', docTheme() === 'dark' ? '#080706' : '#1a1714');
-}
-
-// ===============================
-//  SEARCH
-// ===============================
-function initSearch() {
-  const input = $('searchInput');
-  const clear = $('searchClear');
-  if (!input) return;
-
-  let searchTimer, analyticsTimer;
-
-  input.addEventListener('input', () => {
-    hideRecent();
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
-      handleSearch();
-      syncUrlFromState();
-    }, 120);
-
-    clearTimeout(analyticsTimer);
-    const q = input.value.toLowerCase().trim();
-    if (q.length >= 2) {
-      analyticsTimer = setTimeout(() => {
-        GA.trackSearch(q, document.querySelectorAll('.search-result-item').length);
-      }, 1500);
+  getJSON(key, defaultValue = null) {
+    const raw = this.get(key);
+    if (!raw) return defaultValue;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return defaultValue;
     }
-    if (clear) clear.classList.toggle('visible', q.length > 0);
-  });
+  }
 
-  input.addEventListener('focus', () => { if (!input.value.trim()) showRecent(); });
-  input.addEventListener('blur', () => setTimeout(hideRecent, 200));
+  setJSON(key, value) {
+    try {
+      this.set(key, JSON.stringify(value));
+      return true;
+    } catch {
+      return false;
+    }
+  }
 
-  clear?.addEventListener('click', () => {
-    input.value = '';
-    clear.classList.remove('visible');
-    handleSearch();
-    syncUrlFromState();
-    input.focus();
-  });
+  remove(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      this._memoryStore.delete(key);
+    }
+  }
+
+  // --- Specialized Domain Storage Helpers ---
+
+  getTheme() {
+    return this.get('sgou-theme', null);
+  }
+
+  setTheme(theme) {
+    this.set('sgou-theme', theme);
+  }
+
+  getRecentSearches() {
+    return this.getJSON('sgou-recent', []);
+  }
+
+  addRecentSearch(query) {
+    if (!query || query.length < 2) return;
+    const list = this.getRecentSearches().filter(q => q.toLowerCase() !== query.toLowerCase());
+    list.unshift(query);
+    this.setJSON('sgou-recent', list.slice(0, 5));
+  }
+
+  clearRecentSearches() {
+    this.remove('sgou-recent');
+  }
+
+  getDownloadHistory() {
+    return this.getJSON('sgou-dl-history', []);
+  }
+
+  addDownloadHistory(entry) {
+    if (!entry || !entry.code) return;
+    const history = this.getDownloadHistory().filter(h => h.code !== entry.code);
+    history.unshift(entry);
+    this.setJSON('sgou-dl-history', history.slice(0, 25));
+  }
+
+  clearDownloadHistory() {
+    this.remove('sgou-dl-history');
+  }
+
+  getDownloadCount() {
+    return parseInt(this.get('sgou-dl-count', '0'), 10) || 0;
+  }
+
+  incrementDownloadCount() {
+    const next = this.getDownloadCount() + 1;
+    this.set('sgou-dl-count', String(next));
+    return next;
+  }
 }
 
-function handleSearch() {
-  const input = $('searchInput');
-  const clear = $('searchClear');
-  const q = (input?.value || '').toLowerCase().trim();
-  if (clear) clear.classList.toggle('visible', q.length > 0);
+const Storage = new StorageService();
 
-  let filtered = allData;
-  if (activeLevel !== 'ALL') filtered = filtered.filter(p => p.level === activeLevel);
+// ============================================================================
+//  3. TELEMETRY & ANALYTICS SERVICE
+// ============================================================================
 
-  const grid = $('grid');
-  const results = $('searchResults');
+/**
+ * Non-blocking Google Analytics 4 event dispatcher.
+ */
+class AnalyticsService {
+  event(name, params = {}) {
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', name, params);
+      }
+    } catch {
+      // Telemetry should never throw or break UI workflows
+    }
+  }
 
-  if (q.length > 0) {
-    isSearching = true;
-    if (grid) grid.style.display = 'none';
-    const vc = $('viewControls');
-    if (vc) vc.style.display = 'none';
-    if (!results) return;
-    results.classList.add('active');
+  trackSearch(term, resultCount) {
+    this.event('search', { search_term: term, custom_result_count: resultCount });
+  }
 
-    const matches = [];
-    const seen = new Set();
-    filtered.forEach(prog => {
-      const pHit = prog.programme_name.toLowerCase().includes(q);
-      prog.semesters.forEach(sem => {
-        sem.courses.forEach(c => {
-          const hit = pHit || c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q);
-          if (hit && !seen.has(c.code)) {
-            seen.add(c.code);
-            matches.push({ prog, sem, course: c });
-          }
+  trackDownload(courseCode, filename, method) {
+    this.event('file_download', {
+      file_name: filename,
+      file_extension: 'pdf',
+      custom_course_code: courseCode,
+      download_method: method
+    });
+  }
+
+  trackFilter(level) {
+    this.event('filter_change', { filter_type: 'level', filter_value: level });
+  }
+
+  trackTheme(theme) {
+    this.event('theme_change', { new_theme: theme });
+  }
+
+  trackShare(title, method) {
+    this.event('share', { method, content_type: 'pdf_link', item_id: title });
+  }
+
+  trackEngagement(action) {
+    this.event('engagement_action', { action });
+  }
+}
+
+const Analytics = new AnalyticsService();
+
+// ============================================================================
+//  4. CATALOG SERVICE (S.O.L.I.D: Precomputed O(1) Indexing)
+// ============================================================================
+
+/**
+ * Manages syllabus data retrieval, schema validation, and high-speed lookups.
+ */
+class CatalogService {
+  constructor() {
+    this.programmes = [];
+    this.courseMap = new Map();     // O(1) code lookup
+    this.searchIndex = [];          // Pre-flattened tokenized array
+    this.levels = ['ALL'];
+    this.isLoaded = false;
+  }
+
+  async load() {
+    const sources = ['./sgou_slm_data.json', './data.json'];
+    let raw = null;
+
+    for (const url of sources) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const json = await res.json();
+        if (Array.isArray(json) && json.length > 0) {
+          raw = json;
+          break;
+        }
+      } catch {
+        // Fallback to next source URL
+      }
+    }
+
+    if (!raw) {
+      throw new Error('Failed to load syllabus database from all endpoints');
+    }
+
+    this._process(raw);
+    this.isLoaded = true;
+    return this.programmes;
+  }
+
+  _process(raw) {
+    this.programmes = [];
+    this.courseMap.clear();
+    this.searchIndex = [];
+    const levelSet = new Set();
+
+    // Sanitize and normalize
+    raw.forEach(p => {
+      if (!p || !p.programme_name || !Array.isArray(p.semesters)) return;
+
+      const progName = String(p.programme_name || '').trim();
+      const level = String(p.level || 'UG').trim().toUpperCase();
+      levelSet.add(level);
+
+      const sanitizedSemesters = (p.semesters || []).map(s => ({
+        semester: String(s.semester || '').trim(),
+        courses: Array.isArray(s.courses) ? s.courses.map(c => ({
+          code: String(c.code || '').trim(),
+          name: String(c.name || '').trim(),
+          pdf_url: String(c.pdf_url || '').trim()
+        })) : []
+      }));
+
+      const progRecord = {
+        programme_name: progName,
+        level,
+        semesters: sanitizedSemesters
+      };
+
+      this.programmes.push(progRecord);
+
+      // Pre-compute O(1) course map and search tokens
+      sanitizedSemesters.forEach(sem => {
+        sem.courses.forEach(course => {
+          if (!course.code) return;
+
+          const detail = {
+            course,
+            prog: progRecord,
+            sem
+          };
+
+          // Map for fast deep-link lookups
+          this.courseMap.set(course.code.toLowerCase(), detail);
+
+          // Flattened search record
+          this.searchIndex.push({
+            code: course.code,
+            name: course.name,
+            pdf_url: course.pdf_url,
+            progName: progRecord.programme_name,
+            level: progRecord.level,
+            semName: sem.semester,
+            // Precomputed search tokens for sub-millisecond query evaluation
+            tokens: `${course.code} ${course.name} ${progRecord.programme_name} ${progRecord.level} ${sem.semester}`.toLowerCase()
+          });
         });
       });
     });
 
-    matches.sort((a, b) =>
-      a.course.name.localeCompare(b.course.name, 'en', { sensitivity: 'base' })
+    // Sort programmes alphabetically
+    this.programmes.sort((a, b) =>
+      a.programme_name.localeCompare(b.programme_name, 'en', { sensitivity: 'base' })
     );
 
-    if (!matches.length) {
-      results.innerHTML = `<div class="search-results-header">No results</div>
-        <div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-        No courses match &ldquo;${esc(q)}&rdquo;</div>`;
-    } else {
-      saveRecent(q);
-      results.innerHTML =
-        `<div class="search-results-header">${matches.length} course${matches.length !== 1 ? 's' : ''} found</div>` +
-        matches.map((m, i) => {
-          const lv = m.prog.level;
-          const cls = lv === 'PG' ? 'pg' : lv === 'UG' ? 'ug' : 'fyug';
-          const label = lv === 'FYUG' ? 'FYUG' : lv;
-          const fn = sanitize(m.course.code + '_' + m.course.name) + '.pdf';
-          const vh = buildViewerHash(m.course.pdf_url, m.course.name, m.course.code, m.prog.programme_name, m.prog.level);
-          return `<div class="search-result-item" data-idx="${i}">
-  <span class="search-result-level ${cls}">${label}</span>
-  <div class="search-result-body">
-    <div class="search-result-programme">${hl(m.prog.programme_name, q)} &middot; ${m.sem.semester}</div>
-    <div class="search-result-course-name">${hl(m.course.name, q)}</div>
-    <span class="search-result-code" title="Click to copy code" data-code="${ea(m.course.code)}">${hl(m.course.code, q)}</span>
-  </div>
-  <div class="search-result-actions">
-    <button class="btn-share" data-url="${ea(m.course.pdf_url)}" data-name="${ea(m.course.name)}" aria-label="Share">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-    </button>
-    <a class="btn-view" href="#${ea(vh)}" title="View PDF">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      View</a>
-    <a class="btn-download" href="${ea(m.course.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      PDF</a>
-  </div>
-</div>`;
-        }).join('');
+    this.levels = ['ALL', ...Array.from(levelSet).sort()];
+  }
 
-      animateSearchResults();
-    }
+  getCourse(code) {
+    if (!code) return null;
+    return this.courseMap.get(code.toLowerCase().trim()) || null;
+  }
 
-    const st = $('stats');
-    if (st) st.textContent = matches.length
-      ? `${matches.length} matching course${matches.length !== 1 ? 's' : ''}`
-      : 'No matches';
-  } else {
-    isSearching = false;
-    if (results) { results.classList.remove('active'); results.innerHTML = ''; }
-    const vc = $('viewControls');
-    if (vc) vc.style.display = '';
-    if (grid) { grid.style.display = ''; renderProgrammes(filtered); }
-    updateStats(filtered);
+  filterByLevel(level) {
+    if (!level || level === 'ALL') return this.programmes;
+    return this.programmes.filter(p => p.level === level);
+  }
+
+  getTotalCourses(programmesList = this.programmes) {
+    return programmesList.reduce(
+      (acc, p) => acc + p.semesters.reduce((sAcc, s) => sAcc + s.courses.length, 0),
+      0
+    );
   }
 }
 
-// ===============================
-//  SEARCH RESULTS ANIMATION
-// ===============================
-function animateSearchResults() {
-  if (searchObserver) { searchObserver.disconnect(); searchObserver = null; }
-  const items = document.querySelectorAll('.search-result-item');
-  if (!items.length) return;
+const Catalog = new CatalogService();
 
-  if ('IntersectionObserver' in window) {
-    let stagger = 0;
-    searchObserver = new IntersectionObserver((entries) => {
+// ============================================================================
+//  5. SEARCH ENGINE (S.O.L.I.D: Chunked Virtualization)
+// ============================================================================
+
+/**
+ * Evaluates queries against precomputed search indices with chunked DOM rendering
+ * to guarantee 60 FPS typing without layout freezes.
+ */
+class SearchEngine {
+  constructor(catalog) {
+    this.catalog = catalog;
+    this.currentMatches = [];
+    this.chunkSize = 25;
+    this.renderedCount = 0;
+  }
+
+  /**
+   * Fast multi-token matching over pre-indexed courses.
+   * @param {string} query - Raw search query
+   * @param {string} levelFilter - Active category ('ALL', 'UG', 'PG', etc.)
+   * @returns {Array} Matching course records
+   */
+  search(query, levelFilter = 'ALL') {
+    const q = (query || '').toLowerCase().trim();
+    if (!q) return [];
+
+    const tokens = q.split(/\s+/).filter(Boolean);
+    const results = [];
+    const seenCodes = new Set();
+
+    for (let i = 0; i < this.catalog.searchIndex.length; i++) {
+      const item = this.catalog.searchIndex[i];
+
+      // Category check
+      if (levelFilter !== 'ALL' && item.level !== levelFilter) {
+        continue;
+      }
+
+      // Check if all search tokens match
+      let matchesAll = true;
+      for (let j = 0; j < tokens.length; j++) {
+        if (!item.tokens.includes(tokens[j])) {
+          matchesAll = false;
+          break;
+        }
+      }
+
+      if (matchesAll && !seenCodes.has(item.code)) {
+        seenCodes.add(item.code);
+        results.push(item);
+      }
+    }
+
+    // Sort by name
+    results.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+
+    this.currentMatches = results;
+    this.renderedCount = 0;
+    return results;
+  }
+
+  getNextChunk() {
+    const chunk = this.currentMatches.slice(this.renderedCount, this.renderedCount + this.chunkSize);
+    this.renderedCount += chunk.length;
+    return {
+      items: chunk,
+      hasMore: this.renderedCount < this.currentMatches.length,
+      total: this.currentMatches.length
+    };
+  }
+}
+
+const Search = new SearchEngine(Catalog);
+
+// ============================================================================
+//  6. DOWNLOAD & STREAMING MANAGER (S.O.L.I.D: Strategy Pattern)
+// ============================================================================
+
+/**
+ * Handles Edge-streamed downloads, File System Access API folder selection,
+ * live progress computation, and offline fallbacks.
+ */
+class DownloadManager {
+  constructor() {
+    this.activeItem = null;
+    this.abortController = null;
+    this.lastBlobUrl = null;
+  }
+
+  openModal(item) {
+    if (!item || !item.url) return;
+    this.activeItem = item;
+
+    const modal = $('downloadModal');
+    if (!modal) return;
+
+    const codeEl = $('dlModalCode');
+    const nameEl = $('dlModalName');
+    const badgeEl = $('dlModalBadge');
+    const inputEl = $('dlFilenameInput');
+    const chooseBtn = $('dlChooseFolderBtn');
+    const startBtn = $('dlStartBtn');
+    const destTitle = $('dlDestTitle');
+    const destDesc = $('dlDestDesc');
+    const destIcon = $('dlDestIcon');
+
+    const cleanDefault = (item.code ? item.code + '_' : '') + sanitize(item.name || 'document');
+    if (codeEl) codeEl.textContent = item.code || 'Course SLM';
+    if (nameEl) nameEl.textContent = item.name || 'Course Material';
+    if (inputEl) inputEl.value = cleanDefault;
+
+    if (badgeEl) {
+      const lv = item.level || 'UG';
+      badgeEl.textContent = lv === 'FYUG' ? 'FYUG' : lv;
+      badgeEl.className = 'dl-badge ' + (lv === 'PG' ? 'pg' : lv === 'UG' ? 'ug' : 'fyug');
+    }
+
+    // OS-tailored storage instructions
+    if (IS_IOS) {
+      if (destTitle) destTitle.textContent = 'Where will this file go? (iPhone / iPad)';
+      if (destDesc) destDesc.textContent = "Saves to 'Files' app > Downloads (or tap Share to pick any folder)";
+      if (destIcon) destIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>';
+      if (chooseBtn) chooseBtn.style.display = 'none';
+      if (startBtn) startBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg><span>Open &amp; Save PDF</span>';
+    } else if (IS_ANDROID) {
+      if (destTitle) destTitle.textContent = 'Where will this file go? (Android)';
+      if (destDesc) destDesc.textContent = 'Internal Storage > Downloads folder';
+      if (destIcon) destIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>';
+      if (chooseBtn) chooseBtn.style.display = 'showSaveFilePicker' in window ? 'inline-flex' : 'none';
+      if (startBtn) startBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download PDF</span>';
+    } else {
+      if (destTitle) destTitle.textContent = 'Where will this file go? (PC / Mac)';
+      if (destDesc) destDesc.textContent = 'System Downloads folder (or choose folder below)';
+      if (destIcon) destIcon.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+      if (chooseBtn) chooseBtn.style.display = 'showSaveFilePicker' in window ? 'inline-flex' : 'none';
+      if (startBtn) startBtn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>Download PDF</span>';
+    }
+
+    modal.classList.add('visible');
+    if (inputEl) {
+      setTimeout(() => { inputEl.focus(); inputEl.select(); }, 120);
+    }
+  }
+
+  closeModal() {
+    $('downloadModal')?.classList.remove('visible');
+  }
+
+  async startDownload(usePicker = false) {
+    if (!this.activeItem) return;
+    const item = this.activeItem;
+    const inputEl = $('dlFilenameInput');
+    let cleanName = sanitize((inputEl?.value || '').trim());
+    if (!cleanName) cleanName = (item.code ? item.code + '_' : '') + sanitize(item.name || 'course');
+    const fullFilename = cleanName + '.pdf';
+
+    this.closeModal();
+
+    if (!navigator.onLine) {
+      UI.showToast('You are offline. Connect to internet to download course PDFs.');
+      return;
+    }
+
+    copyToClipboard(fullFilename);
+
+    // iOS strategy
+    if (IS_IOS) {
+      window.open(item.url, '_blank', 'noopener');
+      UI.showToast("iPhone: Tap Share icon (\u2191) at bottom & choose 'Save to Files'", 4500);
+      Storage.addDownloadHistory({
+        code: item.code || '',
+        name: item.name || 'Course Material',
+        prog: item.prog || '',
+        filename: fullFilename,
+        size: '',
+        url: item.url,
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      Storage.incrementDownloadCount();
+      UI.updateDownloadStats();
+      Analytics.trackDownload(item.code || 'unknown', fullFilename, 'ios_safari');
+      return;
+    }
+
+    // Modern File System Access API strategy (Desktop Chromium)
+    let writable = null;
+    if (usePicker && 'showSaveFilePicker' in window) {
+      try {
+        const fileHandle = await window.showSaveFilePicker({
+          suggestedName: fullFilename,
+          types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }]
+        });
+        writable = await fileHandle.createWritable();
+      } catch (err) {
+        if (err.name === 'AbortError') return; // User cancelled dialog
+        UI.showToast('Could not access folder, saving to default Downloads.');
+      }
+    }
+
+    // Launch progress card
+    this._showProgressCard(fullFilename);
+
+    this.abortController = new AbortController();
+    const startTime = Date.now();
+    let receivedBytes = 0;
+    const chunks = [];
+
+    try {
+      const fetchUrl = '/api/download?url=' + encodeURIComponent(item.url) + '&filename=' + encodeURIComponent(fullFilename);
+      const response = await fetch(fetchUrl, { signal: this.abortController.signal });
+
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+
+      const contentLength = +response.headers.get('content-length') || 0;
+      const reader = response.body.getReader();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        if (writable) {
+          await writable.write(value);
+        } else {
+          chunks.push(value);
+        }
+
+        receivedBytes += value.length;
+        this._updateProgressMetrics(receivedBytes, contentLength, startTime);
+      }
+
+      if (writable) {
+        await writable.close();
+        this.lastBlobUrl = null;
+      } else {
+        const blob = new Blob(chunks, { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(blob);
+        this.lastBlobUrl = blobUrl;
+        this._triggerSave(blobUrl, fullFilename);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+      }
+
+      this._showSuccessState(fullFilename, receivedBytes, writable);
+
+      Storage.addDownloadHistory({
+        code: item.code || '',
+        name: item.name || 'Course PDF',
+        prog: item.prog || '',
+        filename: fullFilename,
+        size: (receivedBytes / (1024 * 1024)).toFixed(1) + ' MB',
+        url: item.url,
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      Storage.incrementDownloadCount();
+      UI.updateDownloadStats();
+      Analytics.trackDownload(item.code || 'unknown', fullFilename, writable ? 'save_picker' : 'tracked_edge');
+
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        UI.showToast('Download cancelled.');
+        $('downloadProgressCard')?.classList.remove('visible');
+      } else {
+        // Direct stream fallback
+        this._triggerSave(item.url, fullFilename);
+        if (IS_LOCAL) {
+          UI.showToast('Local dev notice: Run node dev_server.js to test Edge proxy locally. Direct file opened.', 4000);
+        } else {
+          UI.showToast('Direct download initiated.');
+        }
+        $('downloadProgressCard')?.classList.remove('visible');
+      }
+    } finally {
+      this.abortController = null;
+    }
+  }
+
+  cancelDownload() {
+    if (this.abortController) {
+      this.abortController.abort();
+    }
+  }
+
+  _showProgressCard(filename) {
+    const card = $('downloadProgressCard');
+    if (!card) return;
+
+    $('dpFilename').textContent = filename;
+    $('dpStatus').textContent = 'Downloading PDF\u2026';
+    $('dpBarFill').style.width = '0%';
+    $('dpNumbers').textContent = 'Connecting\u2026';
+    $('dpPercent').textContent = '0%';
+    $('dpSuccessActions').style.display = 'none';
+    $('dpCancelBtn').style.display = 'flex';
+    $('dpIcon').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" opacity=".2"/><path d="M12 2a10 10 0 0 1 10 10" class="spin-path"/></svg>`;
+
+    card.classList.add('visible');
+  }
+
+  _updateProgressMetrics(receivedBytes, contentLength, startTime) {
+    const elapsedSec = (Date.now() - startTime) / 1000;
+    const speedMB = elapsedSec > 0 ? (receivedBytes / (1024 * 1024) / elapsedSec).toFixed(1) : '0';
+    const dpBarFill = $('dpBarFill');
+    const dpPercent = $('dpPercent');
+    const dpNumbers = $('dpNumbers');
+
+    if (contentLength > 0) {
+      const pct = Math.min(Math.round((receivedBytes / contentLength) * 100), 100);
+      if (dpBarFill) dpBarFill.style.width = pct + '%';
+      if (dpPercent) dpPercent.textContent = pct + '%';
+      if (dpNumbers) {
+        dpNumbers.textContent = `${(receivedBytes / (1024 * 1024)).toFixed(1)} MB / ${(contentLength / (1024 * 1024)).toFixed(1)} MB (${speedMB} MB/s)`;
+      }
+    } else {
+      if (dpBarFill) dpBarFill.style.width = '100%';
+      if (dpPercent) dpPercent.textContent = 'Streaming';
+      if (dpNumbers) {
+        dpNumbers.textContent = `${(receivedBytes / (1024 * 1024)).toFixed(1)} MB downloaded (${speedMB} MB/s)`;
+      }
+    }
+  }
+
+  _showSuccessState(filename, receivedBytes, usedPicker) {
+    $('dpBarFill').style.width = '100%';
+    $('dpPercent').textContent = '100%';
+    $('dpStatus').textContent = usedPicker ? 'Saved to chosen folder!' : 'Download Complete!';
+    $('dpNumbers').textContent = `${(receivedBytes / (1024 * 1024)).toFixed(1)} MB saved`;
+    $('dpIcon').innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    $('dpCancelBtn').style.display = 'none';
+    $('dpSuccessActions').style.display = 'flex';
+    UI.showToast(`Saved: ${filename}`);
+  }
+
+  _triggerSave(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { if (a.parentNode) a.remove(); }, 200);
+  }
+}
+
+const Downloader = new DownloadManager();
+
+// ============================================================================
+//  7. ROUTER SERVICE (S.O.L.I.D: Pure URL-Driven State)
+// ============================================================================
+
+/**
+ * Hash-based URL Router managing deep-links, browser history, and view states.
+ */
+class RouterService {
+  constructor() {
+    this.isResolving = false;
+  }
+
+  init() {
+    window.addEventListener('popstate', () => this.resolve());
+
+    const hash = window.location.hash.slice(1);
+    if (!hash || hash === '/') return;
+
+    // Standard SPA routes (#/view/CODE, #/search?q=...)
+    if (hash.startsWith('/')) {
+      history.replaceState({ path: '/' }, '', '#/');
+      history.pushState({ path: hash }, '', '#' + hash);
+      return;
+    }
+
+    // Bare course code deep link (#B21EG01LC)
+    if (/^[A-Z]/.test(hash)) {
+      history.replaceState({ path: '/' }, '', '#/');
+      history.pushState({ path: hash }, '', '#' + hash);
+    }
+  }
+
+  navigate(path) {
+    const fullHash = '#' + path;
+    if (window.location.hash === fullHash) return;
+    history.pushState({ path }, '', fullHash);
+    this.resolve();
+  }
+
+  updateUrlSilently(path) {
+    const fullHash = '#' + path;
+    if (window.location.hash === fullHash) return;
+    history.replaceState({ path }, '', fullHash);
+  }
+
+  resolve() {
+    if (!Catalog.isLoaded) return;
+    this.isResolving = true;
+
+    const raw = window.location.hash.slice(1);
+
+    if (!raw || raw === '/') {
+      UI.hideViewerPanel();
+      UI.restoreState('', 'ALL');
+      this.isResolving = false;
+      return;
+    }
+
+    const qIndex = raw.indexOf('?');
+    const path = qIndex >= 0 ? raw.slice(0, qIndex) : raw;
+    const params = new URLSearchParams(qIndex >= 0 ? raw.slice(qIndex + 1) : '');
+
+    // Course Viewer Route: #/view/CODE
+    if (path.startsWith('/view/')) {
+      const code = decodeURIComponent(path.split('/')[2] || '');
+      const item = Catalog.getCourse(code);
+      if (item) {
+        UI.showViewerPanel(item.course.pdf_url, item.course.name, item.course.code, item.prog.programme_name, item.prog.level);
+      } else {
+        UI.showViewerPanel(params.get('url') || '', params.get('name') || 'Course PDF', code, params.get('prog') || '', params.get('level') || 'UG');
+      }
+      this.isResolving = false;
+      return;
+    }
+
+    UI.hideViewerPanel();
+
+    if (path === '/search') {
+      UI.restoreState(params.get('q') || '', params.get('level') || UI.activeLevel);
+    } else if (path.startsWith('/filter/')) {
+      const level = decodeURIComponent(path.split('/')[2] || 'ALL');
+      UI.restoreState($('searchInput')?.value || '', level);
+    } else if (/^[A-Z]/.test(path) && !path.includes('/')) {
+      // Bare course code support
+      const code = decodeURIComponent(path);
+      const item = Catalog.getCourse(code);
+      if (item) {
+        UI.showViewerPanel(item.course.pdf_url, item.course.name, item.course.code, item.prog.programme_name, item.prog.level);
+        this.isResolving = false;
+        return;
+      }
+      UI.restoreState('', 'ALL');
+    } else {
+      UI.restoreState('', 'ALL');
+    }
+
+    this.isResolving = false;
+  }
+}
+
+const Router = new RouterService();
+
+// ============================================================================
+//  8. UI CONTROLLER (S.O.L.I.D: DOM & Interaction Orchestration)
+// ============================================================================
+
+/**
+ * Manages view rendering, modal lifecycle, theme switching, and DOM delegation.
+ */
+class UIController {
+  constructor() {
+    this.activeLevel = 'ALL';
+    this.toastTimer = null;
+    this.navLock = false;
+    this.revealObserver = null;
+    this.searchTimer = null;
+    this.analyticsTimer = null;
+  }
+
+  init() {
+    this.initTheme();
+    this.showSkeletons();
+    this.initDelegation();
+    this.initKeyboard();
+    this.initSearch();
+    this.initStickyShadow();
+    this.initBackToTop();
+    this.initOfflineDetection();
+    this.initInstallPrompt();
+    this.updateDownloadStats();
+  }
+
+  // --- Theme Management ---
+
+  initTheme() {
+    const saved = Storage.getTheme();
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    this.syncMeta();
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (!Storage.getTheme()) {
+        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+        this.syncMeta();
+      }
+    });
+  }
+
+  toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    Storage.setTheme(next);
+    this.syncMeta();
+    Analytics.trackTheme(next);
+  }
+
+  syncMeta() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const meta = $('meta[name="theme-color"]');
+    if (meta) {
+      meta.setAttribute('content', isDark ? '#13110f' : '#181512');
+    }
+  }
+
+  // --- Feedback & Notifications ---
+
+  showToast(message, durationMs = 2400) {
+    const toast = $('toast');
+    if (!toast) return;
+    clearTimeout(this.toastTimer);
+    toast.textContent = message;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => toast.classList.add('visible'));
+    });
+    this.toastTimer = setTimeout(() => toast.classList.remove('visible'), durationMs);
+  }
+
+  showSkeletons() {
+    const grid = $('grid');
+    if (!grid) return;
+    grid.innerHTML = Array.from({ length: 6 }, () => `
+      <div class="programme-card skeleton-card">
+        <div class="card-header">
+          <div class="skel skel-tag"></div>
+          <div class="skel skel-title"></div>
+          <div class="skel skel-meta"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // --- Search & Filtering ---
+
+  initSearch() {
+    const input = $('searchInput');
+    const clear = $('searchClear');
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+      this.hideRecentSearches();
+      clearTimeout(this.searchTimer);
+      this.searchTimer = setTimeout(() => {
+        this.executeSearch();
+        this.syncUrlFromState();
+      }, 120);
+
+      clearTimeout(this.analyticsTimer);
+      const q = input.value.trim().toLowerCase();
+      if (q.length >= 2) {
+        this.analyticsTimer = setTimeout(() => {
+          Analytics.trackSearch(q, document.querySelectorAll('.search-result-item').length);
+        }, 1500);
+      }
+      if (clear) clear.classList.toggle('visible', q.length > 0);
+    });
+
+    input.addEventListener('focus', () => {
+      if (!input.value.trim()) this.showRecentSearches();
+    });
+
+    input.addEventListener('blur', () => {
+      setTimeout(() => this.hideRecentSearches(), 200);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const q = input.value.trim();
+        if (q.length >= 2) {
+          Storage.addRecentSearch(q);
+          input.blur();
+        }
+      }
+    });
+
+    clear?.addEventListener('click', () => {
+      input.value = '';
+      clear.classList.remove('visible');
+      this.executeSearch();
+      this.syncUrlFromState();
+      input.focus();
+    });
+  }
+
+  executeSearch() {
+    const input = $('searchInput');
+    const q = (input?.value || '').trim();
+    const grid = $('grid');
+    const results = $('searchResults');
+    const viewControls = $('viewControls');
+
+    if (q.length > 0) {
+      if (grid) grid.style.display = 'none';
+      if (viewControls) viewControls.style.display = 'none';
+      if (!results) return;
+      results.classList.add('active');
+
+      const matches = Search.search(q, this.activeLevel);
+
+      if (!matches.length) {
+        results.innerHTML = `
+          <div class="search-results-header">No results</div>
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+            No courses match &ldquo;${esc(q)}&rdquo;
+          </div>`;
+      } else {
+        const chunk = Search.getNextChunk();
+        results.innerHTML = `
+          <div class="search-results-header">${matches.length} course${matches.length !== 1 ? 's' : ''} found</div>
+          <div id="searchItemsContainer">
+            ${this._renderSearchItemsHTML(chunk.items, q)}
+          </div>
+          ${chunk.hasMore ? `<button id="loadMoreSearchBtn" class="pill" style="margin:1rem auto;display:flex">Show more results (${matches.length - chunk.items.length} remaining)</button>` : ''}
+        `;
+        this.animateSearchResults();
+      }
+
+      const stats = $('stats');
+      if (stats) {
+        stats.textContent = matches.length ? `${matches.length} matching course${matches.length !== 1 ? 's' : ''}` : 'No matches';
+      }
+    } else {
+      if (results) {
+        results.classList.remove('active');
+        results.innerHTML = '';
+      }
+      if (viewControls) viewControls.style.display = '';
+      const filteredProgrammes = Catalog.filterByLevel(this.activeLevel);
+      if (grid) {
+        grid.style.display = '';
+        this.renderProgrammes(filteredProgrammes);
+      }
+      this.updateStats(filteredProgrammes);
+    }
+  }
+
+  _renderSearchItemsHTML(items, query) {
+    return items.map((item, idx) => {
+      const cls = item.level === 'PG' ? 'pg' : item.level === 'UG' ? 'ug' : 'fyug';
+      const label = item.level;
+      const fn = sanitize(item.code + '_' + item.name) + '.pdf';
+      const vh = '/view/' + encodeURIComponent(item.code || item.name);
+
+      return `
+        <div class="search-result-item" data-idx="${idx}">
+          <span class="search-result-level ${cls}">${label}</span>
+          <div class="search-result-body">
+            <div class="search-result-programme">${hl(item.progName, query)} &middot; ${esc(item.semName)}</div>
+            <div class="search-result-course-name">${hl(item.name, query)}</div>
+            <span class="search-result-code" title="Click to copy code" data-code="${ea(item.code)}">${hl(item.code, query)}</span>
+          </div>
+          <div class="search-result-actions">
+            <button class="btn-share" data-url="${ea(item.pdf_url)}" data-name="${ea(item.name)}" aria-label="Share">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+            <a class="btn-view" href="#${ea(vh)}" title="View PDF">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              View
+            </a>
+            <a class="btn-download" href="${ea(item.pdf_url)}" data-fname="${ea(fn)}" data-code="${ea(item.code)}" data-name="${ea(item.name)}" data-prog="${ea(item.progName)}" data-level="${ea(item.level)}" target="_blank" rel="noopener noreferrer">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              PDF
+            </a>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  loadRemainingSearchResults() {
+    const chunk = Search.getNextChunk();
+    const container = $('searchItemsContainer');
+    const loadBtn = $('loadMoreSearchBtn');
+    if (!container) return;
+
+    const query = $('searchInput')?.value?.trim() || '';
+    container.insertAdjacentHTML('beforeend', this._renderSearchItemsHTML(chunk.items, query));
+
+    if (!chunk.hasMore && loadBtn) {
+      loadBtn.remove();
+    } else if (loadBtn) {
+      loadBtn.textContent = `Show more results (${chunk.total - Search.renderedCount} remaining)`;
+    }
+
+    this.animateSearchResults();
+  }
+
+  animateSearchResults() {
+    const items = document.querySelectorAll('.search-result-item:not(.animate-in)');
+    if (!items.length) return;
+
+    if ('IntersectionObserver' in window) {
+      let delay = 0;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target;
+            requestAnimationFrame(() => {
+              el.style.transitionDelay = delay + 'ms';
+              el.classList.add('animate-in');
+            });
+            delay = Math.min(delay + 25, 200);
+            observer.unobserve(el);
+          }
+        });
+      }, { threshold: 0.05 });
+      items.forEach(el => observer.observe(el));
+    } else {
+      items.forEach(el => el.classList.add('animate-in'));
+    }
+  }
+
+  // --- Recent Searches ---
+
+  showRecentSearches() {
+    const container = $('recentSearches');
+    if (!container) return;
+    const items = Storage.getRecentSearches();
+    if (!items.length) {
+      container.classList.remove('visible');
+      return;
+    }
+    container.innerHTML = '<span class="recent-label">Recent:</span>' +
+      items.map(q => `<button class="recent-pill" data-q="${ea(q)}">${esc(q)}</button>`).join('') +
+      '<button class="recent-clear-btn" id="clearRecentBtn" title="Clear recent searches">&times; Clear</button>';
+    container.classList.add('visible');
+  }
+
+  hideRecentSearches() {
+    $('recentSearches')?.classList.remove('visible');
+  }
+
+  // --- Filter Category Pills ---
+
+  buildFilters() {
+    const container = $('filters');
+    if (!container) return;
+    container.innerHTML = '';
+
+    Catalog.levels.forEach(lv => {
+      const count = lv === 'ALL'
+        ? Catalog.programmes.length
+        : Catalog.programmes.filter(p => p.level === lv).length;
+
+      const pill = document.createElement('button');
+      pill.className = 'pill' + (this.activeLevel === lv ? ' active' : '');
+      pill.dataset.level = lv;
+      pill.innerHTML = `${lv === 'ALL' ? 'All' : lv} <span class="pill-count">${count}</span>`;
+      container.appendChild(pill);
+    });
+  }
+
+  // --- Programme Cards Rendering ---
+
+  renderProgrammes(programmesList, query = '') {
+    const grid = $('grid');
+    if (!grid) return;
+
+    if (!programmesList.length) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          No programmes found matching category.
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = programmesList.map((prog, idx) => {
+      const sems = prog.semesters;
+      const totalCourses = sems.reduce((sum, s) => sum + s.courses.length, 0);
+
+      return `
+        <div class="programme-card" data-level="${ea(prog.level)}" data-idx="${idx}" role="listitem">
+          <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
+            <span class="level-tag">${esc(prog.level)}</span>
+            <h2>${hl(prog.programme_name, query)}</h2>
+            <div class="meta">${sems.length} sem &middot; ${totalCourses} courses</div>
+            <span class="toggle-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </div>
+          <div class="card-body" id="cb-${idx}" aria-hidden="true">
+            <div class="semester-tabs" role="tablist">
+              ${sems.map((s, si) => `
+                <button class="sem-tab${si === 0 ? ' active' : ''}" data-content="p${idx}s${si}" role="tab" aria-selected="${si === 0}">
+                  ${esc(s.semester)} <span class="tab-count">${s.courses.length}</span>
+                </button>
+              `).join('')}
+            </div>
+            ${sems.map((s, si) => `
+              <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
+                ${s.courses.map(course => {
+        const fn = sanitize(course.code + '_' + course.name) + '.pdf';
+        const vh = '/view/' + encodeURIComponent(course.code || course.name);
+        return `
+                    <div class="course-item">
+                      <span class="course-code">${esc(course.code)}</span>
+                      <div class="course-info">
+                        <div class="course-name">${hl(course.name, query)}</div>
+                        <div class="course-actions">
+                          <a class="btn-view" href="#${ea(vh)}" title="View PDF">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            View
+                          </a>
+                          <a class="course-link" href="${ea(course.pdf_url)}" data-fname="${ea(fn)}" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            Download
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+      }).join('')}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.initScrollReveal();
+  }
+
+  initScrollReveal() {
+    if (this.revealObserver) {
+      this.revealObserver.disconnect();
+      this.revealObserver = null;
+    }
+    document.body.classList.add('js-reveal');
+
+    if (!('IntersectionObserver' in window)) {
+      document.querySelectorAll('.programme-card').forEach(c => c.classList.add('revealed'));
+      return;
+    }
+
+    this.revealObserver = new IntersectionObserver((entries) => {
+      let delay = 0;
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          const el = entry.target;
-          const d = stagger;
-          stagger = Math.min(stagger + 35, 250);
-          requestAnimationFrame(() => { el.style.transitionDelay = d + 'ms'; el.classList.add('animate-in'); });
-          searchObserver.unobserve(el);
+          const card = entry.target;
+          requestAnimationFrame(() => {
+            card.style.transitionDelay = delay + 'ms';
+            card.classList.add('revealed');
+            const onEnd = () => {
+              card.style.transitionDelay = '0ms';
+              card.classList.add('reveal-done');
+              card.removeEventListener('transitionend', onEnd);
+            };
+            card.addEventListener('transitionend', onEnd);
+          });
+          delay = Math.min(delay + 40, 240);
+          this.revealObserver.unobserve(card);
         }
       });
-    }, { threshold: 0.05, rootMargin: '0px 0px -10px 0px' });
-    items.forEach(item => searchObserver.observe(item));
-  } else {
-    items.forEach(item => item.classList.add('animate-in'));
+    }, { threshold: 0.03, rootMargin: '0px 0px -30px 0px' });
+
+    document.querySelectorAll('.programme-card:not(.revealed)').forEach(el => this.revealObserver.observe(el));
   }
-}
 
-// ===============================
-//  RECENT SEARCHES
-// ===============================
-function saveRecent(q) {
-  if (!q || q.length < 2) return;
-  try {
-    let r = JSON.parse(localStorage.getItem('sgou-recent') || '[]');
-    r = r.filter(x => x !== q); r.unshift(q);
-    localStorage.setItem('sgou-recent', JSON.stringify(r.slice(0, 5)));
-  } catch (_) { }
-}
-
-function showRecent() {
-  const el = $('recentSearches');
-  if (!el) return;
-  try {
-    const items = JSON.parse(localStorage.getItem('sgou-recent') || '[]');
-    if (!items.length) { el.classList.remove('visible'); return; }
-    el.innerHTML = '<span class="recent-label">Recent:</span>' +
-      items.map(q => `<button class="recent-pill" data-q="${ea(q)}">${esc(q)}</button>`).join('');
-    el.classList.add('visible');
-  } catch (_) { }
-}
-
-function hideRecent() { $('recentSearches')?.classList.remove('visible'); }
-
-// ===============================
-//  FILTERS
-// ===============================
-function buildFilters() {
-  const levels = [...new Set(allData.map(p => p.level))].sort();
-  const el = $('filters');
-  if (!el) return;
-  el.innerHTML = '';
-  el.appendChild(mkPill('All', 'ALL', activeLevel === 'ALL', allData.length));
-  levels.forEach(lv => {
-    el.appendChild(mkPill(lv, lv, activeLevel === lv, allData.filter(p => p.level === lv).length));
-  });
-}
-
-function mkPill(label, level, active, count) {
-  const b = document.createElement('button');
-  b.className = 'pill' + (active ? ' active' : '');
-  b.dataset.level = level;
-  b.innerHTML = `${label} <span class="pill-count">${count}</span>`;
-  return b;
-}
-
-// ===============================
-//  EVENT DELEGATION
-// ===============================
-function initDelegation() {
-  document.addEventListener('click', e => {
-
-    // ---- Viewer panel buttons (check FIRST, before anything else) ----
-    if (e.target.closest('#viewerBack')) {
-      if (viewerNavLock) return;
-      viewerNavLock = true;
-      history.back();                    // popstate → resolve → hideViewerPanel
-      setTimeout(() => { viewerNavLock = false; }, 600);
-      return;
-    }
-    if (e.target.closest('#viewerPanelDownload')) { viewerDownload(); return; }
-    if (e.target.closest('#viewerPanelShare')) { viewerShare(); return; }
-
-    // ---- Hash-based nav links ----
-    const navLink = e.target.closest('a[href^="#/"]');
-    if (navLink) {
-      e.preventDefault();
-      Router.navigate(navLink.getAttribute('href').slice(1));
-      return;
-    }
-
-    // ---- Card header toggle ----
-    const hdr = e.target.closest('.card-header');
-    if (hdr?.closest('.programme-card')) {
-      const card = hdr.closest('.programme-card');
-      if (!card.classList.contains('open'))
-        GA.trackCardOpen((card.querySelector('h2')?.textContent || '').trim());
-      toggleCard(card);
-      return;
-    }
-
-    // ---- Semester tab ----
-    const tab = e.target.closest('.sem-tab');
-    if (tab) {
-      const card = tab.closest('.programme-card');
-      if (!card) return;
-      card.querySelectorAll('.sem-tab').forEach(t => t.classList.remove('active'));
-      card.querySelectorAll('.semester-content').forEach(c => c.classList.remove('active'));
-      tab.classList.add('active');
-      const t = document.getElementById(tab.dataset.content);
-      if (t) t.classList.add('active');
-      return;
-    }
-
-    // ---- Download ----
-    const dl = e.target.closest('.btn-download');
-    if (dl) { e.preventDefault(); downloadPDF(dl.href, dl.dataset.fname, dl); return; }
-
-    // ---- Share ----
-    const sh = e.target.closest('.btn-share');
-    if (sh) { e.preventDefault(); shareContent(sh.dataset.name, sh.dataset.url); return; }
-
-    // ---- Course link (in card) ----
-    const cl = e.target.closest('.course-link');
-    if (cl) { e.preventDefault(); downloadPDF(cl.href, cl.dataset.fname, null); return; }
-
-    // ---- Copy course code ----
-    const code = e.target.closest('.search-result-code[data-code]');
-    if (code) { copyToClipboard(code.dataset.code); showToast('Code copied: ' + code.dataset.code); return; }
-
-    // ---- Recent pill ----
-    const rp = e.target.closest('.recent-pill');
-    if (rp) {
-      const inp = $('searchInput');
-      if (inp) { inp.value = rp.dataset.q; handleSearch(); syncUrlFromState(); }
-      return;
-    }
-
-    // ---- Filter pill ----
-    const fp = e.target.closest('.pill');
-    if (fp) {
-      activeLevel = fp.dataset.level;
-      document.querySelectorAll('.pill').forEach(p =>
-        p.classList.toggle('active', p.dataset.level === activeLevel));
-      GA.trackFilter(activeLevel);
-      handleSearch();
-      syncUrlFromState();
-      return;
-    }
-
-    // ---- Expand / Collapse ----
-    if (e.target.closest('#expandAll')) { expandAll(); return; }
-    if (e.target.closest('#collapseAll')) { collapseAll(); return; }
-  });
-}
-
-// ===============================
-//  CARD TOGGLE
-// ===============================
-function toggleCard(card) {
-  const body = card.querySelector('.card-body');
-  if (!body) return;
-
-  if (card.classList.contains('open')) {
-    body.style.maxHeight = body.scrollHeight + 'px';
-    void body.offsetHeight;
-    body.style.maxHeight = '0px';
-    card.classList.remove('open');
-    card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
-    body.setAttribute('aria-hidden', 'true');
-  } else {
-    card.classList.add('open');
-    body.setAttribute('aria-hidden', 'false');
-    body.style.maxHeight = body.scrollHeight + 'px';
-    card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
-    const onEnd = () => {
-      if (card.classList.contains('open')) body.style.maxHeight = 'none';
-      body.removeEventListener('transitionend', onEnd);
-    };
-    body.addEventListener('transitionend', onEnd);
-    requestAnimationFrame(() => setTimeout(() => {
-      const r = card.getBoundingClientRect();
-      if (r.bottom > window.innerHeight + 40)
-        window.scrollTo({ top: window.scrollY + r.top - 72, behavior: 'smooth' });
-    }, 350));
-  }
-}
-
-function expandAll() {
-  GA.trackEngagement('expand_all');
-  document.querySelectorAll('.programme-card:not(.open)').forEach((card, i) => {
+  toggleCard(card) {
     const body = card.querySelector('.card-body');
     if (!body) return;
-    setTimeout(() => {
+
+    if (card.classList.contains('open')) {
+      body.style.maxHeight = body.scrollHeight + 'px';
+      void body.offsetHeight; // force reflow
+      body.style.maxHeight = '0px';
+      card.classList.remove('open');
+      card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
+      body.setAttribute('aria-hidden', 'true');
+    } else {
       card.classList.add('open');
       body.setAttribute('aria-hidden', 'false');
       body.style.maxHeight = body.scrollHeight + 'px';
@@ -785,509 +1305,639 @@ function expandAll() {
         body.removeEventListener('transitionend', onEnd);
       };
       body.addEventListener('transitionend', onEnd);
-    }, i * 50);
-  });
-}
 
-function collapseAll() {
-  GA.trackEngagement('collapse_all');
-  document.querySelectorAll('.programme-card.open').forEach(card => {
-    const body = card.querySelector('.card-body');
-    if (!body) return;
-    body.style.maxHeight = body.scrollHeight + 'px';
-    void body.offsetHeight;
-    body.style.maxHeight = '0px';
-    card.classList.remove('open');
-    body.setAttribute('aria-hidden', 'true');
-    card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
-  });
-}
-
-// ===============================
-//  KEYBOARD
-// ===============================
-function initKeyboard() {
-  document.addEventListener('keydown', e => {
-    const hdr = e.target.closest?.('.card-header');
-    if (hdr && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      const card = hdr.closest('.programme-card');
-      if (card) toggleCard(card);
-      return;
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const rect = card.getBoundingClientRect();
+          if (rect.bottom > window.innerHeight + 40) {
+            window.scrollTo({ top: window.scrollY + rect.top - 72, behavior: 'smooth' });
+          }
+        }, 320);
+      });
     }
-
-    const st = e.target.closest?.('.sem-tab');
-    if (st && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
-      const tabs = [...st.closest('.semester-tabs').querySelectorAll('.sem-tab')];
-      const i = tabs.indexOf(st);
-      const next = e.key === 'ArrowRight' ? i + 1 : i - 1;
-      if (next >= 0 && next < tabs.length) {
-        e.preventDefault(); tabs[next].focus(); tabs[next].click();
-      }
-      return;
-    }
-
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault(); $('searchInput')?.focus();
-      GA.trackEngagement('keyboard_shortcut'); return;
-    }
-
-    if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
-      e.preventDefault(); $('searchInput')?.focus();
-      GA.trackEngagement('keyboard_shortcut'); return;
-    }
-
-    if (e.key === 'Escape') {
-      const panel = $('viewerPanel');
-      if (panel?.classList.contains('visible')) { history.back(); return; }
-      const inp = $('searchInput');
-      if (document.activeElement === inp) {
-        if (inp.value) { inp.value = ''; $('searchClear')?.classList.remove('visible'); handleSearch(); syncUrlFromState(); }
-        else inp.blur();
-      } else collapseAll();
-    }
-  });
-}
-
-// ===============================
-//  SCROLL REVEAL
-// ===============================
-function initScrollReveal() {
-  if (revealObserver) { revealObserver.disconnect(); revealObserver = null; }
-  document.body.classList.add('js-reveal');
-
-  if (!('IntersectionObserver' in window)) {
-    document.querySelectorAll('.programme-card').forEach(c => c.classList.add('revealed'));
-    return;
   }
 
-  revealObserver = new IntersectionObserver((entries) => {
-    let d = 0;
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const card = entry.target;
-        requestAnimationFrame(() => {
-          card.style.transitionDelay = d + 'ms';
-          card.classList.add('revealed');
-          const clean = () => { card.style.transitionDelay = '0ms'; card.classList.add('reveal-done'); card.removeEventListener('transitionend', clean); };
-          card.addEventListener('transitionend', clean);
-        });
-        d = Math.min(d + 50, 300);
-        revealObserver.unobserve(card);
-      }
+  expandAll() {
+    Analytics.trackEngagement('expand_all');
+    document.querySelectorAll('.programme-card:not(.open)').forEach((card, i) => {
+      const body = card.querySelector('.card-body');
+      if (!body) return;
+      setTimeout(() => {
+        card.classList.add('open');
+        body.setAttribute('aria-hidden', 'false');
+        body.style.maxHeight = body.scrollHeight + 'px';
+        card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
+        const onEnd = () => {
+          if (card.classList.contains('open')) body.style.maxHeight = 'none';
+          body.removeEventListener('transitionend', onEnd);
+        };
+        body.addEventListener('transitionend', onEnd);
+      }, i * 40);
     });
-  }, { threshold: 0.03, rootMargin: '0px 0px -30px 0px' });
+  }
 
-  document.querySelectorAll('.programme-card:not(.revealed)').forEach(el => revealObserver.observe(el));
-}
+  collapseAll() {
+    Analytics.trackEngagement('collapse_all');
+    document.querySelectorAll('.programme-card.open').forEach(card => {
+      const body = card.querySelector('.card-body');
+      if (!body) return;
+      body.style.maxHeight = body.scrollHeight + 'px';
+      void body.offsetHeight;
+      body.style.maxHeight = '0px';
+      card.classList.remove('open');
+      body.setAttribute('aria-hidden', 'true');
+      card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
+    });
+  }
 
-// ===============================
-//  STICKY SHADOW
-// ===============================
-function initStickyShadow() {
-  const sticky = $('stickyControls');
-  if (!sticky) return;
-  const sentinel = document.createElement('div');
-  sentinel.style.cssText = 'height:1px;margin:0;padding:0';
-  sentinel.setAttribute('aria-hidden', 'true');
-  sticky.before(sentinel);
-  new IntersectionObserver(
-    ([e]) => sticky.classList.toggle('scrolled', !e.isIntersecting),
-    { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
-  ).observe(sentinel);
-}
+  // --- Fullscreen In-App PDF Preview Panel ---
 
-// ===============================
-//  BACK TO TOP
-// ===============================
-function initBackToTop() {
-  const btn = $('backToTop');
-  if (!btn) return;
-  let ticking = false;
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(() => { btn.classList.toggle('visible', window.scrollY > 500); ticking = false; });
-      ticking = true;
+  showViewerPanel(pdfUrl, name, code, prog, level) {
+    const panel = $('viewerPanel');
+    if (!panel) return;
+
+    $('viewerPanelTitle').textContent = name || 'Course PDF';
+    $('viewerProgName').textContent = prog || '';
+    $('viewerCourseCode').textContent = code ? 'Code: ' + code : '';
+
+    const badge = $('viewerLevelTag');
+    if (badge) {
+      badge.textContent = level === 'FYUG' ? 'FYUG' : (level || 'UG');
+      badge.className = 'viewer-meta-tag ' + (level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug');
     }
-  }, { passive: true });
-  btn.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    GA.trackEngagement('back_to_top');
-  });
-}
 
-// ===============================
-//  RENDER CARDS
-// ===============================
-function renderProgrammes(data, query) {
-  const grid = $('grid');
-  if (!grid) return;
+    panel._data = { url: pdfUrl, name, code, prog, level };
+    panel.classList.add('visible');
+    document.body.classList.add('viewer-panel-open');
 
-  if (!data.length) {
-    grid.innerHTML = `<div class="empty-state">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      No programmes match your search.</div>`;
-    return;
+    // Hardware-accelerated direct PDF preview (NO Google Docs gview download bug!)
+    const frame = $('viewerPanelFrame');
+    const ld = $('viewerPanelLoading');
+    if (frame) {
+      if (ld) {
+        ld.classList.remove('hidden');
+        ld.innerHTML = '<div class="loading-spinner"></div><span>Loading PDF preview&hellip;</span>';
+      }
+      let loaded = false;
+      const onReady = () => {
+        if (loaded) return;
+        loaded = true;
+        if (ld) ld.classList.add('hidden');
+      };
+      frame.onload = onReady;
+      frame.src = pdfUrl + '#toolbar=1&navpanes=0';
+      setTimeout(onReady, 3500);
+    }
   }
 
-  grid.innerHTML = data.map((prog, idx) => {
-    const sems = prog.semesters;
-    const total = sems.reduce((a, s) => a + s.courses.length, 0);
+  hideViewerPanel() {
+    const panel = $('viewerPanel');
+    if (!panel) return;
+    panel.classList.remove('visible');
+    document.body.classList.remove('viewer-panel-open');
+    const frame = $('viewerPanelFrame');
+    if (frame) frame.src = 'about:blank';
+  }
 
-    return `<div class="programme-card" data-level="${prog.level === 'FYUG' ? 'FYUG' : prog.level}" data-idx="${idx}" role="listitem">
-      <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
-        <span class="level-tag">${prog.level === 'FYUG' ? 'FYUG' : prog.level}</span>
-        <h2>${hl(prog.programme_name, query)}</h2>
-        <div class="meta">${sems.length} sem &middot; ${total} courses</div>
-        <span class="toggle-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
-      </div>
-      <div class="card-body" id="cb-${idx}" aria-hidden="true">
-        <div class="semester-tabs" role="tablist">
-          ${sems.map((s, si) => `<button class="sem-tab${si === 0 ? ' active' : ''}" data-content="p${idx}s${si}" role="tab" aria-selected="${si === 0}">${s.semester} <span class="tab-count">${s.courses.length}</span></button>`).join('')}
+  // --- My Downloads Library Drawer ---
+
+  renderMyDownloads() {
+    const list = $('myDownloadsList');
+    if (!list) return;
+    const history = Storage.getDownloadHistory();
+
+    if (!history.length) {
+      list.innerHTML = `
+        <div class="my-dl-empty">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.3">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <div>No downloads recorded yet.</div>
+          <div style="font-size:11px;color:var(--ink-muted)">Downloaded materials will be cataloged here for quick retrieval.</div>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = history.map(h => `
+      <div class="my-dl-item">
+        <div class="my-dl-item-top">
+          <span class="my-dl-code">${esc(h.code)}</span>
+          <span class="my-dl-time">${esc(h.date)} &middot; ${esc(h.time)}</span>
         </div>
-        ${sems.map((s, si) => `<div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
-          ${s.courses.map(c => {
-      const fn = sanitize(c.code + '_' + c.name) + '.pdf';
-      const vh = buildViewerHash(c.pdf_url, c.name, c.code, prog.programme_name, prog.level);
-      return `<div class="course-item">
-  <span class="course-code">${c.code}</span>
-  <div class="course-info">
-    <div class="course-name">${hl(c.name, query)}</div>
-    <div class="course-actions">
-      <a class="btn-view" href="#${ea(vh)}" title="View PDF">
-        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        View</a>
-      <a class="course-link" href="${ea(c.pdf_url)}" data-fname="${ea(fn)}" target="_blank" rel="noopener">
-        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download</a>
-    </div>
-  </div>
-</div>`;
-    }).join('')}
-        </div>`).join('')}
+        <div class="my-dl-name">${esc(h.name)}</div>
+        <div class="my-dl-actions">
+          <span class="my-dl-filename" title="${esc(h.filename)}">${esc(h.filename)}${h.size ? ' (' + esc(h.size) + ')' : ''}</span>
+          <a class="my-dl-btn" href="${ea(h.url)}" target="_blank" rel="noopener noreferrer">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            Open
+          </a>
+        </div>
       </div>
-    </div>`;
-  }).join('');
-
-  initScrollReveal();
-}
-
-// ===============================
-//  PDF DOWNLOAD
-// ===============================
-async function downloadPDF(url, filename, btnEl) {
-  if (!url) return;
-  const origHTML = btnEl?.innerHTML;
-
-  if (btnEl) {
-    btnEl.classList.add('downloading');
-    btnEl.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round" class="spin-path"/></svg> Wait`;
+    `).join('');
   }
 
-  showToast('Preparing download\u2026');
-  let blob = null;
-  let method = 'new_tab';
+  updateDownloadStats() {
+    const badge = $('downloadsBadge');
+    const countEl = $('downloadCount');
+    const history = Storage.getDownloadHistory();
+    const totalCount = Storage.getDownloadCount();
 
-  try {
-    const origin = new URL(url, location.href).origin;
-    if (origin !== location.origin) {
+    if (badge) {
+      if (history.length > 0) {
+        badge.textContent = history.length;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (countEl) {
+      countEl.textContent = totalCount > 0 ? `${totalCount} download${totalCount !== 1 ? 's' : ''} on this device` : '';
+    }
+  }
+
+  // --- Share Management ---
+
+  async shareContent(name, url) {
+    const item = Catalog.courseMap.get((name || '').toLowerCase()) || null;
+    const code = item?.course?.code || '';
+    const prog = item?.prog?.programme_name || 'SGOU SLM';
+    const siteUrl = location.origin + '/';
+    const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(code || name);
+
+    const text = `${prog}\n${name}${code ? ' (' + code + ')' : ''}\n${viewUrl}`;
+
+    if (navigator.share) {
       try {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 18000);
-        const r = await fetch('/api/download?url=' + encodeURIComponent(url), { signal: ctrl.signal });
-        clearTimeout(t);
-        if (r.ok) { blob = await r.blob(); method = 'proxy'; }
-      } catch (_) { }
-      if (!blob) {
-        try { const r = await fetch(url); if (r.ok) { blob = await r.blob(); method = 'fetch'; } } catch (_) { }
+        await navigator.share({ title: name + ' — SGOU SLM', text });
+        Analytics.trackShare(name, 'web_share');
+      } catch {
+        // User cancelled share dialog
       }
     } else {
-      const r = await fetch(url);
-      if (r.ok) { blob = await r.blob(); method = 'fetch'; }
+      const ok = await copyToClipboard(text);
+      this.showToast(ok ? 'Link copied to clipboard!' : 'Could not copy link');
+      Analytics.trackShare(name, 'clipboard');
     }
-  } catch (_) { }
-
-  if (blob && blob.size > 0) {
-    const u = URL.createObjectURL(blob);
-    triggerDownload(u, filename);
-    setTimeout(() => URL.revokeObjectURL(u), 10000);
-    showToast('Download started');
-    incrementDownloadCount();
-  } else {
-    triggerDownload(url, filename);
-    showToast('PDF opened \u2014 save from your browser');
   }
 
-  GA.trackDownload(filename?.replace(/\.pdf$/i, '') || 'unknown', filename, method);
-  if (btnEl) setTimeout(() => { btnEl.classList.remove('downloading'); if (origHTML) btnEl.innerHTML = origHTML; }, 1500);
-}
+  // --- State Synchronization ---
 
-function triggerDownload(url, filename) {
-  const a = document.createElement('a');
-  a.href = url; a.download = filename || 'document.pdf';
-  a.target = '_blank'; a.rel = 'noopener';
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { if (a.parentNode) a.remove(); }, 200);
-}
+  syncUrlFromState() {
+    const q = ($('searchInput')?.value || '').trim();
+    let path;
+    if (q) {
+      path = '/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(this.activeLevel);
+    } else if (this.activeLevel !== 'ALL') {
+      path = '/filter/' + encodeURIComponent(this.activeLevel);
+    } else {
+      path = '/';
+    }
+    Router.updateUrlSilently(path);
+  }
 
-// ===============================
-//  DOWNLOAD COUNTER
-// ===============================
-function incrementDownloadCount() {
-  try {
-    const n = parseInt(localStorage.getItem('sgou-dl-count') || '0', 10) + 1;
-    localStorage.setItem('sgou-dl-count', String(n));
-    updateDownloadCount();
-  } catch (_) { }
-}
+  restoreState(query, level) {
+    const input = $('searchInput');
+    if (!input) return;
 
-function updateDownloadCount() {
-  try {
-    const el = $('downloadCount');
+    const curQ = input.value.trim();
+    const qChanged = curQ !== query;
+    const lChanged = this.activeLevel !== level;
+
+    if (!qChanged && !lChanged) return;
+
+    if (qChanged) input.value = query;
+    $('searchClear')?.classList.toggle('visible', query.length > 0);
+
+    if (lChanged) {
+      this.activeLevel = level;
+      document.querySelectorAll('.pill').forEach(p =>
+        p.classList.toggle('active', p.dataset.level === this.activeLevel));
+    }
+
+    this.executeSearch();
+  }
+
+  updateStats(programmesList = Catalog.programmes) {
+    const el = $('stats');
     if (!el) return;
-    const n = parseInt(localStorage.getItem('sgou-dl-count') || '0', 10);
-    el.textContent = n > 0 ? `${n} download${n !== 1 ? 's' : ''} on this device` : '';
-  } catch (_) { }
-}
+    const p = programmesList.length;
+    const c = Catalog.getTotalCourses(programmesList);
+    el.textContent = `${p} programme${p !== 1 ? 's' : ''} \u00b7 ${c} course${c !== 1 ? 's' : ''}`;
+  }
 
-// ===============================
-//  SHARE
-// ===============================
-async function shareContent(name, url) {
-  let info = { programme: '', level: '', code: '', courseName: name, pdfUrl: url };
-  for (const prog of allData) {
-    for (const sem of prog.semesters) {
-      const found = sem.courses.find(c => c.pdf_url === url || c.name === name);
-      if (found) {
-        info = {
-          programme: prog.programme_name,
-          level: prog.level === 'FYUG' ? 'FYUG' : prog.level,
-          code: found.code,
-          courseName: found.name,
-          pdfUrl: found.pdf_url
-        };
-        break;
+  // --- Peripheral Helpers & Event Listeners ---
+
+  initStickyShadow() {
+    const sticky = $('stickyControls');
+    if (!sticky) return;
+    const sentinel = document.createElement('div');
+    sentinel.style.cssText = 'height:1px;margin:0;padding:0';
+    sentinel.setAttribute('aria-hidden', 'true');
+    sticky.before(sentinel);
+    new IntersectionObserver(
+      ([entry]) => sticky.classList.toggle('scrolled', !entry.isIntersecting),
+      { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
+    ).observe(sentinel);
+  }
+
+  initBackToTop() {
+    const btn = $('backToTop');
+    if (!btn) return;
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          btn.classList.toggle('visible', window.scrollY > 400);
+          ticking = false;
+        });
+        ticking = true;
       }
-    }
-  }
+    }, { passive: true });
 
-  const siteUrl = location.origin + '/';
-  const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(info.code || info.courseName);
-
-  const text =
-    `${info.programme} - ${info.level}\n` +
-    `${info.courseName} - ${info.code}\n` +
-    `${viewUrl}`;
-
-  if (navigator.share) {
-    try {
-      // text only — no separate url field to avoid duplication
-      await navigator.share({ title: info.courseName + ' \u2014 SGOU SLM', text });
-      GA.trackShare(name, 'web_share');
-    } catch (_) { }
-  } else if (navigator.clipboard) {
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast('Copied to clipboard');
-      GA.trackShare(name, 'clipboard');
-    } catch (_) {
-      showToast('Could not copy');
-    }
-  }
-}
-
-// ===============================
-//  COPY TO CLIPBOARD
-// ===============================
-async function copyToClipboard(text) {
-  try {
-    if (navigator.clipboard) await navigator.clipboard.writeText(text);
-    else {
-      const ta = document.createElement('textarea');
-      ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
-      document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); document.body.removeChild(ta);
-    }
-  } catch (_) { }
-}
-
-// ===============================
-//  STATS
-// ===============================
-function updateStats(data) {
-  const el = $('stats');
-  if (!el) return;
-  const p = data.length;
-  const c = data.reduce((a, pr) => a + pr.semesters.reduce((b, s) => b + s.courses.length, 0), 0);
-  el.textContent = `${p} programme${p !== 1 ? 's' : ''} \u00b7 ${c} course${c !== 1 ? 's' : ''}`;
-}
-
-// ===============================
-//  TOAST
-// ===============================
-let toastTimer;
-function showToast(msg, ms = 2200) {
-  const el = $('toast');
-  if (!el) return;
-  clearTimeout(toastTimer);
-  el.textContent = msg;
-  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
-  toastTimer = setTimeout(() => el.classList.remove('visible'), ms);
-}
-
-// ===============================
-//  PWA: SERVICE WORKER
-// ===============================
-function registerServiceWorker() {
-  if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.register('./sw.js').then(reg => {
-    reg.addEventListener('updatefound', () => {
-      reg.installing?.addEventListener('statechange', function () {
-        if (this.state === 'activated') showToast('App updated \u2014 refresh for latest', 3500);
-      });
+    btn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      Analytics.trackEngagement('back_to_top');
     });
-  }).catch(() => { });
-}
-
-// ===============================
-//  PWA: INSTALL
-// ===============================
-function initInstallPrompt() {
-  const banner = $('installBanner');
-  const isStandalone = window.matchMedia('(display-mode:standalone)').matches
-    || window.navigator.standalone === true
-    || document.referrer.includes('android-app://');
-
-  // Already installed
-  if (isStandalone) {
-    safeSet('sgou-pwa-installed', '1');
-    banner?.classList.remove('visible');
-    GA.trackInstall('already_installed');
-    return;
   }
 
-  if (safeGet('sgou-pwa-installed')) {
-    GA.trackInstall('previously_installed');
-    return;
+  initOfflineDetection() {
+    const bar = $('offlineBar');
+    if (!bar) return;
+    const update = () => bar.classList.toggle('visible', !navigator.onLine);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    update();
   }
 
-  if (safeGet('sgou-install-dismissed')) return;
+  initInstallPrompt() {
+    const banner = $('installBanner');
+    let deferredPrompt = null;
 
-  // Browser fired the install prompt
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredInstallPrompt = e;
-
-    GA.trackInstall('prompt_available');
-
-    if (banner) {
-      setTimeout(() => {
-        banner.classList.add('visible');
-        GA.trackInstall('banner_shown');
-      }, 2500);
-    }
-  });
-
-  // App was successfully installed
-  window.addEventListener('appinstalled', () => {
-    safeSet('sgou-pwa-installed', '1');
-    banner?.classList.remove('visible');
-    deferredInstallPrompt = null;
-    showToast('App installed!');
-    GA.trackInstall('appinstalled_event');
-  });
-
-  // Install button clicked
-  $('installBtn')?.addEventListener('click', async () => {
-    if (!deferredInstallPrompt) {
-      showToast('Use your browser\'s install option');
-      GA.trackInstall('no_prompt_fallback');
-      return;
-    }
-
-    banner?.classList.remove('visible');
-    deferredInstallPrompt.prompt();
-
-    const { outcome } = await deferredInstallPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      safeSet('sgou-pwa-installed', '1');
-      showToast('App installed!');
-    }
-
-    GA.trackInstall('user_choice_' + outcome);
-    deferredInstallPrompt = null;
-  });
-
-  // Dismiss button clicked
-  $('installDismiss')?.addEventListener('click', () => {
-    banner?.classList.remove('visible');
-    safeSet('sgou-install-dismissed', '1');
-    GA.trackInstall('banner_dismissed');
-  });
-
-  // Standalone mode detected (installed via other means)
-  window.matchMedia('(display-mode: standalone)').addEventListener('change', (e) => {
-    if (e.matches) {
-      safeSet('sgou-pwa-installed', '1');
-      banner?.classList.remove('visible');
-      showToast('App installed!');
-      GA.trackInstall('display_mode_change');
-    }
-  });
-}
-
-// ===============================
-//  PWA: OFFLINE
-// ===============================
-function initOfflineDetection() {
-  const bar = $('offlineBar');
-  if (!bar) return;
-  const update = () => bar.classList.toggle('visible', !navigator.onLine);
-  window.addEventListener('online', update);
-  window.addEventListener('offline', update);
-  update();
-}
-
-// ===============================
-//  UTILITIES
-// ===============================
-function $(sel) { return document.getElementById(sel) || document.querySelector(sel); }
-
-function hl(t, q) {
-  if (!q) return t;
-  return t.replace(new RegExp('(' + er(q.trim()) + ')', 'gi'), '<mark>$1</mark>');
-}
-function er(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-function ea(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
-function sanitize(s) { return String(s).replace(/[^a-zA-Z0-9_\- ]/g, '').replace(/\s+/g, '_').substring(0, 80); }
-
-function buildViewerHash(pdfUrl, name, code, prog, level) {
-  // Only use course code — it's unique, URL stays clean
-  return '/view/' + encodeURIComponent(code || name);
-}
-
-function safeGet(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
-function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (_) { } }
-
-function findCourse(code) {
-  if (!code) return null;
-  for (const prog of allData) {
-    for (const sem of prog.semesters) {
-      const c = sem.courses.find(c => c.code === code);
-      if (c) {
-        return {
-          url: c.pdf_url,
-          name: c.name,
-          code: c.code,
-          prog: prog.programme_name,
-          level: prog.level
-        };
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      if (banner && !Storage.get('sgou-install-dismissed')) {
+        setTimeout(() => banner.classList.add('visible'), 2500);
       }
+    });
+
+    $('installBtn')?.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        this.showToast("Use your browser's install option");
+        return;
+      }
+      banner?.classList.remove('visible');
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+    });
+
+    $('installDismiss')?.addEventListener('click', () => {
+      banner?.classList.remove('visible');
+      Storage.set('sgou-install-dismissed', '1');
+    });
+  }
+
+  initKeyboard() {
+    document.addEventListener('keydown', e => {
+      // Toggle card on Enter/Space
+      const hdr = e.target.closest?.('.card-header');
+      if (hdr && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        const card = hdr.closest('.programme-card');
+        if (card) this.toggleCard(card);
+        return;
+      }
+
+      // Quick Search shortcut (/ or Ctrl+K)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        $('searchInput')?.focus();
+        Analytics.trackEngagement('keyboard_search_shortcut');
+        return;
+      }
+      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        $('searchInput')?.focus();
+        Analytics.trackEngagement('keyboard_slash_shortcut');
+        return;
+      }
+
+      // Escape dismissal
+      if (e.key === 'Escape') {
+        if ($('downloadModal')?.classList.contains('visible')) {
+          Downloader.closeModal();
+          return;
+        }
+        if ($('myDownloadsDrawer')?.classList.contains('visible')) {
+          $('myDownloadsDrawer')?.classList.remove('visible');
+          return;
+        }
+        if ($('storageHelpModal')?.classList.contains('visible')) {
+          $('storageHelpModal')?.classList.remove('visible');
+          return;
+        }
+        if ($('viewerPanel')?.classList.contains('visible')) {
+          history.back();
+          return;
+        }
+        const input = $('searchInput');
+        if (document.activeElement === input) {
+          if (input.value) {
+            input.value = '';
+            $('searchClear')?.classList.remove('visible');
+            this.executeSearch();
+            this.syncUrlFromState();
+          } else {
+            input.blur();
+          }
+        } else {
+          this.collapseAll();
+        }
+      }
+    });
+  }
+
+  // --- Central Event Delegation ---
+
+  initDelegation() {
+    document.addEventListener('click', e => {
+      // Theme Toggle
+      if (e.target.closest('#themeToggle')) {
+        this.toggleTheme();
+        return;
+      }
+
+      // Viewer Back
+      if (e.target.closest('#viewerBack')) {
+        if (this.navLock) return;
+        this.navLock = true;
+        history.back();
+        setTimeout(() => { this.navLock = false; }, 400);
+        return;
+      }
+
+      // Viewer External Open
+      if (e.target.closest('#viewerPanelExternal')) {
+        const panel = $('viewerPanel');
+        if (panel?._data?.url) {
+          window.open(panel._data.url, '_blank', 'noopener noreferrer');
+          Analytics.trackEngagement('viewer_external');
+        }
+        return;
+      }
+
+      // Viewer Download
+      if (e.target.closest('#viewerPanelDownload')) {
+        const panel = $('viewerPanel');
+        if (panel?._data) {
+          Downloader.openModal(panel._data);
+        }
+        return;
+      }
+
+      // Viewer Share
+      if (e.target.closest('#viewerPanelShare')) {
+        const panel = $('viewerPanel');
+        if (panel?._data) {
+          this.shareContent(panel._data.name, panel._data.url);
+        }
+        return;
+      }
+
+      // My Downloads Drawer Trigger
+      if (e.target.closest('#myDownloadsBtn')) {
+        this.renderMyDownloads();
+        $('myDownloadsDrawer')?.classList.add('visible');
+        return;
+      }
+      if (e.target.closest('#myDownloadsClose')) {
+        $('myDownloadsDrawer')?.classList.remove('visible');
+        return;
+      }
+      if (e.target.closest('#myDownloadsClearBtn')) {
+        Storage.clearDownloadHistory();
+        this.updateDownloadStats();
+        this.renderMyDownloads();
+        this.showToast('Download history cleared');
+        return;
+      }
+
+      // Storage Help Modal
+      if (e.target.closest('#storageHelpBtn')) {
+        $('storageHelpModal')?.classList.add('visible');
+        return;
+      }
+      if (e.target.closest('#storageHelpClose') || e.target.closest('#storageHelpDoneBtn')) {
+        $('storageHelpModal')?.classList.remove('visible');
+        return;
+      }
+      const guideTab = e.target.closest('.guide-tab');
+      if (guideTab) {
+        document.querySelectorAll('.guide-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.guide-content').forEach(c => c.classList.remove('active'));
+        guideTab.classList.add('active');
+        const target = document.getElementById(guideTab.dataset.tab);
+        if (target) target.classList.add('active');
+        return;
+      }
+
+      // Download Modal Actions
+      if (e.target.closest('#dlModalClose')) {
+        Downloader.closeModal();
+        return;
+      }
+      if (e.target.closest('#dlChooseFolderBtn')) {
+        Downloader.startDownload(true);
+        return;
+      }
+      if (e.target.closest('#dlStartBtn')) {
+        Downloader.startDownload(false);
+        return;
+      }
+
+      // Progress Card Actions
+      if (e.target.closest('#dpCancelBtn')) {
+        Downloader.cancelDownload();
+        return;
+      }
+      if (e.target.closest('#dpDismissBtn')) {
+        $('downloadProgressCard')?.classList.remove('visible');
+        return;
+      }
+      if (e.target.closest('#dpOpenBtn')) {
+        const u = Downloader.lastBlobUrl || Downloader.activeItem?.url;
+        if (u) window.open(u, '_blank', 'noopener noreferrer');
+        return;
+      }
+
+      // Backdrop Dismissal
+      if (e.target === $('downloadModal')) { Downloader.closeModal(); return; }
+      if (e.target === $('storageHelpModal')) { $('storageHelpModal')?.classList.remove('visible'); return; }
+      if (e.target === $('myDownloadsDrawer')) { $('myDownloadsDrawer')?.classList.remove('visible'); return; }
+
+      // Hash Navigation
+      const navLink = e.target.closest('a[href^="#/"]');
+      if (navLink) {
+        e.preventDefault();
+        Router.navigate(navLink.getAttribute('href').slice(1));
+        return;
+      }
+
+      // Card Header Expansion
+      const cardHeader = e.target.closest('.card-header');
+      if (cardHeader && cardHeader.closest('.programme-card')) {
+        const card = cardHeader.closest('.programme-card');
+        this.toggleCard(card);
+        return;
+      }
+
+      // Semester Tab Switching
+      const semTab = e.target.closest('.sem-tab');
+      if (semTab) {
+        const card = semTab.closest('.programme-card');
+        if (!card) return;
+        card.querySelectorAll('.sem-tab').forEach(t => t.classList.remove('active'));
+        card.querySelectorAll('.semester-content').forEach(c => c.classList.remove('active'));
+        semTab.classList.add('active');
+        const content = document.getElementById(semTab.dataset.content);
+        if (content) content.classList.add('active');
+        return;
+      }
+
+      // Download Buttons (Card or Search item)
+      const dlBtn = e.target.closest('.btn-download, .course-link');
+      if (dlBtn) {
+        e.preventDefault();
+        const code = dlBtn.dataset.code || '';
+        const item = Catalog.getCourse(code);
+        if (item) {
+          Downloader.openModal({
+            url: item.course.pdf_url,
+            name: item.course.name,
+            code: item.course.code,
+            prog: item.prog.programme_name,
+            level: item.prog.level
+          });
+        } else {
+          Downloader.openModal({
+            url: dlBtn.href,
+            name: dlBtn.dataset.name || 'Course PDF',
+            code: dlBtn.dataset.code || '',
+            prog: dlBtn.dataset.prog || 'SGOU Programme',
+            level: dlBtn.dataset.level || 'UG'
+          });
+        }
+        return;
+      }
+
+      // Share Buttons
+      const shareBtn = e.target.closest('.btn-share');
+      if (shareBtn) {
+        e.preventDefault();
+        this.shareContent(shareBtn.dataset.name, shareBtn.dataset.url);
+        return;
+      }
+
+      // Code Copy Trigger
+      const codeChip = e.target.closest('.search-result-code[data-code]');
+      if (codeChip) {
+        copyToClipboard(codeChip.dataset.code);
+        this.showToast('Code copied: ' + codeChip.dataset.code);
+        return;
+      }
+
+      // Recent Search Chip Click
+      const recentPill = e.target.closest('.recent-pill');
+      if (recentPill) {
+        const input = $('searchInput');
+        if (input) {
+          input.value = recentPill.dataset.q;
+          this.executeSearch();
+          this.syncUrlFromState();
+        }
+        return;
+      }
+
+      // Clear Recent Searches
+      if (e.target.closest('#clearRecentBtn')) {
+        Storage.clearRecentSearches();
+        this.hideRecentSearches();
+        this.showToast('Search history cleared');
+        return;
+      }
+
+      // Category Pill Click
+      const filterPill = e.target.closest('.pill');
+      if (filterPill && filterPill.dataset.level) {
+        this.activeLevel = filterPill.dataset.level;
+        document.querySelectorAll('.pill').forEach(p =>
+          p.classList.toggle('active', p.dataset.level === this.activeLevel));
+        Analytics.trackFilter(this.activeLevel);
+        this.executeSearch();
+        this.syncUrlFromState();
+        return;
+      }
+
+      // Load more search results
+      if (e.target.closest('#loadMoreSearchBtn')) {
+        this.loadRemainingSearchResults();
+        return;
+      }
+
+      // Global Expand / Collapse All
+      if (e.target.closest('#expandAll')) { this.expandAll(); return; }
+      if (e.target.closest('#collapseAll')) { this.collapseAll(); return; }
+    });
+  }
+}
+
+const UI = new UIController();
+
+// ============================================================================
+//  9. APPLICATION BOOTSTRAPPER (Service Worker & Life Cycle)
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  UI.init();
+  Router.init();
+
+  // Register PWA Service Worker with auto-update
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      reg.addEventListener('updatefound', () => {
+        reg.installing?.addEventListener('statechange', function () {
+          if (this.state === 'activated') {
+            UI.showToast('App updated — refresh for latest version', 3500);
+          }
+        });
+      });
+    }).catch(() => { });
+  }
+
+  // Load syllabus catalog data
+  try {
+    await Catalog.load();
+    UI.buildFilters();
+    UI.renderProgrammes(Catalog.programmes);
+    UI.updateStats();
+
+    // Resolve initial URL route now that catalog is indexed
+    Router.resolve();
+  } catch (err) {
+    const grid = $('grid');
+    if (grid) {
+      grid.innerHTML = `
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>Could not load syllabus database.</div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-top:6px">Ensure <code>sgou_slm_data.json</code> is accessible or check internet connection.</div>
+        </div>`;
     }
   }
-  return null;
-}
+});

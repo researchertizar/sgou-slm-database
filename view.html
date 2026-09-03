@@ -46,32 +46,32 @@
         }
 
         [data-theme="dark"] {
-            --bg: #0e0d0c;
-            --bg-deep: #171614;
-            --surface: #1c1b19;
-            --surface-hover: #252420;
+            --bg: #13110f;
+            --bg-deep: #1b1916;
+            --surface: #201e1a;
+            --surface-hover: #2a2722;
             --accent: #e06b52;
-            --accent-hover: #f08a72;
-            --accent-light: #f08a72;
-            --ink: #ece8e0;
-            --ink-soft: #b0a898;
-            --ink-muted: #8a8278;
-            --border: #302e2a;
-            --border-light: #282622;
-            --ug: #008552;
-            --pg: #9102ce;
-            --fyug: #0354c5;
-            --ug-bg: rgba(31, 90, 67, .25);
-            --pg-bg: rgba(94, 51, 112, .25);
-            --fyug-bg: rgba(35, 80, 144, .25);
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .2);
-            --shadow: 0 2px 10px rgba(0, 0, 0, .3);
-            --shadow-lg: 0 8px 30px rgba(0, 0, 0, .4);
-            --header-bg: #080706;
-            --header-text: #ece8e0;
-            --header-sub: #8a8278;
-            --toast-bg: #ece8e0;
-            --toast-text: #0e0d0c;
+            --accent-hover: #eb7f67;
+            --accent-light: #f29782;
+            --ink: #ece7de;
+            --ink-soft: #b8b0a2;
+            --ink-muted: #8c8375;
+            --border: #36322b;
+            --border-light: #2a2620;
+            --ug: #34d399;
+            --pg: #c084fc;
+            --fyug: #60a5fa;
+            --ug-bg: rgba(52, 211, 153, .16);
+            --pg-bg: rgba(192, 132, 252, .16);
+            --fyug-bg: rgba(96, 165, 250, .16);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, .3);
+            --shadow: 0 4px 20px rgba(0, 0, 0, .4);
+            --shadow-lg: 0 16px 45px rgba(0, 0, 0, .55);
+            --header-bg: #0d0c0a;
+            --header-text: #ece7de;
+            --header-sub: #8c8375;
+            --toast-bg: #ece7de;
+            --toast-text: #13110f;
             --focus-ring: rgba(224, 107, 82, .35);
         }
 
@@ -900,11 +900,54 @@
                 if (code) m += '<span>Code: ' + escH(code) + '</span>';
                 metaEl.innerHTML = m;
 
-                dlBtn.href = pdfUrl;
-                dlBtn.download = (code ? code + '_' : '') + (name || 'doc').replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+                var fn = (code ? code + '_' : '') + (name || 'doc').replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+                var dlUrl = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&filename=' + encodeURIComponent(fn);
+                dlBtn.href = dlUrl;
+                dlBtn.download = fn;
                 openBtn.href = pdfUrl;
                 var errDl = document.getElementById('errorDownload');
-                if (errDl) errDl.href = pdfUrl;
+                if (errDl) { errDl.href = dlUrl; errDl.download = fn; }
+
+                var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                var bDl = document.getElementById('bottomDownload');
+                if (bDl) {
+                    bDl.onclick = function () {
+                        if (isIOS) {
+                            window.open(pdfUrl, '_blank', 'noopener');
+                            var t = document.getElementById('toast');
+                            if (t) {
+                                t.textContent = "iPhone: Tap Share (\u2191) at bottom and select 'Save to Files'";
+                                t.classList.add('visible');
+                                setTimeout(function () { t.classList.remove('visible'); }, 4500);
+                            }
+                        } else {
+                            var a = document.createElement('a');
+                            a.href = dlUrl;
+                            a.download = fn;
+                            a.target = '_blank';
+                            document.body.appendChild(a);
+                            a.click();
+                            setTimeout(function () { a.remove(); }, 200);
+                        }
+                    };
+                }
+
+                var bShare = document.getElementById('bottomShare');
+                var bCopy = document.getElementById('btnCopyLink');
+                function doShare() {
+                    var viewUrl = location.href;
+                    var text = (name || 'Course PDF') + (code ? ' (' + code + ')' : '') + '\n' + viewUrl;
+                    if (navigator.share) {
+                        navigator.share({ title: name + ' — SGOU SLM', text: text }).catch(function () { });
+                    } else if (navigator.clipboard) {
+                        navigator.clipboard.writeText(text).then(function () {
+                            var t = document.getElementById('toast');
+                            if (t) { t.textContent = 'Link copied to clipboard!'; t.classList.add('visible'); setTimeout(function () { t.classList.remove('visible'); }, 2000); }
+                        });
+                    }
+                }
+                if (bShare) bShare.onclick = doShare;
+                if (bCopy) bCopy.onclick = doShare;
 
                 loadPDF(pdfUrl);
             }
@@ -924,8 +967,7 @@
                 var done = false;
                 var step = 0;
                 var strategies = [
-                    { url: 'https://docs.google.com/gview?url=' + encodeURIComponent(url) + '&embedded=true', timeout: 14000 },
-                    { url: url, timeout: 10000 }
+                    { url: url + '#toolbar=1&navpanes=0', timeout: 3500 }
                 ];
 
                 function ready() {
@@ -971,7 +1013,7 @@
             }
 
             function escH(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-            function escA(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;'); }
+            function escA(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
             try { var t = localStorage.getItem('sgou-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (_) { }
         })();
