@@ -99,6 +99,11 @@ const server = http.createServer((req, res) => {
     return res.end('Forbidden');
   }
 
+  // Rewrite /view/:course or clean /view to view.html
+  if (reqUrl.pathname === '/view' || reqUrl.pathname.startsWith('/view/')) {
+    filePath = path.join(__dirname, 'view.html');
+  }
+
   // Fallback check in data/ folder if not found in root (e.g. /sgou_slm_data.json -> /data/sgou_slm_data.json)
   if (!fs.existsSync(filePath) && fs.existsSync(path.join(__dirname, 'data', path.basename(reqUrl.pathname)))) {
     filePath = path.join(__dirname, 'data', path.basename(reqUrl.pathname));

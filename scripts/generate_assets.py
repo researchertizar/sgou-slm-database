@@ -241,10 +241,12 @@ def generate_og_image():
     # Left: Active Status + Canonical URL
     draw.ellipse([58, foot_y + 6, 68, foot_y + 16], fill=(52, 211, 153, 255))
     font_url = get_font("segoeuib.ttf", 15)
-    draw.text((76, foot_y + 2), "sgou-database.vercel.app", font=font_url, fill=(235, 230, 222, 255))
+    draw.text((76, foot_y + 2), "sgou-slm-database.vercel.app", font=font_url, fill=(235, 230, 222, 255))
 
+    url_box = font_url.getbbox("sgou-slm-database.vercel.app")
+    url_w = url_box[2] - url_box[0]
     font_live = get_font("segoeui.ttf", 14)
-    draw.text((290, foot_y + 3), "\u00b7 Open Educational Resource", font=font_live, fill=(145, 138, 126, 255))
+    draw.text((76 + url_w + 14, foot_y + 3), "\u00b7 Open Educational Resource", font=font_live, fill=(145, 138, 126, 255))
 
     # Right: Author Credit
     font_author = get_font("segoeuib.ttf", 15)

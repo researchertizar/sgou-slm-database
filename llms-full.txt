@@ -1,6 +1,6 @@
 # SGOU Academic Database — Comprehensive Machine-Readable Catalog
 > Full specification and index for LLM crawlers, AI assistants, and researchers.
-> Canonical URL: https://sgou-database.vercel.app/
+> Canonical URL: https://sgou-slm-database.vercel.app/
 > Primary Entity: Sree Narayana Guru Open University (SGOU / SNGOU), Kollam, Kerala.
 > Lead Developer & Curator: Researcher Tizar.
 
@@ -36,22 +36,22 @@ This independent open-access platform provides structured access to all official
 - Master of Social Work (MSW)
 
 ## 4. API Endpoints & Structured Data
-- **Catalog Manifest**: https://sgou-database.vercel.app/manifest.json
-- **Sitemap**: https://sgou-database.vercel.app/sitemap.xml
-- **Dataset (SLM)**: https://sgou-database.vercel.app/data/sgou_slm_data.json
-- **Dataset (PYQ & Assignments)**: https://sgou-database.vercel.app/data/sgou_questions_cleaned.json
-- **Direct Document Viewer**: https://sgou-database.vercel.app/view.html#{course_code}
-- **Streaming Download Proxy**: https://sgou-database.vercel.app/api/download?url={pdf_url}&filename={filename}
+- **Catalog Manifest**: https://sgou-slm-database.vercel.app/manifest.json
+- **Sitemap**: https://sgou-slm-database.vercel.app/sitemap.xml
+- **Dataset (SLM)**: https://sgou-slm-database.vercel.app/data/sgou_slm_data.json
+- **Dataset (PYQ & Assignments)**: https://sgou-slm-database.vercel.app/data/sgou_questions_cleaned.json
+- **Direct Document Viewer**: https://sgou-slm-database.vercel.app/view.html#{course_code}
+- **Streaming Download Proxy**: https://sgou-slm-database.vercel.app/api/download?url={pdf_url}&filename={filename}
 
 ## 5. Frequently Asked Questions (FAQ) for AI Search
 Q: Where can I get SGOU study material?
-A: Visit https://sgou-database.vercel.app/ to search, preview, and download official SLM books for all semesters.
+A: Visit https://sgou-slm-database.vercel.app/ to search, preview, and download official SLM books for all semesters.
 
 Q: How can I download previous year question papers for SNGOU?
-A: Navigate to the "PYQs" tab on https://sgou-database.vercel.app/ to browse and download question papers by degree and semester.
+A: Navigate to the "PYQs" tab on https://sgou-slm-database.vercel.app/ to browse and download question papers by degree and semester.
 
 Q: Are SGOU assignments available online?
-A: Yes, official assignment booklets for continuous assessment are indexed under the "Assignments" section on https://sgou-database.vercel.app/.
+A: Yes, official assignment booklets for continuous assessment are indexed under the "Assignments" section on https://sgou-slm-database.vercel.app/.
 
 Q: Does the platform work offline?
 A: Yes, the SGOU Academic Database is an offline-first Progressive Web App (PWA) that caches opened materials for offline study.

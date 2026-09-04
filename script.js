@@ -313,7 +313,7 @@ class StorageService {
 const Storage = new StorageService();
 
 // ============================================================================
-//  3. TELEMETRY & ANALYTICS SERVICE
+//  3. TELEMETRY & ANALYTICS SERVICE (Enhanced GA4 Integration)
 // ============================================================================
 
 /**
@@ -330,33 +330,77 @@ class AnalyticsService {
     }
   }
 
-  trackSearch(term, resultCount) {
-    this.event('search', { search_term: term, custom_result_count: resultCount });
+  trackPageView(pagePath, pageTitle) {
+    this.event('page_view', {
+      page_path: pagePath || (window.location.pathname || '/') + window.location.search,
+      page_title: pageTitle || document.title,
+      page_location: window.location.href
+    });
   }
 
-  trackDownload(courseCode, filename, method) {
+  trackViewItem(item) {
+    if (!item) return;
+    this.event('view_item', {
+      item_id: item.code || item.id || 'unknown',
+      item_name: item.name || item.title || '',
+      item_category: item.type || 'SLM',
+      item_brand: 'SGOU',
+      programme: item.prog || '',
+      level: item.level || ''
+    });
+  }
+
+  trackSearch(term, resultCount) {
+    this.event('search', {
+      search_term: term,
+      custom_result_count: resultCount
+    });
+  }
+
+  trackDownload(courseCode, filename, method, itemType = 'SLM') {
     this.event('file_download', {
       file_name: filename,
       file_extension: 'pdf',
       custom_course_code: courseCode,
+      item_category: itemType,
       download_method: method
     });
   }
 
-  trackFilter(level) {
-    this.event('filter_change', { filter_type: 'level', filter_value: level });
+  trackFilter(filterVal, filterType = 'level') {
+    this.event('filter_change', {
+      filter_type: filterType,
+      filter_value: filterVal
+    });
   }
 
   trackTheme(theme) {
     this.event('theme_change', { new_theme: theme });
   }
 
-  trackShare(title, method) {
-    this.event('share', { method, content_type: 'pdf_link', item_id: title });
+  trackShare(title, method, courseCode = '') {
+    this.event('share', {
+      method,
+      content_type: 'pdf_link',
+      item_id: courseCode || title,
+      item_name: title
+    });
   }
 
-  trackEngagement(action) {
-    this.event('engagement_action', { action });
+  trackEngagement(action, extra = {}) {
+    this.event('engagement_action', { action, ...extra });
+  }
+
+  trackPWA(status) {
+    this.event('pwa_lifecycle', { status });
+  }
+
+  trackNetwork(isOnline) {
+    this.event('network_status', { online: isOnline ? 'online' : 'offline' });
+  }
+
+  trackException(description, fatal = false) {
+    this.event('exception', { description, fatal });
   }
 }
 
@@ -1167,7 +1211,7 @@ class RouterService {
   }
 
   _convertHashToCleanUrl(rawHash) {
-    const base = window.location.pathname || '/';
+    const base = '/';
     if (!rawHash || rawHash === '/') return base;
     const qIndex = rawHash.indexOf('?');
     const path = qIndex >= 0 ? rawHash.slice(0, qIndex) : rawHash;
@@ -1190,6 +1234,10 @@ class RouterService {
     } else if (path.startsWith('/view/')) {
       const code = decodeURIComponent(path.split('/')[2] || '');
       if (code) newParams.set('course', code);
+      const t = (params.get('type') || '').toLowerCase();
+      if (t && t !== 'slm' && t !== 'all') newParams.set('type', t);
+      const ex = params.get('examdate') || '';
+      if (ex) newParams.set('examdate', ex);
     } else if (/^[A-Z0-9_-]+$/i.test(path) && !path.includes('/')) {
       newParams.set('course', decodeURIComponent(path));
     }
@@ -1218,11 +1266,30 @@ class RouterService {
       const item = Catalog.getCourse(courseCode);
       const qType = (params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !item ? 'ASSIGNMENT' : 'SLM'))).toUpperCase();
       const qExam = params.get('examdate') || '';
-      if (item) {
-        UI.showViewerPanel(params.get('url') || item.course.pdf_url, params.get('name') || item.course.name, item.course.code, item.prog.programme_name, item.prog.level, qType, qExam);
-      } else {
-        UI.showViewerPanel(params.get('url') || '', params.get('name') || courseCode, courseCode, params.get('prog') || '', params.get('level') || 'UG', qType, qExam);
+      const docName = params.get('name') || (item ? item.course.name : courseCode);
+      const docProg = params.get('prog') || (item ? item.prog.programme_name : '');
+      const docLevel = params.get('level') || (item ? item.prog.level : 'UG');
+
+      Analytics.trackPageView(window.location.pathname + window.location.search, `${docName} (${courseCode}) — SGOU Academic Database`);
+      Analytics.trackViewItem({
+        code: courseCode,
+        name: docName,
+        type: qType,
+        prog: docProg,
+        level: docLevel
+      });
+
+      let pdfUrl = params.get('url') || '';
+      if (!pdfUrl && item) {
+        if (qType === 'PYQ' && item.course.pyqs && item.course.pyqs.length > 0) {
+          const matchedPyq = (qExam ? item.course.pyqs.find(p => p.exam_date === qExam) : null) || item.course.pyqs[0];
+          pdfUrl = matchedPyq?.pdf_url || item.course.pdf_url;
+        } else {
+          pdfUrl = item.course.pdf_url;
+        }
       }
+
+      UI.showViewerPanel(pdfUrl, docName, item ? item.course.code : courseCode, docProg, docLevel, qType, qExam);
       this.isResolving = false;
       return;
     }
@@ -1244,6 +1311,7 @@ class RouterService {
     const query = params.get('q') || params.get('search') || '';
 
     UI.restoreState(query, level, type);
+    Analytics.trackPageView(window.location.pathname + window.location.search, document.title);
     this.isResolving = false;
   }
 }
@@ -1486,7 +1554,7 @@ class UIController {
         fn = (item.code ? item.code + '_' : '') + sanitize(item.name) + '_SLM.pdf';
       }
 
-      const vh = '/view/' + encodeURIComponent(item.code || item.name) + '?type=' + encodeURIComponent(type) + '&url=' + encodeURIComponent(item.pdf_url) + '&name=' + encodeURIComponent(item.name) + '&code=' + encodeURIComponent(item.code || '') + '&prog=' + encodeURIComponent(item.progName) + '&examdate=' + encodeURIComponent(item.examDate || '') + '&batch=' + encodeURIComponent(item.admissionBatch || '') + '&level=' + encodeURIComponent(item.level);
+      const vUrl = `/?course=${encodeURIComponent(item.code || item.name)}${type && type !== 'SLM' ? '&type=' + encodeURIComponent(type.toLowerCase()) : ''}${item.examDate ? '&examdate=' + encodeURIComponent(item.examDate) : ''}`;
 
       return `
         <div class="search-result-item" data-idx="${idx}">
@@ -1506,7 +1574,7 @@ class UIController {
             ` : ''}
           </div>
           <div class="search-result-actions">
-            <a class="btn-view" href="#${ea(vh)}" title="View PDF">
+            <a class="btn-view" href="${ea(vUrl)}" title="View PDF" data-type="${ea(type)}" data-code="${ea(item.code || '')}" data-name="${ea(item.name)}" data-prog="${ea(item.progName)}" data-level="${ea(item.level)}" data-examdate="${ea(item.examDate || '')}" data-url="${ea(item.pdf_url)}">
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span>View</span>
             </a>
@@ -1691,7 +1759,7 @@ class UIController {
                   <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
                     ${s.assignments && s.assignments.length > 0 ? s.assignments.map(asgn => {
                       const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
-                      const vhAsgn = '/view/' + encodeURIComponent(prog.programme_name + '_' + s.semester) + '?type=ASSIGNMENT&url=' + encodeURIComponent(asgn.pdf_url) + '&name=' + encodeURIComponent(asgn.title) + '&prog=' + encodeURIComponent(prog.programme_name) + '&semester=' + encodeURIComponent(s.semester) + '&level=' + encodeURIComponent(prog.level);
+                      const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment`;
                       return `
                         <div class="semester-assignment-card asgn-mode-hero">
                           <div class="asgn-card-left">
@@ -1705,7 +1773,7 @@ class UIController {
                             </div>
                           </div>
                           <div class="asgn-card-actions">
-                            <a class="btn-view" href="#${ea(vhAsgn)}" title="View Assignment Booklet PDF">
+                            <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment Booklet PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                               <span>View Booklet</span>
                             </a>
@@ -1738,7 +1806,7 @@ class UIController {
                         <div class="course-pyq-drawer open">
                           ${course.pyqs.map(py => {
                             const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                            const vhPyq = '/view/' + encodeURIComponent(course.code || course.name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                            const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
                             return `
                               <div class="pyq-paper-item">
                                 <div class="pyq-paper-info">
@@ -1746,7 +1814,7 @@ class UIController {
                                   ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
                                 </div>
                                 <div class="pyq-paper-actions">
-                                  <a class="btn-view" href="#${ea(vhPyq)}" title="View Exam Paper PDF">
+                                  <a class="btn-view" href="${ea(vUrlPyq)}" title="View Exam Paper PDF" data-type="PYQ" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     <span>View</span>
                                   </a>
@@ -1770,7 +1838,7 @@ class UIController {
                         </div>
                         ${s.generalPyqs.map(py => {
                           const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                          const vhG = '/view/' + encodeURIComponent(py.code || py.clean_name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(py.clean_name || py.subject_name) + '&code=' + encodeURIComponent(py.code || '') + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                          const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
                           return `
                             <div class="pyq-paper-item">
                               <div class="pyq-paper-info">
@@ -1779,7 +1847,7 @@ class UIController {
                                 ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
                               </div>
                               <div class="pyq-paper-actions">
-                                <a class="btn-view" href="#${ea(vhG)}" title="View PYQ PDF">
+                                <a class="btn-view" href="${ea(vUrlG)}" title="View PYQ PDF" data-type="PYQ" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                   <span>View</span>
                                 </a>
@@ -1803,7 +1871,7 @@ class UIController {
                   <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
                     ${s.courses.map(course => {
                       const fn = sanitize(course.code + '_' + course.name) + '_SLM.pdf';
-                      const vh = '/view/' + encodeURIComponent(course.code || course.name) + '?type=SLM&url=' + encodeURIComponent(course.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&level=' + encodeURIComponent(prog.level);
+                      const vUrl = `/?course=${encodeURIComponent(course.code || course.name)}`;
                       return `
                         <div class="course-item">
                           <div class="course-main-row">
@@ -1812,7 +1880,7 @@ class UIController {
                               <span class="course-name">${hl(course.name, query)}</span>
                             </div>
                             <div class="course-actions">
-                              <a class="btn-view" href="#${ea(vh)}" title="View SLM PDF">
+                              <a class="btn-view" href="${ea(vUrl)}" title="View SLM PDF" data-type="SLM" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(course.pdf_url)}">
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                 <span>View</span>
                               </a>
@@ -1837,7 +1905,7 @@ class UIController {
                 <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
                   ${s.assignments && s.assignments.length > 0 ? s.assignments.map(asgn => {
                     const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
-                    const vhAsgn = '/view/' + encodeURIComponent(prog.programme_name + '_' + s.semester) + '?type=ASSIGNMENT&url=' + encodeURIComponent(asgn.pdf_url) + '&name=' + encodeURIComponent(asgn.title) + '&prog=' + encodeURIComponent(prog.programme_name) + '&semester=' + encodeURIComponent(s.semester) + '&level=' + encodeURIComponent(prog.level);
+                    const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment`;
                     return `
                       <div class="semester-assignment-card">
                         <div class="asgn-card-left">
@@ -1850,7 +1918,7 @@ class UIController {
                           </div>
                         </div>
                         <div class="asgn-card-actions">
-                          <a class="btn-view" href="#${ea(vhAsgn)}" title="View Assignment PDF">
+                          <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             <span>View</span>
                           </a>
@@ -1865,7 +1933,7 @@ class UIController {
 
                   ${s.courses.map(course => {
                     const fn = sanitize(course.code + '_' + course.name) + '_SLM.pdf';
-                    const vh = '/view/' + encodeURIComponent(course.code || course.name) + '?type=SLM&url=' + encodeURIComponent(course.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&level=' + encodeURIComponent(prog.level);
+                    const vUrl = `/?course=${encodeURIComponent(course.code || course.name)}`;
                     const hasPyqs = course.pyqs && course.pyqs.length > 0;
 
                     return `
@@ -1876,7 +1944,7 @@ class UIController {
                             <span class="course-name">${hl(course.name, query)}</span>
                           </div>
                           <div class="course-actions">
-                            <a class="btn-view" href="#${ea(vh)}" title="View SLM PDF">
+                            <a class="btn-view" href="${ea(vUrl)}" title="View SLM PDF" data-type="SLM" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(course.pdf_url)}">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                               <span>View</span>
                             </a>
@@ -1900,7 +1968,7 @@ class UIController {
                             <div class="course-pyq-drawer">
                               ${course.pyqs.map(py => {
                                 const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                                const vhPyq = '/view/' + encodeURIComponent(course.code || course.name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                                const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
                                 return `
                                   <div class="pyq-paper-item">
                                     <div class="pyq-paper-info">
@@ -1908,7 +1976,7 @@ class UIController {
                                       ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
                                     </div>
                                     <div class="pyq-paper-actions">
-                                      <a class="btn-view" href="#${ea(vhPyq)}" title="View PYQ PDF">
+                                      <a class="btn-view" href="${ea(vUrlPyq)}" title="View PYQ PDF" data-type="PYQ" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                                         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                         <span>View</span>
                                       </a>
@@ -1935,7 +2003,7 @@ class UIController {
                       </div>
                       ${s.generalPyqs.map(py => {
                         const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                        const vhG = '/view/' + encodeURIComponent(py.code || py.clean_name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(py.clean_name || py.subject_name) + '&code=' + encodeURIComponent(py.code || '') + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                        const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
                         return `
                           <div class="pyq-paper-item">
                             <div class="pyq-paper-info">
@@ -1944,7 +2012,7 @@ class UIController {
                               ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
                             </div>
                             <div class="pyq-paper-actions">
-                              <a class="btn-view" href="#${ea(vhG)}" title="View PYQ PDF">
+                              <a class="btn-view" href="${ea(vUrlG)}" title="View PYQ PDF" data-type="PYQ" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                 <span>View</span>
                               </a>
@@ -2123,15 +2191,15 @@ class UIController {
     panel.classList.add('visible');
     document.body.classList.add('viewer-panel-open');
 
-    // Sync clean course URL without hash
-    const base = window.location.pathname || '/';
+    // Sync clean course URL without hash or path prefix
     const viewParams = new URLSearchParams();
     if (code) viewParams.set('course', code);
     else if (name) viewParams.set('course', name);
     if (type && type !== 'SLM' && type !== 'ALL') viewParams.set('type', type.toLowerCase());
-    Router.updateUrlSilently(`${base}?${viewParams.toString()}`);
+    if (examDate) viewParams.set('examdate', examDate);
+    Router.updateUrlSilently(`/?${viewParams.toString()}`);
 
-    // Hardware-accelerated direct PDF preview
+    // Hardware-accelerated direct PDF preview without creating secondary iframe history entry
     const frame = $('viewerPanelFrame');
     const ld = $('viewerPanelLoading');
     if (frame) {
@@ -2146,7 +2214,16 @@ class UIController {
         if (ld) ld.classList.add('hidden');
       };
       frame.onload = onReady;
-      frame.src = pdfUrl + '#toolbar=1&navpanes=0';
+      const fullUrl = pdfUrl + '#toolbar=1&navpanes=0';
+      try {
+        if (frame.contentWindow) {
+          frame.contentWindow.location.replace(fullUrl);
+        } else {
+          frame.src = fullUrl;
+        }
+      } catch (e) {
+        frame.src = fullUrl;
+      }
       setTimeout(onReady, 3500);
     }
   }
@@ -2157,7 +2234,17 @@ class UIController {
     panel.classList.remove('visible');
     document.body.classList.remove('viewer-panel-open');
     const frame = $('viewerPanelFrame');
-    if (frame) frame.src = 'about:blank';
+    if (frame) {
+      try {
+        if (frame.contentWindow) {
+          frame.contentWindow.location.replace('about:blank');
+        } else {
+          frame.src = 'about:blank';
+        }
+      } catch (e) {
+        frame.src = 'about:blank';
+      }
+    }
     if (syncUrl) this.syncUrlFromState(false);
   }
 
@@ -2225,20 +2312,27 @@ class UIController {
     }
   }
 
-  // --- Share Management ---
-
   async shareContent(name, url, type = 'SLM', code = '') {
     const item = Catalog.courseMap.get((code || name || '').toLowerCase()) || null;
-    const prog = item?.prog?.programme_name || 'SGOU Academic Database';
+    const prog = item?.prog?.programme_name || '';
     const siteUrl = location.origin + '/';
-    const viewUrl = siteUrl + 'view.html?code=' + encodeURIComponent(code || name) + '&type=' + encodeURIComponent(type) + (url ? '&url=' + encodeURIComponent(url) : '');
+    const cleanCode = code || item?.course?.code || '';
+    const cleanProg = prog ? formatProgName(prog) : 'SGOU Distance Education';
+
+    // Canonical clean URL without raw CloudFront bucket hashes or ugly percent-encoded query bloat
+    const typeParam = type === 'PYQ' ? '&type=pyq' : type === 'ASSIGNMENT' ? '&type=assignment' : '';
+    const shareUrl = cleanCode
+      ? `${siteUrl}?course=${encodeURIComponent(cleanCode)}${typeParam}`
+      : `${siteUrl}?q=${encodeURIComponent(name)}${typeParam}`;
 
     const typeLabel = type === 'PYQ' ? 'Previous Year Exam Paper' : type === 'ASSIGNMENT' ? 'Assignment Booklet' : 'Course SLM';
-    const text = `${prog}\n${name}${code ? ' (' + code + ')' : ''} [${typeLabel}]\n${viewUrl}`;
+
+    // Polished, authoritative academic share card
+    const text = `${name}${cleanCode ? ' (' + cleanCode + ')' : ''} — ${typeLabel}\n${cleanProg} · SNGOU\n${shareUrl}`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: name + ' — SGOU Database', text });
+        await navigator.share({ title: `${name} — SGOU Database`, text });
         Analytics.trackShare(name, 'web_share');
       } catch {
         // User cancelled share dialog
@@ -2372,11 +2466,14 @@ class UIController {
 
   initOfflineDetection() {
     const bar = $('offlineBar');
-    if (!bar) return;
-    const update = () => bar.classList.toggle('visible', !navigator.onLine);
+    const update = () => {
+      const isOnline = navigator.onLine;
+      if (bar) bar.classList.toggle('visible', !isOnline);
+      Analytics.trackNetwork(isOnline);
+    };
     window.addEventListener('online', update);
     window.addEventListener('offline', update);
-    update();
+    if (bar) bar.classList.toggle('visible', !navigator.onLine);
   }
 
   initInstallPrompt() {
@@ -2386,9 +2483,15 @@ class UIController {
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
+      Analytics.trackPWA('prompt_available');
       if (banner && !Storage.get('sgou-install-dismissed')) {
         setTimeout(() => banner.classList.add('visible'), 2500);
       }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      Analytics.trackPWA('installed');
+      this.showToast('SGOU Database successfully installed!');
     });
 
     $('installBtn')?.addEventListener('click', async () => {
@@ -2398,12 +2501,14 @@ class UIController {
       }
       banner?.classList.remove('visible');
       deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
+      const choice = await deferredPrompt.userChoice;
+      Analytics.trackPWA(choice?.outcome === 'accepted' ? 'prompt_accepted' : 'prompt_declined');
       deferredPrompt = null;
     });
 
     $('installDismiss')?.addEventListener('click', () => {
       banner?.classList.remove('visible');
+      Analytics.trackPWA('prompt_dismissed');
       Storage.set('sgou-install-dismissed', '1');
     });
   }
@@ -2514,7 +2619,11 @@ class UIController {
       if (e.target.closest('#viewerBack')) {
         if (this.navLock) return;
         this.navLock = true;
-        history.back();
+        if (window.history.length > 1) {
+          history.back();
+        } else {
+          Router.navigate('/');
+        }
         setTimeout(() => { this.navLock = false; }, 400);
         return;
       }
@@ -2617,6 +2726,28 @@ class UIController {
       if (e.target === $('downloadModal')) { Downloader.closeModal(); return; }
       if (e.target === $('storageHelpModal')) { $('storageHelpModal')?.classList.remove('visible'); return; }
       if (e.target === $('myDownloadsDrawer')) { $('myDownloadsDrawer')?.classList.remove('visible'); return; }
+
+      // In-App Viewer Button Click
+      const viewBtn = e.target.closest('.btn-view');
+      if (viewBtn) {
+        e.preventDefault();
+        const href = viewBtn.getAttribute('href');
+        const code = viewBtn.dataset.code || '';
+        const name = viewBtn.dataset.name || '';
+        const prog = viewBtn.dataset.prog || '';
+        const level = viewBtn.dataset.level || 'UG';
+        const type = viewBtn.dataset.type || 'SLM';
+        const examDate = viewBtn.dataset.examdate || '';
+        const url = viewBtn.dataset.url || '';
+
+        if (url) {
+          Router.navigate(href);
+          this.showViewerPanel(url, name, code, prog, level, type, examDate);
+        } else if (href) {
+          Router.navigate(href);
+        }
+        return;
+      }
 
       // Hash Navigation
       const navLink = e.target.closest('a[href^="#/"]');

@@ -13,30 +13,30 @@
     <meta name="theme-color" content="#1a1714">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="canonical" href="https://sgou-database.vercel.app/">
+    <link rel="canonical" href="https://sgou-slm-database.vercel.app/">
     <title>SGOU Academic Database | By Researcher Tizar</title>
 
     <!-- Open Graph & Social Sharing (WhatsApp, LinkedIn, Facebook, Telegram) -->
     <meta property="og:site_name" content="SGOU Academic Database">
-    <meta property="og:title" content="SGOU Academic Database — SLM Textbooks, PYQs & Assignments">
+    <meta property="og:title" content="SGOU Academic Database | SLM Textbooks, PYQs & Assignments">
     <meta property="og:description"
         content="Free academic repository for Sree Narayana Guru Open University (SNGOU). Search, preview, and download 1,200+ SLM books, 950+ question papers, and 75+ assignments offline.">
-    <meta property="og:url" content="https://sgou-database.vercel.app/">
+    <meta property="og:url" content="https://sgou-slm-database.vercel.app/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_IN">
-    <meta property="og:image" content="https://sgou-database.vercel.app/og-image.png">
-    <meta property="og:image:secure_url" content="https://sgou-database.vercel.app/og-image.png">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/og-image.png">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/og-image.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="SGOU Academic Database — Sree Narayana Guru Open University Portal by Researcher Tizar">
+    <meta property="og:image:alt" content="SGOU Academic Database — SGOU Portal by Researcher Tizar">
 
     <!-- Twitter / X Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="SGOU Academic Database — By Researcher Tizar">
     <meta name="twitter:description"
         content="Free academic portal for Sree Narayana Guru Open University (SNGOU): 1,200+ SLM books, 950+ PYQs, and 75+ assignments with offline PWA support.">
-    <meta name="twitter:image" content="https://sgou-database.vercel.app/og-image.png">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/og-image.png">
     <meta name="twitter:image:alt" content="SGOU Academic Database Preview Banner">
     <meta name="twitter:creator" content="@researchertizar">
 
@@ -63,8 +63,8 @@
       "@graph": [
         {
           "@type": "WebSite",
-          "@id": "https://sgou-database.vercel.app/#website",
-          "url": "https://sgou-database.vercel.app/",
+          "@id": "https://sgou-slm-database.vercel.app/#website",
+          "url": "https://sgou-slm-database.vercel.app/",
           "name": "SGOU Academic Database",
           "alternateName": [
             "SGOU Database",
@@ -84,7 +84,7 @@
             "@type": "SearchAction",
             "target": {
               "@type": "EntryPoint",
-              "urlTemplate": "https://sgou-database.vercel.app/#/search?q={search_term_string}"
+              "urlTemplate": "https://sgou-slm-database.vercel.app/?q={search_term_string}"
             },
             "query-input": "required name=search_term_string"
           }
@@ -104,14 +104,14 @@
         },
         {
           "@type": "FAQPage",
-          "@id": "https://sgou-database.vercel.app/#faq",
+          "@id": "https://sgou-slm-database.vercel.app/#faq",
           "mainEntity": [
             {
               "@type": "Question",
               "name": "How can I download SGOU SLM textbooks online?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Browse and download official SGOU Self-Learning Material (SLM) textbooks for UG, PG, and FYUG programmes for free directly on https://sgou-database.vercel.app/."
+                "text": "Browse and download official SGOU Self-Learning Material (SLM) textbooks for UG, PG, and FYUG programmes for free directly on https://sgou-slm-database.vercel.app/."
               }
             },
             {
@@ -152,13 +152,17 @@
     }
     </script>
 
-    <!-- Google Analytics 4 -->
+    <!-- Google Analytics 4 (GA4) with Modern Telemetry Configuration -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag() { dataLayer.push(arguments); }
         gtag('js', new Date());
-        gtag('config', 'G-E2N7NJNRQB');
+        gtag('config', 'G-E2N7NJNRQB', {
+            send_page_view: true,
+            cookie_flags: 'SameSite=None;Secure',
+            link_attribution: true
+        });
     </script>
 </head>
 
@@ -347,7 +351,7 @@
                     <polyline points="7 10 12 15 17 10" />
                     <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Install SLM Browser for offline access</span>
+                <span>Install SGOU Database for offline access</span>
             </div>
             <div class="install-actions">
                 <button class="install-btn" id="installBtn">Install</button>
@@ -635,7 +639,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260904_01" defer></script>
+    <script src="script.js?v=20260904_05" defer></script>
 </body>
 
 </html>

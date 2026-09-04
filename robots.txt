@@ -14,4 +14,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://sgou-database.vercel.app/sitemap.xml
+Sitemap: https://sgou-slm-database.vercel.app/sitemap.xml

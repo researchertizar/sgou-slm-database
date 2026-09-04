@@ -1,5 +1,5 @@
-const CACHE = 'sgou-v96';
-const SHELL = ['./', './index.html', './style.css?v=20260904_01', './script.js?v=20260904_01', './manifest.json', './icon.svg', './icon-192.png', './apple-touch-icon.png', './favicon-32x32.png', './view.html', './opensearch.xml'];
+const CACHE = 'sgou-v100';
+const SHELL = ['./', './index.html', './style.css?v=20260904_02', './script.js?v=20260904_05', './manifest.json', './icon.svg', './icon-192.png', './apple-touch-icon.png', './favicon-32x32.png', './view.html', './opensearch.xml'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {

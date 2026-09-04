@@ -3,7 +3,7 @@
 > Curated and developed by Researcher Tizar.
 
 ## Overview
-The SGOU Academic Database (https://sgou-database.vercel.app/) is a modern, client-side digital repository providing free, open access to university syllabus materials for distance education students:
+The SGOU Academic Database (https://sgou-slm-database.vercel.app/) is a modern, client-side digital repository providing free, open access to university syllabus materials for distance education students:
 - **1,200+ Course Self-Learning Material (SLM) Textbooks**
 - **950+ Previous Year Exam Question Papers (PYQ)**
 - **75+ Assignment Question Booklets**
@@ -13,7 +13,7 @@ The SGOU Academic Database (https://sgou-database.vercel.app/) is a modern, clie
 - **Institution**: Sree Narayana Guru Open University (SNGOU / SGOU)
 - **Location**: Kollam, Kerala, India
 - **University Website**: https://sgou.ac.in
-- **Platform URL**: https://sgou-database.vercel.app/
+- **Platform URL**: https://sgou-slm-database.vercel.app/
 
 ## Degree Programs Covered
 - **FYUG / UG Disciplines**: Bachelor of Arts (B.A.) in English, Malayalam, Hindi, Sanskrit, Arabic, Economics, History, Sociology, Philosophy; Bachelor of Commerce (B.Com); Bachelor of Business Administration (BBA); Bachelor of Computer Applications (BCA).
@@ -23,11 +23,11 @@ The SGOU Academic Database (https://sgou-database.vercel.app/) is a modern, clie
 - **Platform Type**: Progressive Web Application (PWA) with full offline caching.
 - **Search Capabilities**: Instant multi-token full-text search across courses, course codes (e.g., B21CA01, B21EG01), question papers, and assignments.
 - **Download Engine**: Streaming edge proxy bypassing payload limits and CORS restrictions.
-- **Standalone Document Viewer**: https://sgou-database.vercel.app/view.html
+- **Standalone Document Viewer**: https://sgou-slm-database.vercel.app/view.html
 
 ## Key Links & API Resources
-- Web Application: https://sgou-database.vercel.app/
-- SLM Textbook Dataset: https://sgou-database.vercel.app/data/sgou_slm_data.json
-- Question Paper & Assignment Dataset: https://sgou-database.vercel.app/data/sgou_questions_cleaned.json
-- Standalone Viewer: https://sgou-database.vercel.app/view.html
+- Web Application: https://sgou-slm-database.vercel.app/
+- SLM Textbook Dataset: https://sgou-slm-database.vercel.app/data/sgou_slm_data.json
+- Question Paper & Assignment Dataset: https://sgou-slm-database.vercel.app/data/sgou_questions_cleaned.json
+- Standalone Viewer: https://sgou-slm-database.vercel.app/view.html
 - Developer / Curator: Researcher Tizar (researchertizar)

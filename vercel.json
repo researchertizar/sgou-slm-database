@@ -2,7 +2,11 @@
     "cleanUrls": true,
     "rewrites": [
         {
-            "source": "/((?!.*\\.).*)",
+            "source": "/view/:course",
+            "destination": "/view.html?course=:course"
+        },
+        {
+            "source": "/((?!view|.*\\.).*)",
             "destination": "/index.html"
         }
     ],
