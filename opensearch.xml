@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>SGOU Database</ShortName>
+  <Description>Search SGOU SLM Textbooks, Question Papers (PYQ), and Assignments</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <Image width="32" height="32" type="image/png">https://sgou-database.vercel.app/favicon-32x32.png</Image>
+  <Url type="text/html" template="https://sgou-database.vercel.app/?q={searchTerms}"/>
+  <Developer>Researcher Tizar</Developer>
+  <Attribution>Sree Narayana Guru Open University (SGOU) Academic Resources</Attribution>
+  <SyndicationRight>open</SyndicationRight>
+  <AdultContent>false</AdultContent>
+  <Language>en-IN</Language>
+</OpenSearchDescription>

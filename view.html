@@ -4,8 +4,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <title>Loading... — SGOU SLM</title>
+    <meta name="description"
+        content="Document Viewer — Preview, read, and download Sree Narayana Guru Open University (SGOU / SNGOU) SLM textbooks, previous year question papers (PYQs), and assignment booklets.">
+    <meta name="keywords"
+        content="SGOU, SNGOU, Sree Narayana Guru Open University, SGOU SLM, SGOU PYQ, SGOU assignments, SGOU PDF viewer, Kerala Open University">
+    <meta name="author" content="Researcher Tizar">
+    <meta name="theme-color" content="#1a1714">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://sgou-database.vercel.app/view.html">
+    <title>Document Viewer — SGOU Academic Database</title>
+
+    <!-- Open Graph & Social Cards -->
+    <meta property="og:site_name" content="SGOU Academic Database">
+    <meta property="og:title" content="Document Viewer — SGOU Academic Database">
+    <meta property="og:description"
+        content="Preview, read, and download official SGOU SLM course textbooks, question papers, and assignments offline.">
+    <meta property="og:url" content="https://sgou-database.vercel.app/view.html">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="https://sgou-database.vercel.app/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Document Viewer — SGOU Academic Database">
+    <meta name="twitter:description"
+        content="Preview and download SGOU distance education textbooks, question papers, and assignment booklets.">
+    <meta name="twitter:image" content="https://sgou-database.vercel.app/og-image.png">
+    <meta name="twitter:creator" content="@researchertizar">
+
+    <!-- Touch & Favicon Formats -->
     <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+
+    <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -806,18 +840,26 @@
 
     <script>
         (function () {
+            var params = new URLSearchParams(window.location.search);
             var hash = window.location.hash.slice(1);
             var courseCode = decodeURIComponent(hash || '');
-            var params = new URLSearchParams(window.location.search);
 
             var pdfUrl = params.get('url') || '';
             var name = params.get('name') || '';
-            var code = params.get('code') || courseCode;
+            var code = params.get('code') || params.get('course') || courseCode;
             var prog = params.get('prog') || '';
             var level = params.get('level') || '';
             var matType = params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !code ? 'ASSIGNMENT' : 'SLM'));
             var examDate = params.get('examdate') || params.get('date') || '';
             var batch = params.get('batch') || '';
+
+            // Clean legacy hash from URL bar if present
+            if (hash) {
+                var cleanParams = new URLSearchParams(window.location.search);
+                if (!cleanParams.has('code') && courseCode) cleanParams.set('code', courseCode);
+                var qs = cleanParams.toString();
+                history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : ''));
+            }
 
             var loading = document.getElementById('viewerLoading');
             var errorEl = document.getElementById('viewerError');
@@ -978,9 +1020,21 @@
                     return;
                 }
 
-                var typeLabel = matType === 'PYQ' ? 'PYQ Paper' : matType === 'ASSIGNMENT' ? 'Assignment' : 'Course SLM';
-                document.title = (name || 'PDF') + ' (' + typeLabel + ') \u2014 SGOU Database';
+                var typeLabel = matType === 'PYQ' ? 'Previous Exam Paper' : matType === 'ASSIGNMENT' ? 'Assignment Booklet' : 'Course SLM Textbook';
+                var fullTitle = (name || 'Document') + (code ? ' (' + code + ')' : '') + ' \u2014 ' + typeLabel + ' \u2014 SGOU Academic Database';
+                document.title = fullTitle;
                 titleEl.textContent = name || 'Course Material';
+
+                // Sync dynamic Open Graph and Twitter metadata for social previews
+                var ogT = document.querySelector('meta[property="og:title"]');
+                if (ogT) ogT.setAttribute('content', fullTitle);
+                var twT = document.querySelector('meta[name="twitter:title"]');
+                if (twT) twT.setAttribute('content', fullTitle);
+                var ogD = document.querySelector('meta[property="og:description"]');
+                var descStr = 'Read and download ' + (name || 'course study material') + (code ? ' [' + code + ']' : '') + ' for ' + (prog || 'SGOU') + ' (' + (level || 'Degree') + ') on the SGOU Academic Database.';
+                if (ogD) ogD.setAttribute('content', descStr);
+                var twD = document.querySelector('meta[name="twitter:description"]');
+                if (twD) twD.setAttribute('content', descStr);
 
                 var cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
                 var label = level === 'FYUG' ? 'FYUG' : level;

@@ -1,5 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="108" fill="#1a1714"/>
-  <rect x="72" y="365" width="368" height="10" rx="5" fill="#b8432f"/>
-  <text x="256" y="290" font-family="Georgia, serif" font-size="210" font-weight="bold" fill="#f5f0e8" text-anchor="middle" dominant-baseline="central">SG</text>
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1c1916"/>
+      <stop offset="100%" stop-color="#0f0e0d"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#b8432f"/>
+      <stop offset="100%" stop-color="#e06b52"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Precision Squircle Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="rgba(255, 255, 255, 0.08)" stroke-width="4"/>
+
+  <!-- Academic Serif Monogram: SG -->
+  <text x="256" y="276" font-family="Georgia, 'Times New Roman', serif" font-size="216" font-weight="bold" fill="#f5f0e8" text-anchor="middle" dominant-baseline="central">SG</text>
+
+  <!-- Clean Terracotta Accent Bar -->
+  <rect x="86" y="374" width="340" height="12" rx="6" fill="url(#accentGrad)"/>
 </svg>

@@ -1,57 +1,83 @@
 {
-    "name": "SGOU SLM Browser - By Researcher Tizar",
-    "short_name": "SGOU SLM",
-    "description": "Browse SGOU self-learning material and download course PDFs offline",
+    "name": "SGOU Academic Database — By Researcher Tizar",
+    "short_name": "SGOU Database",
+    "description": "Comprehensive academic database for Sree Narayana Guru Open University (SGOU / SNGOU) — SLM textbooks, previous year question papers (PYQs), and assignments.",
     "start_url": "./",
     "scope": "./",
     "display": "standalone",
     "orientation": "portrait-primary",
     "handle_links": "preferred",
-    "background_color": "#f5f0e8",
+    "background_color": "#0e0d0c",
     "theme_color": "#1a1714",
     "categories": [
-        "education"
+        "education",
+        "reference",
+        "books"
     ],
     "shortcuts": [
         {
-            "name": "Search Courses",
+            "name": "Search Database",
             "short_name": "Search",
-            "description": "Search for a course or programme",
-            "url": "./#/search",
+            "description": "Search for courses, codes, question papers, and assignments",
+            "url": "./?q=",
             "icons": [
                 {
-                    "src": "icon.svg",
-                    "sizes": "any",
-                    "type": "image/svg+xml"
+                    "src": "icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
                 }
             ]
         },
         {
-            "name": "Browse Programmes",
-            "short_name": "Browse",
-            "description": "View all available programmes",
-            "url": "./",
+            "name": "Previous Year Questions",
+            "short_name": "PYQs",
+            "description": "Browse SGOU previous year question papers",
+            "url": "./?type=pyq",
             "icons": [
                 {
-                    "src": "icon.svg",
-                    "sizes": "any",
-                    "type": "image/svg+xml"
+                    "src": "icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Assignment Booklets",
+            "short_name": "Assignments",
+            "description": "View continuous assessment assignment booklets",
+            "url": "./?type=assignment",
+            "icons": [
+                {
+                    "src": "icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
                 }
             ]
         }
     ],
     "icons": [
         {
+            "src": "favicon-32x32.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
             "src": "icon.svg",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any"
-        },
-        {
-            "src": "icon.svg",
-            "sizes": "192x192 512x512",
-            "type": "image/svg+xml",
-            "purpose": "maskable"
         }
     ]
 }

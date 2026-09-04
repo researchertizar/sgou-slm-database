@@ -1127,11 +1127,13 @@ class DownloadManager {
 const Downloader = new DownloadManager();
 
 // ============================================================================
-//  7. ROUTER SERVICE (S.O.L.I.D: Pure URL-Driven State)
+//  7. ROUTER SERVICE (S.O.L.I.D: Professional Clean URL Architecture)
 // ============================================================================
 
 /**
- * Hash-based URL Router managing deep-links, browser history, and view states.
+ * Modern HTML5 History API Router managing deep-links, browser history,
+ * clean query parameters (?type=pyq, ?level=ug, ?q=...), and backward-compatible
+ * migration from legacy hash routes.
  */
 class RouterService {
   constructor() {
@@ -1140,93 +1142,108 @@ class RouterService {
 
   init() {
     window.addEventListener('popstate', () => this.resolve());
-
-    const hash = window.location.hash.slice(1);
-    if (!hash || hash === '/') return;
-
-    // Standard SPA routes (#/view/CODE, #/search?q=...)
-    if (hash.startsWith('/')) {
-      history.replaceState({ path: '/' }, '', '#/');
-      history.pushState({ path: hash }, '', '#' + hash);
-      return;
-    }
-
-    // Bare course code deep link (#B21EG01LC)
-    if (/^[A-Z]/.test(hash)) {
-      history.replaceState({ path: '/' }, '', '#/');
-      history.pushState({ path: hash }, '', '#' + hash);
-    }
-  }
-
-  navigate(path) {
-    const fullHash = '#' + path;
-    if (window.location.hash === fullHash) return;
-    history.pushState({ path }, '', fullHash);
     this.resolve();
   }
 
-  updateUrlSilently(path) {
-    const fullHash = '#' + path;
-    if (window.location.hash === fullHash) return;
-    history.replaceState({ path }, '', fullHash);
+  navigate(url) {
+    const target = this._normalizeUrl(url);
+    const current = (window.location.pathname || '/') + window.location.search;
+    if (current === target && !window.location.hash) return;
+    history.pushState({ url: target }, '', target);
+    this.resolve();
+  }
+
+  updateUrlSilently(url) {
+    const target = this._normalizeUrl(url);
+    const current = (window.location.pathname || '/') + window.location.search;
+    if (current === target && !window.location.hash) return;
+    history.replaceState({ url: target }, '', target);
+  }
+
+  _normalizeUrl(url) {
+    if (!url) return window.location.pathname || '/';
+    if (url.startsWith('#')) return this._convertHashToCleanUrl(url.slice(1));
+    return url;
+  }
+
+  _convertHashToCleanUrl(rawHash) {
+    const base = window.location.pathname || '/';
+    if (!rawHash || rawHash === '/') return base;
+    const qIndex = rawHash.indexOf('?');
+    const path = qIndex >= 0 ? rawHash.slice(0, qIndex) : rawHash;
+    const params = new URLSearchParams(qIndex >= 0 ? rawHash.slice(qIndex + 1) : '');
+
+    const newParams = new URLSearchParams();
+    if (path.startsWith('/type/')) {
+      const t = decodeURIComponent(path.split('/')[2] || '').toLowerCase();
+      if (t && t !== 'slm' && t !== 'all') newParams.set('type', t);
+    } else if (path.startsWith('/filter/')) {
+      const l = decodeURIComponent(path.split('/')[2] || '').toLowerCase();
+      if (l && l !== 'all') newParams.set('level', l);
+    } else if (path === '/search') {
+      const q = params.get('q');
+      const t = (params.get('type') || '').toLowerCase();
+      const l = (params.get('level') || '').toLowerCase();
+      if (q) newParams.set('q', q);
+      if (t && t !== 'slm' && t !== 'all') newParams.set('type', t);
+      if (l && l !== 'all') newParams.set('level', l);
+    } else if (path.startsWith('/view/')) {
+      const code = decodeURIComponent(path.split('/')[2] || '');
+      if (code) newParams.set('course', code);
+    } else if (/^[A-Z0-9_-]+$/i.test(path) && !path.includes('/')) {
+      newParams.set('course', decodeURIComponent(path));
+    }
+
+    const qs = newParams.toString();
+    return qs ? `${base}?${qs}` : base;
   }
 
   resolve() {
     if (!Catalog.isLoaded) return;
     this.isResolving = true;
 
-    const raw = window.location.hash.slice(1);
-
-    if (!raw || raw === '/') {
-      UI.hideViewerPanel();
-      UI.restoreState('', 'ALL');
-      this.isResolving = false;
-      return;
+    // --- Step 1: Backward-Compatible Legacy Hash Migration ---
+    const rawHash = window.location.hash.slice(1);
+    if (rawHash && rawHash !== '/') {
+      const cleanUrl = this._convertHashToCleanUrl(rawHash);
+      history.replaceState(null, '', cleanUrl);
     }
 
-    const qIndex = raw.indexOf('?');
-    const path = qIndex >= 0 ? raw.slice(0, qIndex) : raw;
-    const params = new URLSearchParams(qIndex >= 0 ? raw.slice(qIndex + 1) : '');
+    // --- Step 2: Parse Modern Clean Query Parameters ---
+    const params = new URLSearchParams(window.location.search);
 
-    // Course Viewer Route: #/view/CODE
-    if (path.startsWith('/view/')) {
-      const codeOrTitle = decodeURIComponent(path.split('/')[2] || '');
-      const item = Catalog.getCourse(codeOrTitle);
-      const qType = params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !item ? 'ASSIGNMENT' : 'SLM'));
+    // Direct Course Viewer Deep-Link (?course=B21CA01 or ?view=B21CA01 or ?code=B21CA01)
+    const courseCode = params.get('course') || params.get('view') || params.get('code');
+    if (courseCode) {
+      const item = Catalog.getCourse(courseCode);
+      const qType = (params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !item ? 'ASSIGNMENT' : 'SLM'))).toUpperCase();
       const qExam = params.get('examdate') || '';
       if (item) {
         UI.showViewerPanel(params.get('url') || item.course.pdf_url, params.get('name') || item.course.name, item.course.code, item.prog.programme_name, item.prog.level, qType, qExam);
       } else {
-        UI.showViewerPanel(params.get('url') || '', params.get('name') || codeOrTitle, codeOrTitle, params.get('prog') || '', params.get('level') || 'UG', qType, qExam);
+        UI.showViewerPanel(params.get('url') || '', params.get('name') || courseCode, courseCode, params.get('prog') || '', params.get('level') || 'UG', qType, qExam);
       }
       this.isResolving = false;
       return;
     }
 
-    UI.hideViewerPanel();
+    // Hide viewer panel if closing or navigating away
+    UI.hideViewerPanel(false);
 
-    if (path === '/search') {
-      UI.restoreState(params.get('q') || '', params.get('level') || UI.activeLevel, params.get('type') || UI.activeType);
-    } else if (path.startsWith('/type/')) {
-      const type = decodeURIComponent(path.split('/')[2] || 'ALL');
-      UI.restoreState($('searchInput')?.value || '', UI.activeLevel, type);
-    } else if (path.startsWith('/filter/')) {
-      const level = decodeURIComponent(path.split('/')[2] || 'ALL');
-      UI.restoreState($('searchInput')?.value || '', level, UI.activeType);
-    } else if (/^[A-Z]/.test(path) && !path.includes('/')) {
-      // Bare course code support
-      const code = decodeURIComponent(path);
-      const item = Catalog.getCourse(code);
-      if (item) {
-        UI.showViewerPanel(item.course.pdf_url, item.course.name, item.course.code, item.prog.programme_name, item.prog.level, 'SLM');
-        this.isResolving = false;
-        return;
-      }
-      UI.restoreState('', 'ALL', 'ALL');
-    } else {
-      UI.restoreState('', 'ALL', 'ALL');
-    }
+    // Material Type (?type=pyq, ?type=assignment, ?type=slm, ?type=all)
+    const rawType = (params.get('type') || '').toUpperCase();
+    const type = (rawType === 'PYQ' || rawType === 'PYQS') ? 'PYQ' :
+                 (rawType === 'ASSIGNMENT' || rawType === 'ASSIGNMENTS' || rawType === 'ASGN') ? 'ASSIGNMENT' :
+                 (rawType === 'ALL') ? 'ALL' : 'SLM';
 
+    // Degree Level (?level=ug, ?level=pg, ?level=fyug, ?level=all)
+    const rawLevel = (params.get('level') || '').toUpperCase();
+    const level = (rawLevel === 'UG' || rawLevel === 'PG' || rawLevel === 'FYUG') ? rawLevel : 'ALL';
+
+    // Search Query (?q=english or ?search=english)
+    const query = params.get('q') || params.get('search') || '';
+
+    UI.restoreState(query, level, type);
     this.isResolving = false;
   }
 }
@@ -2106,6 +2123,14 @@ class UIController {
     panel.classList.add('visible');
     document.body.classList.add('viewer-panel-open');
 
+    // Sync clean course URL without hash
+    const base = window.location.pathname || '/';
+    const viewParams = new URLSearchParams();
+    if (code) viewParams.set('course', code);
+    else if (name) viewParams.set('course', name);
+    if (type && type !== 'SLM' && type !== 'ALL') viewParams.set('type', type.toLowerCase());
+    Router.updateUrlSilently(`${base}?${viewParams.toString()}`);
+
     // Hardware-accelerated direct PDF preview
     const frame = $('viewerPanelFrame');
     const ld = $('viewerPanelLoading');
@@ -2126,13 +2151,14 @@ class UIController {
     }
   }
 
-  hideViewerPanel() {
+  hideViewerPanel(syncUrl = true) {
     const panel = $('viewerPanel');
     if (!panel) return;
     panel.classList.remove('visible');
     document.body.classList.remove('viewer-panel-open');
     const frame = $('viewerPanelFrame');
     if (frame) frame.src = 'about:blank';
+    if (syncUrl) this.syncUrlFromState(false);
   }
 
   // --- My Downloads Library Drawer ---
@@ -2205,7 +2231,7 @@ class UIController {
     const item = Catalog.courseMap.get((code || name || '').toLowerCase()) || null;
     const prog = item?.prog?.programme_name || 'SGOU Academic Database';
     const siteUrl = location.origin + '/';
-    const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(code || name) + '?type=' + encodeURIComponent(type) + '&url=' + encodeURIComponent(url);
+    const viewUrl = siteUrl + 'view.html?code=' + encodeURIComponent(code || name) + '&type=' + encodeURIComponent(type) + (url ? '&url=' + encodeURIComponent(url) : '');
 
     const typeLabel = type === 'PYQ' ? 'Previous Year Exam Paper' : type === 'ASSIGNMENT' ? 'Assignment Booklet' : 'Course SLM';
     const text = `${prog}\n${name}${code ? ' (' + code + ')' : ''} [${typeLabel}]\n${viewUrl}`;
@@ -2226,19 +2252,29 @@ class UIController {
 
   // --- State Synchronization ---
 
-  syncUrlFromState() {
+  syncUrlFromState(push = false) {
     const q = ($('searchInput')?.value || '').trim();
-    let path;
+    const params = new URLSearchParams();
+
     if (q) {
-      path = '/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(this.activeLevel) + (this.activeType !== 'SLM' ? '&type=' + encodeURIComponent(this.activeType) : '');
-    } else if (this.activeType !== 'SLM') {
-      path = '/type/' + encodeURIComponent(this.activeType);
-    } else if (this.activeLevel !== 'ALL') {
-      path = '/filter/' + encodeURIComponent(this.activeLevel);
-    } else {
-      path = '/';
+      params.set('q', q);
     }
-    Router.updateUrlSilently(path);
+    if (this.activeType && this.activeType !== 'SLM' && this.activeType !== 'ALL') {
+      params.set('type', this.activeType.toLowerCase());
+    }
+    if (this.activeLevel && this.activeLevel !== 'ALL') {
+      params.set('level', this.activeLevel.toLowerCase());
+    }
+
+    const qs = params.toString();
+    const base = window.location.pathname || '/';
+    const cleanUrl = qs ? `${base}?${qs}` : base;
+
+    if (push) {
+      Router.navigate(cleanUrl);
+    } else {
+      Router.updateUrlSilently(cleanUrl);
+    }
   }
 
   restoreState(query, level, type = 'SLM') {

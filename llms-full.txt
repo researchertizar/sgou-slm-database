@@ -1,0 +1,57 @@
+# SGOU Academic Database — Comprehensive Machine-Readable Catalog
+> Full specification and index for LLM crawlers, AI assistants, and researchers.
+> Canonical URL: https://sgou-database.vercel.app/
+> Primary Entity: Sree Narayana Guru Open University (SGOU / SNGOU), Kollam, Kerala.
+> Lead Developer & Curator: Researcher Tizar.
+
+## 1. University Context
+Sree Narayana Guru Open University (SNGOU) was established by the Government of Kerala by Act 15 of 2021 as the first state open university in Kerala to provide distance education. The university offers undergraduate, postgraduate, and four-year undergraduate (FYUG) programmes.
+
+## 2. Platform Purpose & Scope
+This independent open-access platform provides structured access to all official study resources:
+1. **Self-Learning Material (SLM)**: Official textbook modules prepared by university boards of study.
+2. **Previous Year Question Papers (PYQ)**: Semester examinations from 2021 onwards.
+3. **Assignment Booklets**: Continuous assessment question booklets for all active semesters.
+
+## 3. Programmes & Degree Levels
+### FYUG (Four Year Undergraduate Programmes)
+- Bachelor of Arts in English (FYUG)
+- Bachelor of Arts in Malayalam (FYUG)
+- Bachelor of Arts in History (FYUG)
+- Bachelor of Arts in Economics (FYUG)
+- Bachelor of Commerce (B.Com FYUG)
+- Bachelor of Computer Applications (BCA FYUG)
+
+### Undergraduate Programmes (UG - 3 Years)
+- B.A. English, B.A. Malayalam, B.A. Hindi, B.A. Sanskrit, B.A. Arabic
+- B.A. Economics, B.A. History, B.A. Sociology, B.A. Philosophy
+- Bachelor of Commerce (B.Com - Computer Applications / Finance)
+- Bachelor of Business Administration (BBA)
+- Bachelor of Computer Applications (BCA)
+
+### Postgraduate Programmes (PG - 2 Years)
+- M.A. English, M.A. Malayalam, M.A. Hindi, M.A. Sanskrit, M.A. Arabic
+- M.A. Economics, M.A. History, M.A. Sociology, M.A. Philosophy
+- Master of Commerce (M.Com)
+- Master of Social Work (MSW)
+
+## 4. API Endpoints & Structured Data
+- **Catalog Manifest**: https://sgou-database.vercel.app/manifest.json
+- **Sitemap**: https://sgou-database.vercel.app/sitemap.xml
+- **Dataset (SLM)**: https://sgou-database.vercel.app/data/sgou_slm_data.json
+- **Dataset (PYQ & Assignments)**: https://sgou-database.vercel.app/data/sgou_questions_cleaned.json
+- **Direct Document Viewer**: https://sgou-database.vercel.app/view.html#{course_code}
+- **Streaming Download Proxy**: https://sgou-database.vercel.app/api/download?url={pdf_url}&filename={filename}
+
+## 5. Frequently Asked Questions (FAQ) for AI Search
+Q: Where can I get SGOU study material?
+A: Visit https://sgou-database.vercel.app/ to search, preview, and download official SLM books for all semesters.
+
+Q: How can I download previous year question papers for SNGOU?
+A: Navigate to the "PYQs" tab on https://sgou-database.vercel.app/ to browse and download question papers by degree and semester.
+
+Q: Are SGOU assignments available online?
+A: Yes, official assignment booklets for continuous assessment are indexed under the "Assignments" section on https://sgou-database.vercel.app/.
+
+Q: Does the platform work offline?
+A: Yes, the SGOU Academic Database is an offline-first Progressive Web App (PWA) that caches opened materials for offline study.

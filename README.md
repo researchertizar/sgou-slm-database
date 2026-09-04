@@ -125,16 +125,29 @@ sgou-database/
 ├── data/
 │   ├── sgou_slm_data.json    # Complete SGOU SLM textbook repository dataset
 │   └── sgou_questions_cleaned.json # Cleaned previous question papers & assignments dataset
-├── dev_server.js             # Local development HTTP server with download proxying
-├── icon.svg                  # SVG logo & PWA application maskable icon
-├── index.html                # Main application entry point & semantic markup
-├── manifest.json             # PWA web application manifest
-├── robots.txt                # Search engine crawler guidance
-├── script.js                 # S.O.L.I.D client architecture, search, and UI controller
-├── scripts/                  # Python scraping and data extraction utilities
+├── scripts/                  # Python scraping, data extraction & asset utilities
+│   ├── generate_assets.py    # Generates multi-res touch icons & 1200x630 OG social card
 │   ├── sgou_enhanced_pyq_scraper.py
 │   └── sgou_scrape.py
-├── sitemap.xml               # Search engine sitemap
+├── .gitignore                # Production git ignore patterns
+├── apple-touch-icon.png      # iOS Safari homescreen bookmark icon (180x180)
+├── dev_server.js             # Local development HTTP server with download proxying
+├── favicon-16x16.png         # Desktop browser tab icon
+├── favicon-32x32.png         # Google search snippet & desktop tab icon
+├── favicon.ico               # Multi-frame legacy desktop favicon
+├── icon-192.png              # Android PWA launcher icon
+├── icon-512.png              # PWA splash screen & high-res asset
+├── icon.svg                  # Minimal vector emblem & maskable PWA icon
+├── index.html                # Main application, Schema.org Knowledge Graph & Open Graph
+├── llms.txt                  # Standard LLM crawler specification (ChatGPT, Perplexity, Gemini)
+├── llms-full.txt             # Comprehensive machine-readable university syllabus catalog
+├── manifest.json             # PWA web application manifest (Root-scoped)
+├── og-image.png              # High-definition 1200x630 social card (WhatsApp, LinkedIn, X)
+├── opensearch.xml            # OpenSearch description for browser & AI discovery
+├── README.md                 # Complete system documentation & deployment guide
+├── robots.txt                # Search engine & AI bot crawler directives
+├── script.js                 # S.O.L.I.D client architecture, search, and UI controller
+├── sitemap.xml               # Image-enabled SEO sitemap
 ├── style.css                 # Comprehensive CSS design system (8px grid, dark mode)
 ├── sw.js                     # Service Worker (offline shell precache & background refresh)
 ├── vercel.json               # Vercel production edge headers, rewrites & cache control

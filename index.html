@@ -5,31 +5,152 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta name="description"
-        content="SGOU Academic Database — SLM Textbooks, Previous Question Papers (PYQs) & Assignments for Sree Narayana Guru Open University.">
+        content="SGOU Academic Database — Comprehensive digital repository for Sree Narayana Guru Open University (SNGOU), Kollam. Access 1,200+ SLM textbooks, 950+ previous year question papers (PYQs), and 75+ assignment booklets for FYUG, UG, and PG courses. Fast, offline-capable, and completely free.">
+    <meta name="keywords"
+        content="SGOU, SNGOU, Sree Narayana Guru Open University, Sreenarayanaguru Open University, SGOU SLM, SGOU textbooks, SGOU study material, SGOU previous question papers, SGOU PYQ, SGOU assignments, SGOU question bank, SGOU syllabus, Kollam Open University, Kerala distance education, SGOU FYUG, SGOU UG, SGOU PG, BA English, BCom, BBA, BCA, MA English, MCom, MSW, Researcher Tizar">
+    <meta name="author" content="Researcher Tizar">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <meta name="theme-color" content="#1a1714">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="canonical" href="https://sgou-database.vercel.app/">
     <title>SGOU Academic Database | By Researcher Tizar</title>
 
-    <!-- Open Graph & Social Sharing -->
-    <meta property="og:title" content="SGOU Academic Database — By Researcher Tizar">
+    <!-- Open Graph & Social Sharing (WhatsApp, LinkedIn, Facebook, Telegram) -->
+    <meta property="og:site_name" content="SGOU Academic Database">
+    <meta property="og:title" content="SGOU Academic Database — SLM Textbooks, PYQs & Assignments">
     <meta property="og:description"
-        content="Search, preview, and download SGOU Self-Learning Material (SLM) course books, previous year question papers (PYQ), and assignments.">
-    <meta property="og:image" content="icon.svg">
+        content="Free academic repository for Sree Narayana Guru Open University (SNGOU). Search, preview, and download 1,200+ SLM books, 950+ question papers, and 75+ assignments offline.">
+    <meta property="og:url" content="https://sgou-database.vercel.app/">
     <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="SGOU Academic Database">
-    <meta name="twitter:description" content="Search, preview, and download SGOU SLMs, PYQs, and assignments offline.">
+    <meta property="og:locale" content="en_IN">
+    <meta property="og:image" content="https://sgou-database.vercel.app/og-image.png">
+    <meta property="og:image:secure_url" content="https://sgou-database.vercel.app/og-image.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SGOU Academic Database — Sree Narayana Guru Open University Portal by Researcher Tizar">
 
+    <!-- Twitter / X Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SGOU Academic Database — By Researcher Tizar">
+    <meta name="twitter:description"
+        content="Free academic portal for Sree Narayana Guru Open University (SNGOU): 1,200+ SLM books, 950+ PYQs, and 75+ assignments with offline PWA support.">
+    <meta name="twitter:image" content="https://sgou-database.vercel.app/og-image.png">
+    <meta name="twitter:image:alt" content="SGOU Academic Database Preview Banner">
+    <meta name="twitter:creator" content="@researchertizar">
+
+    <!-- Touch & Favicon Formats -->
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="search" type="application/opensearchdescription+xml" title="SGOU Database" href="opensearch.xml">
+
+    <!-- Typography & CSS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260903_20">
+    <link rel="stylesheet" href="style.css?v=20260904_01">
+
+    <!-- Schema.org Knowledge Graph (JSON-LD) for Search Engines & AI Crawlers -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://sgou-database.vercel.app/#website",
+          "url": "https://sgou-database.vercel.app/",
+          "name": "SGOU Academic Database",
+          "alternateName": [
+            "SGOU Database",
+            "SNGOU Academic Portal",
+            "SGOU SLM Browser",
+            "SGOU Study Material Repository",
+            "Sree Narayana Guru Open University Database"
+          ],
+          "description": "Free digital repository for Sree Narayana Guru Open University (SNGOU), Kollam, offering free access to SLM textbooks, previous year question papers (PYQs), and assignment booklets.",
+          "inLanguage": "en-IN",
+          "publisher": {
+            "@type": "Person",
+            "name": "Researcher Tizar",
+            "jobTitle": "LEAD Engineer & Curator"
+          },
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://sgou-database.vercel.app/#/search?q={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "EducationalOrganization",
+          "@id": "https://sgou.ac.in/#organization",
+          "name": "Sree Narayana Guru Open University",
+          "alternateName": ["SGOU", "SNGOU", "Sreenarayanaguru Open University"],
+          "url": "https://sgou.ac.in",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Kollam",
+            "addressRegion": "Kerala",
+            "addressCountry": "IN"
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://sgou-database.vercel.app/#faq",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How can I download SGOU SLM textbooks online?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Browse and download official SGOU Self-Learning Material (SLM) textbooks for UG, PG, and FYUG programmes for free directly on https://sgou-database.vercel.app/."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Where can I find SGOU previous year question papers (PYQ)?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The SGOU Academic Database indexes 950+ previous year exam question papers categorized by course code, degree level, and semester examination date."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Are SGOU assignment booklets available for all semesters?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, official assignment booklets for continuous internal assessment across undergraduate and postgraduate programmes are indexed under the Assignments section."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does the SGOU Academic Database work offline?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, the SGOU Academic Database is an offline-first Progressive Web Application (PWA). Opened study materials and syllabus records are cached locally for offline study."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Who developed the SGOU Academic Database?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The SGOU Academic Database was curated and engineered by Researcher Tizar as an open-access educational utility for distance learning students."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
@@ -200,6 +321,10 @@
 
     <!-- Main -->
     <main>
+        <section class="sr-only" aria-label="University Repository Overview">
+            <h2>Sree Narayana Guru Open University (SGOU / SNGOU) Academic Database</h2>
+            <p>Independent, open-access academic portal curated and developed by Researcher Tizar for students and scholars of Sree Narayana Guru Open University, Kollam, Kerala. This repository offers free access to 1,200+ Self-Learning Material (SLM) course textbooks, 950+ previous year question papers (PYQs), and continuous evaluation assignment question booklets across all 37 Four Year Undergraduate (FYUG), Undergraduate (UG), and Postgraduate (PG) degree programmes.</p>
+        </section>
         <div class="search-results" id="searchResults" role="region" aria-label="Search results"></div>
         <div class="programme-grid" id="grid" role="list" aria-label="Programmes"></div>
     </main>
@@ -510,7 +635,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260903_20" defer></script>
+    <script src="script.js?v=20260904_01" defer></script>
 </body>
 
 </html>
