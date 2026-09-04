@@ -97,6 +97,11 @@ const server = http.createServer((req, res) => {
     return res.end('Forbidden');
   }
 
+  // Fallback check in data/ folder if not found in root (e.g. /sgou_slm_data.json -> /data/sgou_slm_data.json)
+  if (!fs.existsSync(filePath) && fs.existsSync(path.join(__dirname, 'data', path.basename(reqUrl.pathname)))) {
+    filePath = path.join(__dirname, 'data', path.basename(reqUrl.pathname));
+  }
+
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -106,7 +111,10 @@ const server = http.createServer((req, res) => {
     const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, {
       'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     });
     fs.createReadStream(filePath).pipe(res);
   });

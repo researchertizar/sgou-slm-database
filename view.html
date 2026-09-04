@@ -306,6 +306,31 @@
             color: #6ea8fe;
         }
 
+        .detail-type {
+            display: inline-block;
+            font-family: 'DM Mono', monospace;
+            font-size: 10px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            padding: .1rem .35rem;
+            border-radius: 3px;
+        }
+
+        .detail-type.slm {
+            background: rgba(31, 90, 67, .35);
+            color: #6fd4a8;
+        }
+
+        .detail-type.pyq {
+            background: rgba(67, 56, 202, .35);
+            color: #a5b4fc;
+        }
+
+        .detail-type.asgn {
+            background: rgba(180, 83, 9, .35);
+            color: #fcd34d;
+        }
+
         .detail-actions {
             display: flex;
             gap: .3rem;
@@ -790,6 +815,9 @@
             var code = params.get('code') || courseCode;
             var prog = params.get('prog') || '';
             var level = params.get('level') || '';
+            var matType = params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !code ? 'ASSIGNMENT' : 'SLM'));
+            var examDate = params.get('examdate') || params.get('date') || '';
+            var batch = params.get('batch') || '';
 
             var loading = document.getElementById('viewerLoading');
             var errorEl = document.getElementById('viewerError');
@@ -817,7 +845,7 @@
             if (courseCode && !pdfUrl) {
                 titleEl.textContent = 'Loading\u2026';
 
-                var dataPaths = ['/sgou_slm_data.json', '/data.json'];
+                var dataPaths = ['./data/sgou_slm_data.json', '/data/sgou_slm_data.json', '/sgou_slm_data.json', '/data.json'];
                 tryFetch(0);
             } else if (pdfUrl) {
                 showCourse();
@@ -866,7 +894,7 @@
                         });
 
                         if (!found) {
-                            showError('Course "' + courseCode + '" not found in database.');
+                            tryFetchQ(0);
                             return;
                         }
 
@@ -879,7 +907,68 @@
                         showCourse();
                     })
                     .catch(function () {
-                        tryFetch(i + 1);
+                        if (i + 1 < dataPaths.length) {
+                            tryFetch(i + 1);
+                        } else {
+                            tryFetchQ(0);
+                        }
+                    });
+            }
+
+            function tryFetchQ(j) {
+                var qPaths = ['./data/sgou_questions_cleaned.json', '/data/sgou_questions_cleaned.json', '/sgou_questions_cleaned.json'];
+                if (j >= qPaths.length) {
+                    showError('Material "' + courseCode + '" not found in database.');
+                    return;
+                }
+                fetch(qPaths[j], { cache: 'no-cache' })
+                    .then(function(r) {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.text();
+                    })
+                    .then(function(text) {
+                        var trimmed = text.trim();
+                        if (trimmed.charAt(0) !== '[' && trimmed.charAt(0) !== '{') throw new Error('Not JSON');
+                        return JSON.parse(trimmed);
+                    })
+                    .then(function(data) {
+                        if (!Array.isArray(data)) throw new Error('Not array');
+                        var foundQ = null;
+                        var codeUp = courseCode.toUpperCase().trim();
+                        data.forEach(function(p) {
+                            (p.previous_year_questions || []).forEach(function(py) {
+                                if (foundQ) return;
+                                var subj = (py.subject_name || '').toUpperCase();
+                                if (subj.includes(codeUp)) {
+                                    foundQ = {
+                                        pdfUrl: py.pdf_url,
+                                        name: py.subject_name,
+                                        code: courseCode,
+                                        prog: p.course_title,
+                                        level: p.course_title && (p.course_title.includes('M.') || p.course_title.includes('MASTER')) ? 'PG' : 'UG',
+                                        examDate: py.exam_date,
+                                        batch: py.admission_batch,
+                                        type: 'PYQ'
+                                    };
+                                }
+                            });
+                        });
+                        if (!foundQ) {
+                            showError('Material "' + courseCode + '" not found in database.');
+                            return;
+                        }
+                        name = foundQ.name;
+                        code = foundQ.code;
+                        prog = foundQ.prog;
+                        level = foundQ.level;
+                        pdfUrl = foundQ.pdfUrl;
+                        examDate = foundQ.examDate;
+                        batch = foundQ.batch;
+                        matType = foundQ.type;
+                        showCourse();
+                    })
+                    .catch(function() {
+                        tryFetchQ(j + 1);
                     });
             }
 
@@ -889,18 +978,34 @@
                     return;
                 }
 
-                document.title = (name || 'PDF') + ' \u2014 SGOU SLM';
-                titleEl.textContent = name || 'Course PDF';
+                var typeLabel = matType === 'PYQ' ? 'PYQ Paper' : matType === 'ASSIGNMENT' ? 'Assignment' : 'Course SLM';
+                document.title = (name || 'PDF') + ' (' + typeLabel + ') \u2014 SGOU Database';
+                titleEl.textContent = name || 'Course Material';
 
                 var cls = level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug';
                 var label = level === 'FYUG' ? 'FYUG' : level;
+                var typeCls = matType === 'PYQ' ? 'pyq' : matType === 'ASSIGNMENT' ? 'asgn' : 'slm';
+
                 var m = '';
                 if (prog) m += '<span>' + escH(prog) + '</span>';
                 if (level) m += '<span class="viewer-meta-tag ' + cls + '">' + label + '</span>';
+                m += '<span class="detail-type ' + typeCls + '">' + typeLabel + '</span>';
                 if (code) m += '<span>Code: ' + escH(code) + '</span>';
+                if (examDate) m += '<span>Exam: ' + escH(examDate) + '</span>';
+                if (batch) m += '<span>' + escH(batch) + '</span>';
                 metaEl.innerHTML = m;
 
-                var fn = (code ? code + '_' : '') + (name || 'doc').replace(/[^a-zA-Z0-9 _\-]/g, '') + '.pdf';
+                var cleanCode = code ? code + '_' : '';
+                var cleanName = (name || 'doc').replace(/[^a-zA-Z0-9 _\-]/g, '').trim();
+                var fn;
+                if (matType === 'PYQ') {
+                    fn = cleanCode + cleanName + '_PYQ' + (examDate ? '_' + examDate.replace(/[^a-zA-Z0-9 _\-]/g, '') : '') + '.pdf';
+                } else if (matType === 'ASSIGNMENT') {
+                    fn = (prog ? prog.replace(/[^a-zA-Z0-9 _\-]/g, '') + '_' : '') + cleanName + '_Assignment.pdf';
+                } else {
+                    fn = cleanCode + cleanName + '_SLM.pdf';
+                }
+
                 var dlUrl = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&filename=' + encodeURIComponent(fn);
                 dlBtn.href = dlUrl;
                 dlBtn.download = fn;

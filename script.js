@@ -79,6 +79,41 @@ function hl(text, query) {
 }
 
 /**
+ * Converts shouty uppercase programme names to polished Title Case,
+ * preserving acronyms like UG, PG, FYUG, BA, MA, B.Com, MCA, etc.
+ * @param {string} name - Raw programme name
+ * @returns {string} Clean Title Case programme name
+ */
+function formatProgName(name) {
+  if (!name) return '';
+  return String(name)
+    .toLowerCase()
+    .replace(/\b([a-z])/g, m => m.toUpperCase())
+    .replace(/\b(Of|In|And|For|A|An|The|To|On)\b/g, m => m.toLowerCase())
+    .replace(/\b(Ug|Pg|Fyug|Fyugp|Ba|Ma|Bcom|Mcom|Bba|Mba|Bca|Mca|Blis|Mlis|Msw|Bsc|Msc|Sgou|Cbcs|Slm|Pyq)\b/gi, m => m.toUpperCase())
+    .replace(/^([a-z])/, m => m.toUpperCase());
+}
+
+/**
+ * Formats assignment question titles into clean academic Title Case
+ * without smashed words (e.g. "LanguageandLiterature").
+ * @param {string} title
+ * @returns {string}
+ */
+function formatAssignmentTitle(title) {
+  if (!title) return 'Semester Assignment Booklet';
+  let t = String(title)
+    .replace(/LanguageandLiterature/gi, 'Language & Literature')
+    .replace(/ASSIGNMENT\s+QUESTIONS\s*/gi, '')
+    .replace(/B\.A\./gi, 'B.A. ')
+    .replace(/M\.A\./gi, 'M.A. ')
+    .replace(/B\.Com/gi, 'B.Com ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return formatProgName(t) + ' — Assignment Booklet';
+}
+
+/**
  * Sanitizes filename string against path traversal and control characters.
  * @param {string} s - Raw filename
  * @returns {string} Clean alphanumeric filename
@@ -112,6 +147,53 @@ async function copyToClipboard(text) {
   } catch {
     return false;
   }
+}
+
+/**
+ * Normalizes semester strings (e.g., 'SEMESTER 1', 'Semester-1', 'S1' -> 'S1').
+ * @param {string} s - Raw semester string
+ * @returns {string} Normalized semester key (e.g., 'S1')
+ */
+function normSem(s) {
+  if (!s) return 'S1';
+  const str = String(s).trim().toUpperCase();
+  const m = str.match(/(?:SEMESTER|SEM|S)\s*[-_]?\s*(\d+)/i) || str.match(/(\d+)/);
+  if (m) return 'S' + m[1];
+  return str;
+}
+
+const SGOU_CODE_REGEX = /\b(SG[BM]\d{2}[A-Z]{2}\d{3}[A-Z]{2}|[BM]\d{2}[A-Z]{2}\d{2}[A-Z]{2})\b/i;
+const NOT_COURSE_CODES = new Set(['SEMESTER', 'FEBRUARY', 'GRADUATE', 'EXAMINATIONS', 'UNDER', 'MASTER', 'BACHELOR', 'PROGRAMME']);
+
+/**
+ * Extracts normalized SGOU course code from PYQ subject string or course_code field.
+ * @param {Object} py - Raw PYQ object
+ * @returns {string} Course code or empty string
+ */
+function extractCourseCode(py) {
+  if (!py) return '';
+  const rawCode = String(py.course_code || '').trim().toUpperCase();
+  if (rawCode && /^[A-Z0-9]{8,13}$/.test(rawCode) && !NOT_COURSE_CODES.has(rawCode)) {
+    return rawCode;
+  }
+  const m = String(py.subject_name || '').match(SGOU_CODE_REGEX);
+  if (m) return m[1].toUpperCase();
+  return '';
+}
+
+/**
+ * Extracts clean course subject title from noisy PYQ subject string.
+ * @param {string} raw - Raw subject string
+ * @returns {string} Clean course name
+ */
+function cleanSubjectName(raw) {
+  if (!raw) return 'Exam Question Paper';
+  const parts = String(raw).split(/[–\-—]/);
+  if (parts.length > 1) {
+    const afterHyphen = parts.slice(1).join(' ').trim();
+    if (afterHyphen.length > 3) return afterHyphen;
+  }
+  return String(raw).replace(/^(B\.?[A-Z/.]+\s+(?:DEGREE\s+)?EXAMINATIONS?,?\s*(?:[A-Za-z0-9]+\s+Semester\s+[^–\-—]+)?)/i, '').trim() || String(raw);
 }
 
 // Device & Environment detection
@@ -293,95 +375,185 @@ class CatalogService {
     this.courseMap = new Map();     // O(1) code lookup
     this.searchIndex = [];          // Pre-flattened tokenized array
     this.levels = ['ALL'];
+    this.totalCourses = 0;          // Total SLM
+    this.totalPyq = 0;              // Total PYQs
+    this.totalAsgn = 0;             // Total Assignments
+    this.totalAll = 0;
     this.isLoaded = false;
   }
 
   async load() {
-    const sources = ['./sgou_slm_data.json', './data.json'];
-    let raw = null;
+    const slmSources = ['./data/sgou_slm_data.json', './sgou_slm_data.json', '/data/sgou_slm_data.json', './data.json'];
+    const qSources = ['./data/sgou_questions_cleaned.json', './sgou_questions_cleaned.json', '/data/sgou_questions_cleaned.json'];
 
-    for (const url of sources) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const json = await res.json();
-        if (Array.isArray(json) && json.length > 0) {
-          raw = json;
-          break;
-        }
-      } catch {
-        // Fallback to next source URL
+    const fetchFirstValid = async (urls) => {
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (Array.isArray(json) && json.length > 0) return json;
+        } catch (_) {}
       }
-    }
+      return null;
+    };
 
-    if (!raw) {
+    const [slmRaw, qRaw] = await Promise.all([
+      fetchFirstValid(slmSources),
+      fetchFirstValid(qSources)
+    ]);
+
+    if (!slmRaw && !qRaw) {
       throw new Error('Failed to load syllabus database from all endpoints');
     }
 
-    this._process(raw);
+    if (!qRaw) {
+      console.warn('[CatalogService] Questions dataset was unavailable; running in SLM-only mode.');
+    }
+    if (!slmRaw) {
+      console.warn('[CatalogService] SLM dataset was unavailable; running in Questions-only mode.');
+    }
+
+    this._process(slmRaw || [], qRaw || []);
     this.isLoaded = true;
     return this.programmes;
   }
 
-  _process(raw) {
+  _process(slmRaw, qRaw) {
     this.programmes = [];
     this.courseMap.clear();
     this.searchIndex = [];
+    this.totalCourses = 0;
+    this.totalPyq = 0;
+    this.totalAsgn = 0;
     const levelSet = new Set();
 
-    // Sanitize and normalize
-    raw.forEach(p => {
+    // Index Questions dataset by programme title
+    const qMap = new Map();
+    (qRaw || []).forEach(q => {
+      if (!q || !q.course_title) return;
+      qMap.set(q.course_title.trim().toUpperCase(), q);
+    });
+
+    slmRaw.forEach(p => {
       if (!p || !p.programme_name || !Array.isArray(p.semesters)) return;
 
       const progName = String(p.programme_name || '').trim();
       const level = String(p.level || 'UG').trim().toUpperCase();
       levelSet.add(level);
 
-      const sanitizedSemesters = (p.semesters || []).map(s => ({
-        semester: String(s.semester || '').trim(),
-        courses: Array.isArray(s.courses) ? s.courses.map(c => ({
-          code: String(c.code || '').trim(),
-          name: String(c.name || '').trim(),
-          pdf_url: String(c.pdf_url || '').trim()
-        })) : []
-      }));
+      const qProg = qMap.get(progName.toUpperCase());
+
+      // Group assignments by normalized semester
+      const asgnBySem = new Map();
+      if (qProg && Array.isArray(qProg.assignments)) {
+        qProg.assignments.forEach(a => {
+          const sKey = normSem(a.semester);
+          if (!asgnBySem.has(sKey)) asgnBySem.set(sKey, []);
+          asgnBySem.get(sKey).push({
+            title: String(a.title || '').trim(),
+            semester: sKey,
+            pdf_url: String(a.pdf_url || '').trim()
+          });
+          this.totalAsgn++;
+        });
+      }
+
+      // Group PYQs by normalized semester and course code
+      const pyqBySemAndCode = new Map();
+      const pyqBySemGeneral = new Map();
+      if (qProg && Array.isArray(qProg.previous_year_questions)) {
+        qProg.previous_year_questions.forEach(py => {
+          const sKey = normSem(py.semester);
+          const cCode = extractCourseCode(py);
+          const cleanSubject = cleanSubjectName(py.subject_name);
+          const pyRecord = {
+            subject_name: String(py.subject_name || '').trim(),
+            clean_name: cleanSubject,
+            code: cCode,
+            exam_date: String(py.exam_date || '').trim(),
+            admission_batch: String(py.admission_batch || '').trim(),
+            semester: sKey,
+            pdf_url: String(py.pdf_url || '').trim()
+          };
+          this.totalPyq++;
+
+          if (cCode) {
+            if (!pyqBySemAndCode.has(sKey)) pyqBySemAndCode.set(sKey, new Map());
+            const semCodeMap = pyqBySemAndCode.get(sKey);
+            if (!semCodeMap.has(cCode)) semCodeMap.set(cCode, []);
+            semCodeMap.get(cCode).push(pyRecord);
+          } else {
+            if (!pyqBySemGeneral.has(sKey)) pyqBySemGeneral.set(sKey, []);
+            pyqBySemGeneral.get(sKey).push(pyRecord);
+          }
+        });
+      }
+
+      let progSlmCount = 0;
+      let progPyqCount = 0;
+      let progAsgnCount = 0;
+
+      const sanitizedSemesters = (p.semesters || []).map(s => {
+        const sKey = normSem(s.semester);
+        const semAssignments = asgnBySem.get(sKey) || [];
+        progAsgnCount += semAssignments.length;
+
+        const semCodeMap = pyqBySemAndCode.get(sKey);
+        const semGeneralPyqs = pyqBySemGeneral.get(sKey) || [];
+        progPyqCount += semGeneralPyqs.length;
+
+        const courses = Array.isArray(s.courses) ? s.courses.map(c => {
+          const cCode = String(c.code || '').trim();
+          const cName = String(c.name || '').trim();
+          const cUrl = String(c.pdf_url || '').trim();
+          const cPyqs = semCodeMap ? (semCodeMap.get(cCode.toUpperCase()) || []) : [];
+          progPyqCount += cPyqs.length;
+          progSlmCount++;
+          this.totalCourses++;
+
+          return {
+            code: cCode,
+            name: cName,
+            pdf_url: cUrl,
+            pyqs: cPyqs
+          };
+        }) : [];
+
+        return {
+          semester: String(s.semester || sKey).trim(),
+          semKey: sKey,
+          assignments: semAssignments,
+          generalPyqs: semGeneralPyqs,
+          courses
+        };
+      });
 
       const progRecord = {
         programme_name: progName,
         level,
-        semesters: sanitizedSemesters
+        semesters: sanitizedSemesters,
+        totalSlm: progSlmCount,
+        totalPyq: progPyqCount,
+        totalAsgn: progAsgnCount
       };
 
       this.programmes.push(progRecord);
 
-      // Pre-compute O(1) course map and search tokens
+      // Pre-compute O(1) course lookup map (instantaneous)
       sanitizedSemesters.forEach(sem => {
         sem.courses.forEach(course => {
           if (!course.code) return;
-
-          const detail = {
+          this.courseMap.set(course.code.toLowerCase(), {
             course,
             prog: progRecord,
             sem
-          };
-
-          // Map for fast deep-link lookups
-          this.courseMap.set(course.code.toLowerCase(), detail);
-
-          // Flattened search record
-          this.searchIndex.push({
-            code: course.code,
-            name: course.name,
-            pdf_url: course.pdf_url,
-            progName: progRecord.programme_name,
-            level: progRecord.level,
-            semName: sem.semester,
-            // Precomputed search tokens for sub-millisecond query evaluation
-            tokens: `${course.code} ${course.name} ${progRecord.programme_name} ${progRecord.level} ${sem.semester}`.toLowerCase()
           });
         });
       });
     });
+
+    this.totalAll = this.totalCourses + this.totalPyq + this.totalAsgn;
 
     // Sort programmes alphabetically
     this.programmes.sort((a, b) =>
@@ -389,6 +561,108 @@ class CatalogService {
     );
 
     this.levels = ['ALL', ...Array.from(levelSet).sort()];
+
+    // Schedule background token indexing during idle time (Progressive Two-Stage Startup)
+    this._scheduleSearchIndexing();
+  }
+
+  /**
+   * Schedules deep search token indexing during browser idle cycles.
+   */
+  _scheduleSearchIndexing() {
+    if (this._indexingScheduled) return;
+    this._indexingScheduled = true;
+
+    const build = () => {
+      if (!this.searchIndex.length) {
+        this.buildSearchIndex();
+      }
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(build, { timeout: 1500 });
+    } else {
+      setTimeout(build, 80);
+    }
+  }
+
+  /**
+   * Builds the flattened search token array across courses, pyqs, and assignments.
+   * Can be called on demand if the user initiates a search before idle callback triggers.
+   */
+  buildSearchIndex() {
+    if (this.searchIndex.length > 0) return;
+
+    const idx = [];
+    this.programmes.forEach(progRecord => {
+      progRecord.semesters.forEach(sem => {
+        // 1. Index SLM courses
+        sem.courses.forEach(course => {
+          if (!course.code) return;
+
+          idx.push({
+            type: 'SLM',
+            code: course.code,
+            name: course.name,
+            pdf_url: course.pdf_url,
+            progName: progRecord.programme_name,
+            level: progRecord.level,
+            semName: sem.semester,
+            tokens: `${course.code} ${course.name} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} slm textbook book material`.toLowerCase()
+          });
+
+          // 2. Index associated PYQs
+          course.pyqs.forEach(py => {
+            idx.push({
+              type: 'PYQ',
+              code: course.code,
+              name: py.clean_name || course.name,
+              subject_name: py.subject_name,
+              examDate: py.exam_date,
+              admissionBatch: py.admission_batch,
+              pdf_url: py.pdf_url,
+              progName: progRecord.programme_name,
+              level: progRecord.level,
+              semName: sem.semester,
+              tokens: `${course.code} ${py.clean_name} ${py.subject_name} ${py.exam_date} ${py.admission_batch} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} pyq previous question paper exam`.toLowerCase()
+            });
+          });
+        });
+
+        // 3. Index Semester General PYQs
+        sem.generalPyqs.forEach(py => {
+          idx.push({
+            type: 'PYQ',
+            code: py.code || '',
+            name: py.clean_name || py.subject_name,
+            subject_name: py.subject_name,
+            examDate: py.exam_date,
+            admissionBatch: py.admission_batch,
+            pdf_url: py.pdf_url,
+            progName: progRecord.programme_name,
+            level: progRecord.level,
+            semName: sem.semester,
+            tokens: `${py.code} ${py.clean_name} ${py.subject_name} ${py.exam_date} ${py.admission_batch} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} pyq previous question paper exam`.toLowerCase()
+          });
+        });
+
+        // 4. Index Assignments
+        sem.assignments.forEach(asgn => {
+          idx.push({
+            type: 'ASSIGNMENT',
+            code: '',
+            name: asgn.title,
+            pdf_url: asgn.pdf_url,
+            progName: progRecord.programme_name,
+            level: progRecord.level,
+            semName: sem.semester,
+            tokens: `${asgn.title} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} assignment questions booklet`.toLowerCase()
+          });
+        });
+      });
+    });
+
+    this.searchIndex = idx;
   }
 
   getCourse(code) {
@@ -401,11 +675,37 @@ class CatalogService {
     return this.programmes.filter(p => p.level === level);
   }
 
+  filter(level = 'ALL', type = 'ALL') {
+    let list = this.filterByLevel(level);
+    if (type === 'SLM') {
+      return list.filter(p => (p.totalSlm || 0) > 0);
+    } else if (type === 'PYQ') {
+      return list.filter(p => (p.totalPyq || 0) > 0);
+    } else if (type === 'ASSIGNMENT') {
+      return list.filter(p => (p.totalAsgn || 0) > 0);
+    }
+    return list;
+  }
+
+  getLevelCounts(type = 'ALL') {
+    const counts = {};
+    this.levels.forEach(lv => {
+      const list = this.filter(lv, type);
+      counts[lv] = list.length;
+    });
+    return counts;
+  }
+
   getTotalCourses(programmesList = this.programmes) {
-    return programmesList.reduce(
-      (acc, p) => acc + p.semesters.reduce((sAcc, s) => sAcc + s.courses.length, 0),
-      0
-    );
+    return programmesList.reduce((acc, p) => acc + (p.totalSlm || 0), 0);
+  }
+
+  getTotalPyq(programmesList = this.programmes) {
+    return programmesList.reduce((acc, p) => acc + (p.totalPyq || 0), 0);
+  }
+
+  getTotalAsgn(programmesList = this.programmes) {
+    return programmesList.reduce((acc, p) => acc + (p.totalAsgn || 0), 0);
   }
 }
 
@@ -425,31 +725,51 @@ class SearchEngine {
     this.currentMatches = [];
     this.chunkSize = 25;
     this.renderedCount = 0;
+    this._memoCache = new Map();
   }
 
   /**
-   * Fast multi-token matching over pre-indexed courses.
+   * Fast multi-token matching over pre-indexed courses, question papers & assignments.
+   * Leverages LRU memoization cache for instantaneous O(1) response on repeated/backspaced queries.
    * @param {string} query - Raw search query
-   * @param {string} levelFilter - Active category ('ALL', 'UG', 'PG', etc.)
-   * @returns {Array} Matching course records
+   * @param {string} levelFilter - Active level ('ALL', 'UG', 'PG', etc.)
+   * @param {string} typeFilter - Active material type ('ALL', 'SLM', 'PYQ', 'ASSIGNMENT')
+   * @returns {Array} Matching records
    */
-  search(query, levelFilter = 'ALL') {
+  search(query, levelFilter = 'ALL', typeFilter = 'ALL') {
     const q = (query || '').toLowerCase().trim();
-    if (!q) return [];
+    if (!q && typeFilter === 'ALL' && levelFilter === 'ALL') return [];
 
-    const tokens = q.split(/\s+/).filter(Boolean);
+    const cacheKey = `${q}::${levelFilter}::${typeFilter}`;
+    if (this._memoCache.has(cacheKey)) {
+      this.currentMatches = this._memoCache.get(cacheKey);
+      this.renderedCount = 0;
+      return this.currentMatches;
+    }
+
+    // Ensure search tokens are compiled if user searches prior to background idle callback
+    if (!this.catalog.searchIndex.length && this.catalog.isLoaded) {
+      this.catalog.buildSearchIndex();
+    }
+
+    const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
     const results = [];
-    const seenCodes = new Set();
+    const seenUrls = new Set();
 
     for (let i = 0; i < this.catalog.searchIndex.length; i++) {
       const item = this.catalog.searchIndex[i];
 
-      // Category check
+      // Level category check
       if (levelFilter !== 'ALL' && item.level !== levelFilter) {
         continue;
       }
 
-      // Check if all search tokens match
+      // Material type check
+      if (typeFilter !== 'ALL' && item.type !== typeFilter) {
+        continue;
+      }
+
+      // Search tokens check
       let matchesAll = true;
       for (let j = 0; j < tokens.length; j++) {
         if (!item.tokens.includes(tokens[j])) {
@@ -458,14 +778,27 @@ class SearchEngine {
         }
       }
 
-      if (matchesAll && !seenCodes.has(item.code)) {
-        seenCodes.add(item.code);
+      if (matchesAll && !seenUrls.has(item.pdf_url)) {
+        seenUrls.add(item.pdf_url);
         results.push(item);
       }
     }
 
-    // Sort by name
-    results.sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' }));
+    // Sort order: SLM, PYQ, Assignment, then alphabetically
+    const typeOrder = { 'SLM': 1, 'PYQ': 2, 'ASSIGNMENT': 3 };
+    results.sort((a, b) => {
+      const tA = typeOrder[a.type] || 99;
+      const tB = typeOrder[b.type] || 99;
+      if (tA !== tB) return tA - tB;
+      return a.name.localeCompare(b.name, 'en', { sensitivity: 'base' });
+    });
+
+    // Maintain max 60 LRU memoized queries
+    if (this._memoCache.size >= 60) {
+      const firstKey = this._memoCache.keys().next().value;
+      this._memoCache.delete(firstKey);
+    }
+    this._memoCache.set(cacheKey, results);
 
     this.currentMatches = results;
     this.renderedCount = 0;
@@ -510,6 +843,10 @@ class DownloadManager {
     const codeEl = $('dlModalCode');
     const nameEl = $('dlModalName');
     const badgeEl = $('dlModalBadge');
+    const typeBadgeEl = $('dlModalTypeBadge');
+    const extraEl = $('dlModalExtra');
+    const titleEl = $('dlModalTitle');
+    const subtitleEl = $('dlModalSubtitle');
     const inputEl = $('dlFilenameInput');
     const chooseBtn = $('dlChooseFolderBtn');
     const startBtn = $('dlStartBtn');
@@ -517,8 +854,24 @@ class DownloadManager {
     const destDesc = $('dlDestDesc');
     const destIcon = $('dlDestIcon');
 
-    const cleanDefault = (item.code ? item.code + '_' : '') + sanitize(item.name || 'document');
-    if (codeEl) codeEl.textContent = item.code || 'Course SLM';
+    const itemType = (item.type || 'SLM').toUpperCase();
+
+    let cleanDefault;
+    if (itemType === 'PYQ') {
+      cleanDefault = (item.code ? item.code + '_' : '') + sanitize(item.name || 'exam_paper') + '_PYQ' + (item.examDate ? '_' + sanitize(item.examDate) : '');
+      if (titleEl) titleEl.textContent = 'Download Question Paper';
+      if (subtitleEl) subtitleEl.textContent = 'Previous Year Exam Paper';
+    } else if (itemType === 'ASSIGNMENT') {
+      cleanDefault = sanitize(item.prog || 'SGOU') + '_' + sanitize(item.semester || 'Semester') + '_Assignment';
+      if (titleEl) titleEl.textContent = 'Download Assignment';
+      if (subtitleEl) subtitleEl.textContent = 'Official Semester Assignment Questions';
+    } else {
+      cleanDefault = (item.code ? item.code + '_' : '') + sanitize(item.name || 'document') + '_SLM';
+      if (titleEl) titleEl.textContent = 'Download Course SLM';
+      if (subtitleEl) subtitleEl.textContent = 'Official Self-Learning Material';
+    }
+
+    if (codeEl) codeEl.textContent = item.code || (itemType === 'ASSIGNMENT' ? (item.semester || 'Assignment') : 'SGOU Material');
     if (nameEl) nameEl.textContent = item.name || 'Course Material';
     if (inputEl) inputEl.value = cleanDefault;
 
@@ -526,6 +879,20 @@ class DownloadManager {
       const lv = item.level || 'UG';
       badgeEl.textContent = lv === 'FYUG' ? 'FYUG' : lv;
       badgeEl.className = 'dl-badge ' + (lv === 'PG' ? 'pg' : lv === 'UG' ? 'ug' : 'fyug');
+    }
+
+    if (typeBadgeEl) {
+      typeBadgeEl.textContent = itemType;
+      typeBadgeEl.className = 'dl-type-badge ' + (itemType === 'PYQ' ? 'pyq' : itemType === 'ASSIGNMENT' ? 'asgn' : 'slm');
+    }
+
+    if (extraEl) {
+      if (item.examDate) {
+        extraEl.textContent = `Exam: ${item.examDate}${item.admissionBatch ? ' (' + item.admissionBatch + ')' : ''}`;
+        extraEl.style.display = 'block';
+      } else {
+        extraEl.style.display = 'none';
+      }
     }
 
     // OS-tailored storage instructions
@@ -823,12 +1190,14 @@ class RouterService {
 
     // Course Viewer Route: #/view/CODE
     if (path.startsWith('/view/')) {
-      const code = decodeURIComponent(path.split('/')[2] || '');
-      const item = Catalog.getCourse(code);
+      const codeOrTitle = decodeURIComponent(path.split('/')[2] || '');
+      const item = Catalog.getCourse(codeOrTitle);
+      const qType = params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !item ? 'ASSIGNMENT' : 'SLM'));
+      const qExam = params.get('examdate') || '';
       if (item) {
-        UI.showViewerPanel(item.course.pdf_url, item.course.name, item.course.code, item.prog.programme_name, item.prog.level);
+        UI.showViewerPanel(params.get('url') || item.course.pdf_url, params.get('name') || item.course.name, item.course.code, item.prog.programme_name, item.prog.level, qType, qExam);
       } else {
-        UI.showViewerPanel(params.get('url') || '', params.get('name') || 'Course PDF', code, params.get('prog') || '', params.get('level') || 'UG');
+        UI.showViewerPanel(params.get('url') || '', params.get('name') || codeOrTitle, codeOrTitle, params.get('prog') || '', params.get('level') || 'UG', qType, qExam);
       }
       this.isResolving = false;
       return;
@@ -837,22 +1206,25 @@ class RouterService {
     UI.hideViewerPanel();
 
     if (path === '/search') {
-      UI.restoreState(params.get('q') || '', params.get('level') || UI.activeLevel);
+      UI.restoreState(params.get('q') || '', params.get('level') || UI.activeLevel, params.get('type') || UI.activeType);
+    } else if (path.startsWith('/type/')) {
+      const type = decodeURIComponent(path.split('/')[2] || 'ALL');
+      UI.restoreState($('searchInput')?.value || '', UI.activeLevel, type);
     } else if (path.startsWith('/filter/')) {
       const level = decodeURIComponent(path.split('/')[2] || 'ALL');
-      UI.restoreState($('searchInput')?.value || '', level);
+      UI.restoreState($('searchInput')?.value || '', level, UI.activeType);
     } else if (/^[A-Z]/.test(path) && !path.includes('/')) {
       // Bare course code support
       const code = decodeURIComponent(path);
       const item = Catalog.getCourse(code);
       if (item) {
-        UI.showViewerPanel(item.course.pdf_url, item.course.name, item.course.code, item.prog.programme_name, item.prog.level);
+        UI.showViewerPanel(item.course.pdf_url, item.course.name, item.course.code, item.prog.programme_name, item.prog.level, 'SLM');
         this.isResolving = false;
         return;
       }
-      UI.restoreState('', 'ALL');
+      UI.restoreState('', 'ALL', 'ALL');
     } else {
-      UI.restoreState('', 'ALL');
+      UI.restoreState('', 'ALL', 'ALL');
     }
 
     this.isResolving = false;
@@ -871,6 +1243,7 @@ const Router = new RouterService();
 class UIController {
   constructor() {
     this.activeLevel = 'ALL';
+    this.activeType = 'SLM';
     this.toastTimer = null;
     this.navLock = false;
     this.revealObserver = null;
@@ -933,11 +1306,27 @@ class UIController {
     const toast = $('toast');
     if (!toast) return;
     clearTimeout(this.toastTimer);
+    toast.classList.remove('has-action');
     toast.textContent = message;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => toast.classList.add('visible'));
     });
     this.toastTimer = setTimeout(() => toast.classList.remove('visible'), durationMs);
+  }
+
+  showUpdateToast() {
+    const toast = $('toast');
+    if (!toast) return;
+    clearTimeout(this.toastTimer);
+    toast.classList.add('has-action');
+    toast.innerHTML = `<span style="font-size:12px;font-weight:500">App updated!</span> <button class="toast-refresh-btn" id="toastRefreshBtn" onclick="window.location.reload(true)" title="Refresh page"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Refresh</button>`;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => toast.classList.add('visible'));
+    });
+    this.toastTimer = setTimeout(() => {
+      toast.classList.remove('visible');
+      toast.classList.remove('has-action');
+    }, 25000);
   }
 
   showSkeletons() {
@@ -1019,21 +1408,23 @@ class UIController {
       if (!results) return;
       results.classList.add('active');
 
-      const matches = Search.search(q, this.activeLevel);
+      const matches = Search.search(q, this.activeLevel, this.activeType);
 
       if (!matches.length) {
+        const typeWord = this.activeType === 'PYQ' ? 'question papers' : this.activeType === 'ASSIGNMENT' ? 'assignments' : this.activeType === 'SLM' ? 'course textbooks' : 'materials';
         results.innerHTML = `
           <div class="search-results-header">No results</div>
           <div class="empty-state">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>
             </svg>
-            No courses match &ldquo;${esc(q)}&rdquo;
+            No ${typeWord} match &ldquo;${esc(q)}&rdquo;
           </div>`;
       } else {
         const chunk = Search.getNextChunk();
+        const typeNoun = this.activeType === 'PYQ' ? 'question paper' : this.activeType === 'ASSIGNMENT' ? 'assignment' : this.activeType === 'SLM' ? 'textbook' : 'material';
         results.innerHTML = `
-          <div class="search-results-header">${matches.length} course${matches.length !== 1 ? 's' : ''} found</div>
+          <div class="search-results-header">${matches.length} ${typeNoun}${matches.length !== 1 ? 's' : ''} found</div>
           <div id="searchItemsContainer">
             ${this._renderSearchItemsHTML(chunk.items, q)}
           </div>
@@ -1044,7 +1435,7 @@ class UIController {
 
       const stats = $('stats');
       if (stats) {
-        stats.textContent = matches.length ? `${matches.length} matching course${matches.length !== 1 ? 's' : ''}` : 'No matches';
+        stats.textContent = matches.length ? `${matches.length} matching material${matches.length !== 1 ? 's' : ''}` : 'No matches';
       }
     } else {
       if (results) {
@@ -1052,12 +1443,13 @@ class UIController {
         results.innerHTML = '';
       }
       if (viewControls) viewControls.style.display = '';
-      const filteredProgrammes = Catalog.filterByLevel(this.activeLevel);
+      const filteredProgrammes = Catalog.filter(this.activeLevel, this.activeType);
       if (grid) {
         grid.style.display = '';
-        this.renderProgrammes(filteredProgrammes);
+        this.renderProgrammes(filteredProgrammes, '', this.activeType);
       }
       this.updateStats(filteredProgrammes);
+      this.buildFilters();
     }
   }
 
@@ -1065,29 +1457,49 @@ class UIController {
     return items.map((item, idx) => {
       const cls = item.level === 'PG' ? 'pg' : item.level === 'UG' ? 'ug' : 'fyug';
       const label = item.level;
-      const fn = sanitize(item.code + '_' + item.name) + '.pdf';
-      const vh = '/view/' + encodeURIComponent(item.code || item.name);
+      const type = item.type || 'SLM';
+      const typeCls = type === 'PYQ' ? 'pyq' : type === 'ASSIGNMENT' ? 'asgn' : 'slm';
+
+      let fn;
+      if (type === 'PYQ') {
+        fn = (item.code ? item.code + '_' : '') + sanitize(item.name) + '_PYQ' + (item.examDate ? '_' + sanitize(item.examDate) : '') + '.pdf';
+      } else if (type === 'ASSIGNMENT') {
+        fn = sanitize(item.progName) + '_' + sanitize(item.semName) + '_Assignment.pdf';
+      } else {
+        fn = (item.code ? item.code + '_' : '') + sanitize(item.name) + '_SLM.pdf';
+      }
+
+      const vh = '/view/' + encodeURIComponent(item.code || item.name) + '?type=' + encodeURIComponent(type) + '&url=' + encodeURIComponent(item.pdf_url) + '&name=' + encodeURIComponent(item.name) + '&code=' + encodeURIComponent(item.code || '') + '&prog=' + encodeURIComponent(item.progName) + '&examdate=' + encodeURIComponent(item.examDate || '') + '&batch=' + encodeURIComponent(item.admissionBatch || '') + '&level=' + encodeURIComponent(item.level);
 
       return `
         <div class="search-result-item" data-idx="${idx}">
-          <span class="search-result-level ${cls}">${label}</span>
+          <div class="search-result-badges">
+            <span class="search-result-level ${cls}">${label}</span>
+            <span class="search-result-type ${typeCls}">${type}</span>
+          </div>
           <div class="search-result-body">
             <div class="search-result-programme">${hl(item.progName, query)} &middot; ${esc(item.semName)}</div>
             <div class="search-result-course-name">${hl(item.name, query)}</div>
-            <span class="search-result-code" title="Click to copy code" data-code="${ea(item.code)}">${hl(item.code, query)}</span>
+            ${item.code ? `<span class="search-result-code" title="Click to copy code" data-code="${ea(item.code)}">${hl(item.code, query)}</span>` : ''}
+            ${type === 'PYQ' ? `
+              <div class="search-result-extra">
+                <span class="pyq-date-pill">${esc(item.examDate || 'Exam Paper')}</span>
+                ${item.admissionBatch ? `<span class="pyq-batch-text">${esc(item.admissionBatch)}</span>` : ''}
+              </div>
+            ` : ''}
           </div>
           <div class="search-result-actions">
-            <button class="btn-share" data-url="${ea(item.pdf_url)}" data-name="${ea(item.name)}" aria-label="Share">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            </button>
             <a class="btn-view" href="#${ea(vh)}" title="View PDF">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              View
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span>View</span>
             </a>
-            <a class="btn-download" href="${ea(item.pdf_url)}" data-fname="${ea(fn)}" data-code="${ea(item.code)}" data-name="${ea(item.name)}" data-prog="${ea(item.progName)}" data-level="${ea(item.level)}" target="_blank" rel="noopener noreferrer">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              PDF
+            <a class="btn-download" href="${ea(item.pdf_url)}" data-type="${ea(type)}" data-fname="${ea(fn)}" data-code="${ea(item.code || '')}" data-name="${ea(item.name)}" data-prog="${ea(item.progName)}" data-level="${ea(item.level)}" data-examdate="${ea(item.examDate || '')}" data-batch="${ea(item.admissionBatch || '')}" data-semester="${ea(item.semName || '')}" target="_blank" rel="noopener noreferrer">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>PDF</span>
             </a>
+            <button class="btn-share" data-url="${ea(item.pdf_url)}" data-name="${ea(item.name)}" data-type="${ea(type)}" data-code="${ea(item.code || '')}" aria-label="Share" title="Share link">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
           </div>
         </div>
       `;
@@ -1164,10 +1576,10 @@ class UIController {
     if (!container) return;
     container.innerHTML = '';
 
+    const counts = Catalog.getLevelCounts(this.activeType);
+
     Catalog.levels.forEach(lv => {
-      const count = lv === 'ALL'
-        ? Catalog.programmes.length
-        : Catalog.programmes.filter(p => p.level === lv).length;
+      const count = counts[lv] || 0;
 
       const pill = document.createElement('button');
       pill.className = 'pill' + (this.activeLevel === lv ? ' active' : '');
@@ -1179,67 +1591,359 @@ class UIController {
 
   // --- Programme Cards Rendering ---
 
-  renderProgrammes(programmesList, query = '') {
+  renderProgrammes(programmesList, query = '', activeType = this.activeType) {
     const grid = $('grid');
     if (!grid) return;
 
     if (!programmesList.length) {
+      const typeWord = activeType === 'PYQ' ? 'question papers' : activeType === 'ASSIGNMENT' ? 'assignment booklets' : activeType === 'SLM' ? 'course textbooks' : 'materials';
       grid.innerHTML = `
-        <div class="empty-state">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          No programmes found matching category.
+        <div class="empty-category-notice">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>No ${typeWord} found matching <strong>${esc(this.activeLevel)}</strong> programmes.</div>
+          <button class="empty-category-btn" id="resetCategoryFilterBtn">Show All Programmes</button>
         </div>`;
       return;
     }
 
     grid.innerHTML = programmesList.map((prog, idx) => {
-      const sems = prog.semesters;
-      const totalCourses = sems.reduce((sum, s) => sum + s.courses.length, 0);
+      let sems;
+      if (activeType === 'ASSIGNMENT') {
+        sems = prog.semesters.filter(s => s.assignments && s.assignments.length > 0);
+      } else if (activeType === 'PYQ') {
+        sems = prog.semesters.filter(s => (s.courses && s.courses.some(c => c.pyqs && c.pyqs.length > 0)) || (s.generalPyqs && s.generalPyqs.length > 0));
+      } else if (activeType === 'SLM') {
+        sems = prog.semesters.filter(s => s.courses && s.courses.length > 0);
+      } else {
+        sems = prog.semesters;
+      }
+
+      if (!sems.length) return '';
+
+      let metaParts = [`${sems.length} sem`];
+      if (activeType === 'PYQ') {
+        metaParts.push(`${prog.totalPyq} Question Papers`);
+      } else if (activeType === 'ASSIGNMENT') {
+        metaParts.push(`${prog.totalAsgn} Assignment Booklets`);
+      } else if (activeType === 'SLM') {
+        metaParts.push(`${prog.totalSlm} Course Textbooks`);
+      } else {
+        if (prog.totalSlm > 0) metaParts.push(`${prog.totalSlm} SLM`);
+        if (prog.totalPyq > 0) metaParts.push(`${prog.totalPyq} PYQ`);
+        if (prog.totalAsgn > 0) metaParts.push(`${prog.totalAsgn} Asgn`);
+      }
 
       return `
         <div class="programme-card" data-level="${ea(prog.level)}" data-idx="${idx}" role="listitem">
           <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
-            <span class="level-tag">${esc(prog.level)}</span>
-            <h2>${hl(prog.programme_name, query)}</h2>
-            <div class="meta">${sems.length} sem &middot; ${totalCourses} courses</div>
-            <span class="toggle-icon">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </span>
+            <div class="card-header-main">
+              <div class="card-badge-row">
+                <span class="level-tag level-${ea(prog.level.toLowerCase())}">${esc(prog.level)}</span>
+                <span class="card-meta-text">${metaParts.join(' &middot; ')}</span>
+              </div>
+              <h2 class="programme-title">${hl(formatProgName(prog.programme_name), query)}</h2>
+            </div>
+            <div class="card-chevron" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
           </div>
           <div class="card-body" id="cb-${idx}" aria-hidden="true">
             <div class="semester-tabs" role="tablist">
-              ${sems.map((s, si) => `
-                <button class="sem-tab${si === 0 ? ' active' : ''}" data-content="p${idx}s${si}" role="tab" aria-selected="${si === 0}">
-                  ${esc(s.semester)} <span class="tab-count">${s.courses.length}</span>
-                </button>
-              `).join('')}
+              ${sems.map((s, si) => {
+                let count;
+                if (activeType === 'PYQ') {
+                  count = (s.courses ? s.courses.reduce((sum, c) => sum + (c.pyqs ? c.pyqs.length : 0), 0) : 0) + (s.generalPyqs ? s.generalPyqs.length : 0);
+                } else if (activeType === 'ASSIGNMENT') {
+                  count = s.assignments ? s.assignments.length : 0;
+                } else if (activeType === 'SLM') {
+                  count = s.courses ? s.courses.length : 0;
+                } else {
+                  count = (s.courses ? s.courses.length : 0) + (s.assignments ? s.assignments.length : 0) + (s.generalPyqs ? s.generalPyqs.length : 0);
+                }
+                return `
+                  <button class="sem-tab${si === 0 ? ' active' : ''}" data-content="p${idx}s${si}" role="tab" aria-selected="${si === 0}">
+                    ${esc(s.semester)} <span class="tab-count">${count}</span>
+                  </button>
+                `;
+              }).join('')}
             </div>
-            ${sems.map((s, si) => `
-              <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
-                ${s.courses.map(course => {
-        const fn = sanitize(course.code + '_' + course.name) + '.pdf';
-        const vh = '/view/' + encodeURIComponent(course.code || course.name);
-        return `
-                    <div class="course-item">
-                      <span class="course-code">${esc(course.code)}</span>
-                      <div class="course-info">
-                        <div class="course-name">${hl(course.name, query)}</div>
-                        <div class="course-actions">
-                          <a class="btn-view" href="#${ea(vh)}" title="View PDF">
-                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            View
+            ${sems.map((s, si) => {
+              // --- 1. ASSIGNMENT MODE ---
+              if (activeType === 'ASSIGNMENT') {
+                return `
+                  <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
+                    ${s.assignments && s.assignments.length > 0 ? s.assignments.map(asgn => {
+                      const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
+                      const vhAsgn = '/view/' + encodeURIComponent(prog.programme_name + '_' + s.semester) + '?type=ASSIGNMENT&url=' + encodeURIComponent(asgn.pdf_url) + '&name=' + encodeURIComponent(asgn.title) + '&prog=' + encodeURIComponent(prog.programme_name) + '&semester=' + encodeURIComponent(s.semester) + '&level=' + encodeURIComponent(prog.level);
+                      return `
+                        <div class="semester-assignment-card asgn-mode-hero">
+                          <div class="asgn-card-left">
+                            <div class="asgn-card-icon-wrap">
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h4"/></svg>
+                            </div>
+                            <div class="asgn-card-text">
+                              <span class="asgn-card-badge">Official Semester Assignment Booklet</span>
+                              <div class="asgn-card-title">${esc(formatAssignmentTitle(asgn.title))}</div>
+                              <div class="asgn-card-sub">Continuous Internal Assessment &bull; ${esc(s.semester)}</div>
+                            </div>
+                          </div>
+                          <div class="asgn-card-actions">
+                            <a class="btn-view" href="#${ea(vhAsgn)}" title="View Assignment Booklet PDF">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                              <span>View Booklet</span>
+                            </a>
+                            <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                              <span>PDF</span>
+                            </a>
+                          </div>
+                        </div>
+                      `;
+                    }).join('') : '<div style="padding:1.5rem;text-align:center;color:var(--ink-muted);font-size:13px">No assignments cataloged for this semester</div>'}
+                  </div>
+                `;
+              }
+
+              // --- 2. PYQ MODE ---
+              if (activeType === 'PYQ') {
+                const coursesWithPyq = (s.courses || []).filter(c => c.pyqs && c.pyqs.length > 0);
+                return `
+                  <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
+                    ${coursesWithPyq.map(course => `
+                      <div class="course-item pyq-mode">
+                        <div class="course-main-row">
+                          <div class="course-header-group">
+                            <span class="course-code">${esc(course.code)}</span>
+                            <span class="course-name">${hl(course.name, query)}</span>
+                          </div>
+                          <span class="pyq-count-chip">${course.pyqs.length} Paper${course.pyqs.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div class="course-pyq-drawer open">
+                          ${course.pyqs.map(py => {
+                            const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
+                            const vhPyq = '/view/' + encodeURIComponent(course.code || course.name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                            return `
+                              <div class="pyq-paper-item">
+                                <div class="pyq-paper-info">
+                                  <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
+                                  ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                                </div>
+                                <div class="pyq-paper-actions">
+                                  <a class="btn-view" href="#${ea(vhPyq)}" title="View Exam Paper PDF">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <span>View</span>
+                                  </a>
+                                  <a class="btn-download" href="${ea(py.pdf_url)}" data-type="PYQ" data-fname="${ea(fnPyq)}" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-examdate="${ea(py.exam_date)}" data-batch="${ea(py.admission_batch)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    <span>PDF</span>
+                                  </a>
+                                </div>
+                              </div>
+                            `;
+                          }).join('')}
+                        </div>
+                      </div>
+                    `).join('')}
+
+                    ${s.generalPyqs && s.generalPyqs.length > 0 ? `
+                      <div class="semester-pyq-archive" style="border-top:none;margin-top:.4rem">
+                        <div class="semester-pyq-archive-title">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                          <span>General Examination Papers (${s.generalPyqs.length})</span>
+                        </div>
+                        ${s.generalPyqs.map(py => {
+                          const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
+                          const vhG = '/view/' + encodeURIComponent(py.code || py.clean_name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(py.clean_name || py.subject_name) + '&code=' + encodeURIComponent(py.code || '') + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                          return `
+                            <div class="pyq-paper-item">
+                              <div class="pyq-paper-info">
+                                <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
+                                <strong style="font-size:12px;margin-left:4px">${esc(py.clean_name || py.subject_name)}</strong>
+                                ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                              </div>
+                              <div class="pyq-paper-actions">
+                                <a class="btn-view" href="#${ea(vhG)}" title="View PYQ PDF">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                  <span>View</span>
+                                </a>
+                                <a class="btn-download" href="${ea(py.pdf_url)}" data-type="PYQ" data-fname="${ea(fnG)}" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-examdate="${ea(py.exam_date)}" data-batch="${ea(py.admission_batch)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                  <span>PDF</span>
+                                </a>
+                              </div>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }
+
+              // --- 3. SLM MODE ---
+              if (activeType === 'SLM') {
+                return `
+                  <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
+                    ${s.courses.map(course => {
+                      const fn = sanitize(course.code + '_' + course.name) + '_SLM.pdf';
+                      const vh = '/view/' + encodeURIComponent(course.code || course.name) + '?type=SLM&url=' + encodeURIComponent(course.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&level=' + encodeURIComponent(prog.level);
+                      return `
+                        <div class="course-item">
+                          <div class="course-main-row">
+                            <div class="course-header-group">
+                              <span class="course-code">${esc(course.code)}</span>
+                              <span class="course-name">${hl(course.name, query)}</span>
+                            </div>
+                            <div class="course-actions">
+                              <a class="btn-view" href="#${ea(vh)}" title="View SLM PDF">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span>View</span>
+                              </a>
+                              <a class="btn-download" href="${ea(course.pdf_url)}" data-type="SLM" data-fname="${ea(fn)}" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <span>PDF</span>
+                              </a>
+                              <button class="btn-share" data-url="${ea(course.pdf_url)}" data-name="${ea(course.name)}" data-type="SLM" data-code="${ea(course.code)}" aria-label="Share" title="Share link">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                `;
+              }
+
+              // --- 4. ALL MATERIALS MODE (Default Integrated) ---
+              return `
+                <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
+                  ${s.assignments && s.assignments.length > 0 ? s.assignments.map(asgn => {
+                    const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
+                    const vhAsgn = '/view/' + encodeURIComponent(prog.programme_name + '_' + s.semester) + '?type=ASSIGNMENT&url=' + encodeURIComponent(asgn.pdf_url) + '&name=' + encodeURIComponent(asgn.title) + '&prog=' + encodeURIComponent(prog.programme_name) + '&semester=' + encodeURIComponent(s.semester) + '&level=' + encodeURIComponent(prog.level);
+                    return `
+                      <div class="semester-assignment-card">
+                        <div class="asgn-card-left">
+                          <div class="asgn-card-icon-wrap">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                          </div>
+                          <div class="asgn-card-text">
+                            <div class="asgn-card-title">${esc(formatAssignmentTitle(asgn.title))}</div>
+                            <div class="asgn-card-sub">Semester Assignment Booklet &bull; SGOU</div>
+                          </div>
+                        </div>
+                        <div class="asgn-card-actions">
+                          <a class="btn-view" href="#${ea(vhAsgn)}" title="View Assignment PDF">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span>View</span>
                           </a>
-                          <a class="course-link" href="${ea(course.pdf_url)}" data-fname="${ea(fn)}" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
-                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            Download
+                          <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            <span>PDF</span>
                           </a>
                         </div>
                       </div>
+                    `;
+                  }).join('') : ''}
+
+                  ${s.courses.map(course => {
+                    const fn = sanitize(course.code + '_' + course.name) + '_SLM.pdf';
+                    const vh = '/view/' + encodeURIComponent(course.code || course.name) + '?type=SLM&url=' + encodeURIComponent(course.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&level=' + encodeURIComponent(prog.level);
+                    const hasPyqs = course.pyqs && course.pyqs.length > 0;
+
+                    return `
+                      <div class="course-item">
+                        <div class="course-main-row">
+                          <div class="course-header-group">
+                            <span class="course-code">${esc(course.code)}</span>
+                            <span class="course-name">${hl(course.name, query)}</span>
+                          </div>
+                          <div class="course-actions">
+                            <a class="btn-view" href="#${ea(vh)}" title="View SLM PDF">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                              <span>View</span>
+                            </a>
+                            <a class="btn-download" href="${ea(course.pdf_url)}" data-type="SLM" data-fname="${ea(fn)}" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                              <span>PDF</span>
+                            </a>
+                            <button class="btn-share" data-url="${ea(course.pdf_url)}" data-name="${ea(course.name)}" data-type="SLM" data-code="${ea(course.code)}" aria-label="Share" title="Share link">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        ${hasPyqs ? `
+                          <div class="course-sub-row">
+                            <button class="course-pyq-toggle" type="button" aria-expanded="false">
+                              <svg class="toggle-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+                              <svg class="toggle-paper" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                              <span>${course.pyqs.length} Question Paper${course.pyqs.length > 1 ? 's' : ''}</span>
+                            </button>
+                            <div class="course-pyq-drawer">
+                              ${course.pyqs.map(py => {
+                                const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
+                                const vhPyq = '/view/' + encodeURIComponent(course.code || course.name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(course.name) + '&code=' + encodeURIComponent(course.code) + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                                return `
+                                  <div class="pyq-paper-item">
+                                    <div class="pyq-paper-info">
+                                      <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
+                                      ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                                    </div>
+                                    <div class="pyq-paper-actions">
+                                      <a class="btn-view" href="#${ea(vhPyq)}" title="View PYQ PDF">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                        <span>View</span>
+                                      </a>
+                                      <a class="btn-download" href="${ea(py.pdf_url)}" data-type="PYQ" data-fname="${ea(fnPyq)}" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-examdate="${ea(py.exam_date)}" data-batch="${ea(py.admission_batch)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                        <span>PDF</span>
+                                      </a>
+                                    </div>
+                                  </div>
+                                `;
+                              }).join('')}
+                            </div>
+                          </div>
+                        ` : ''}
+                      </div>
+                    `;
+                  }).join('')}
+
+                  ${s.generalPyqs && s.generalPyqs.length > 0 ? `
+                    <div class="semester-pyq-archive">
+                      <div class="semester-pyq-archive-title">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span>Additional Question Papers (${s.generalPyqs.length})</span>
+                      </div>
+                      ${s.generalPyqs.map(py => {
+                        const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
+                        const vhG = '/view/' + encodeURIComponent(py.code || py.clean_name) + '?type=PYQ&url=' + encodeURIComponent(py.pdf_url) + '&name=' + encodeURIComponent(py.clean_name || py.subject_name) + '&code=' + encodeURIComponent(py.code || '') + '&prog=' + encodeURIComponent(prog.programme_name) + '&examdate=' + encodeURIComponent(py.exam_date) + '&batch=' + encodeURIComponent(py.admission_batch) + '&level=' + encodeURIComponent(prog.level);
+                        return `
+                          <div class="pyq-paper-item">
+                            <div class="pyq-paper-info">
+                              <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
+                              <strong style="font-size:12px;margin-left:4px">${esc(py.clean_name || py.subject_name)}</strong>
+                              ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                            </div>
+                            <div class="pyq-paper-actions">
+                              <a class="btn-view" href="#${ea(vhG)}" title="View PYQ PDF">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span>View</span>
+                              </a>
+                              <a class="btn-download" href="${ea(py.pdf_url)}" data-type="PYQ" data-fname="${ea(fnG)}" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-examdate="${ea(py.exam_date)}" data-batch="${ea(py.admission_batch)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <span>PDF</span>
+                              </a>
+                            </div>
+                          </div>
+                        `;
+                      }).join('')}
                     </div>
-                  `;
-      }).join('')}
-              </div>
-            `).join('')}
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
           </div>
         </div>
       `;
@@ -1350,15 +2054,40 @@ class UIController {
     });
   }
 
+  toggleAll() {
+    const openCards = document.querySelectorAll('.programme-card.open');
+    if (openCards.length > 0) {
+      this.collapseAll();
+      this.updateToggleBtn(false);
+    } else {
+      this.expandAll();
+      this.updateToggleBtn(true);
+    }
+  }
+
+  updateToggleBtn(isExpanded) {
+    const btn = $('toggleAll');
+    if (!btn) return;
+    btn.dataset.state = isExpanded ? 'expanded' : 'collapsed';
+    const text = btn.querySelector('.toggle-text');
+    const icon = btn.querySelector('.toggle-icon');
+    if (text) text.textContent = isExpanded ? 'Collapse' : 'Expand';
+    if (icon) {
+      icon.innerHTML = isExpanded
+        ? '<polyline points="17 11 12 6 7 11" /><polyline points="17 18 12 13 7 18" />'
+        : '<polyline points="7 13 12 18 17 13" /><polyline points="7 6 12 11 17 6" />';
+    }
+  }
+
   // --- Fullscreen In-App PDF Preview Panel ---
 
-  showViewerPanel(pdfUrl, name, code, prog, level) {
+  showViewerPanel(pdfUrl, name, code, prog, level, type = 'SLM', examDate = '') {
     const panel = $('viewerPanel');
     if (!panel) return;
 
-    $('viewerPanelTitle').textContent = name || 'Course PDF';
+    $('viewerPanelTitle').textContent = name || 'Academic PDF';
     $('viewerProgName').textContent = prog || '';
-    $('viewerCourseCode').textContent = code ? 'Code: ' + code : '';
+    $('viewerCourseCode').textContent = code ? 'Code: ' + code : (examDate ? 'Exam: ' + examDate : '');
 
     const badge = $('viewerLevelTag');
     if (badge) {
@@ -1366,11 +2095,18 @@ class UIController {
       badge.className = 'viewer-meta-tag ' + (level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug');
     }
 
-    panel._data = { url: pdfUrl, name, code, prog, level };
+    const typeTag = $('viewerTypeTag');
+    if (typeTag) {
+      const t = (type || 'SLM').toUpperCase();
+      typeTag.textContent = t === 'PYQ' ? 'PYQ' : t === 'ASSIGNMENT' ? 'ASGN' : 'SLM';
+      typeTag.className = 'viewer-type-tag ' + (t === 'PYQ' ? 'pyq' : t === 'ASSIGNMENT' ? 'asgn' : 'slm');
+    }
+
+    panel._data = { url: pdfUrl, name, code, prog, level, type, examDate };
     panel.classList.add('visible');
     document.body.classList.add('viewer-panel-open');
 
-    // Hardware-accelerated direct PDF preview (NO Google Docs gview download bug!)
+    // Hardware-accelerated direct PDF preview
     const frame = $('viewerPanelFrame');
     const ld = $('viewerPanelLoading');
     if (frame) {
@@ -1420,22 +2156,27 @@ class UIController {
       return;
     }
 
-    list.innerHTML = history.map(h => `
-      <div class="my-dl-item">
-        <div class="my-dl-item-top">
-          <span class="my-dl-code">${esc(h.code)}</span>
-          <span class="my-dl-time">${esc(h.date)} &middot; ${esc(h.time)}</span>
+    list.innerHTML = history.map(h => {
+      const type = (h.type || 'SLM').toUpperCase();
+      const typeCls = type === 'PYQ' ? 'pyq' : type === 'ASSIGNMENT' ? 'asgn' : 'slm';
+      return `
+        <div class="my-dl-item">
+          <div class="my-dl-item-top">
+            <span class="my-dl-code">${esc(h.code || type)}</span>
+            <span class="mat-badge ${typeCls}" style="font-size:9px;padding:1px 4px">${type}</span>
+            <span class="my-dl-time">${esc(h.date)} &middot; ${esc(h.time)}</span>
+          </div>
+          <div class="my-dl-name">${esc(h.name)}</div>
+          <div class="my-dl-actions">
+            <span class="my-dl-filename" title="${esc(h.filename)}">${esc(h.filename)}${h.size ? ' (' + esc(h.size) + ')' : ''}</span>
+            <a class="my-dl-btn" href="${ea(h.url)}" target="_blank" rel="noopener noreferrer">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Open
+            </a>
+          </div>
         </div>
-        <div class="my-dl-name">${esc(h.name)}</div>
-        <div class="my-dl-actions">
-          <span class="my-dl-filename" title="${esc(h.filename)}">${esc(h.filename)}${h.size ? ' (' + esc(h.size) + ')' : ''}</span>
-          <a class="my-dl-btn" href="${ea(h.url)}" target="_blank" rel="noopener noreferrer">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            Open
-          </a>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   updateDownloadStats() {
@@ -1460,18 +2201,18 @@ class UIController {
 
   // --- Share Management ---
 
-  async shareContent(name, url) {
-    const item = Catalog.courseMap.get((name || '').toLowerCase()) || null;
-    const code = item?.course?.code || '';
-    const prog = item?.prog?.programme_name || 'SGOU SLM';
+  async shareContent(name, url, type = 'SLM', code = '') {
+    const item = Catalog.courseMap.get((code || name || '').toLowerCase()) || null;
+    const prog = item?.prog?.programme_name || 'SGOU Academic Database';
     const siteUrl = location.origin + '/';
-    const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(code || name);
+    const viewUrl = siteUrl + 'view.html#' + encodeURIComponent(code || name) + '?type=' + encodeURIComponent(type) + '&url=' + encodeURIComponent(url);
 
-    const text = `${prog}\n${name}${code ? ' (' + code + ')' : ''}\n${viewUrl}`;
+    const typeLabel = type === 'PYQ' ? 'Previous Year Exam Paper' : type === 'ASSIGNMENT' ? 'Assignment Booklet' : 'Course SLM';
+    const text = `${prog}\n${name}${code ? ' (' + code + ')' : ''} [${typeLabel}]\n${viewUrl}`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: name + ' — SGOU SLM', text });
+        await navigator.share({ title: name + ' — SGOU Database', text });
         Analytics.trackShare(name, 'web_share');
       } catch {
         // User cancelled share dialog
@@ -1489,7 +2230,9 @@ class UIController {
     const q = ($('searchInput')?.value || '').trim();
     let path;
     if (q) {
-      path = '/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(this.activeLevel);
+      path = '/search?q=' + encodeURIComponent(q) + '&level=' + encodeURIComponent(this.activeLevel) + (this.activeType !== 'SLM' ? '&type=' + encodeURIComponent(this.activeType) : '');
+    } else if (this.activeType !== 'SLM') {
+      path = '/type/' + encodeURIComponent(this.activeType);
     } else if (this.activeLevel !== 'ALL') {
       path = '/filter/' + encodeURIComponent(this.activeLevel);
     } else {
@@ -1498,15 +2241,16 @@ class UIController {
     Router.updateUrlSilently(path);
   }
 
-  restoreState(query, level) {
+  restoreState(query, level, type = 'SLM') {
     const input = $('searchInput');
     if (!input) return;
 
     const curQ = input.value.trim();
     const qChanged = curQ !== query;
     const lChanged = this.activeLevel !== level;
+    const tChanged = this.activeType !== type;
 
-    if (!qChanged && !lChanged) return;
+    if (!qChanged && !lChanged && !tChanged) return;
 
     if (qChanged) input.value = query;
     $('searchClear')?.classList.toggle('visible', query.length > 0);
@@ -1517,15 +2261,42 @@ class UIController {
         p.classList.toggle('active', p.dataset.level === this.activeLevel));
     }
 
+    if (tChanged) {
+      this.activeType = type;
+      document.querySelectorAll('.material-type-switcher .type-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.type === this.activeType));
+    }
+
     this.executeSearch();
   }
 
   updateStats(programmesList = Catalog.programmes) {
     const el = $('stats');
-    if (!el) return;
     const p = programmesList.length;
-    const c = Catalog.getTotalCourses(programmesList);
-    el.textContent = `${p} programme${p !== 1 ? 's' : ''} \u00b7 ${c} course${c !== 1 ? 's' : ''}`;
+    const slm = Catalog.getTotalCourses(programmesList);
+    const pyq = Catalog.getTotalPyq(programmesList);
+    const asgn = Catalog.getTotalAsgn(programmesList);
+
+    if (el) {
+      const lvl = this.activeLevel !== 'ALL' ? `${this.activeLevel} ` : '';
+      if (this.activeType === 'PYQ') {
+        el.textContent = `${p} ${lvl}programme${p !== 1 ? 's' : ''} \u00b7 ${pyq} Question Papers`;
+      } else if (this.activeType === 'ASSIGNMENT') {
+        el.textContent = `${p} ${lvl}programme${p !== 1 ? 's' : ''} \u00b7 ${asgn} Assignment Booklets`;
+      } else if (this.activeType === 'SLM') {
+        el.textContent = `${p} ${lvl}programme${p !== 1 ? 's' : ''} \u00b7 ${slm} SLM Textbooks`;
+      } else {
+        el.textContent = `${p} ${lvl}programme${p !== 1 ? 's' : ''} \u00b7 ${slm} SLM \u00b7 ${pyq} PYQs \u00b7 ${asgn} Asgn`;
+      }
+    }
+
+    // Update switcher counts
+    const cSlm = $('countSlm');
+    const cPyq = $('countPyq');
+    const cAsgn = $('countAsgn');
+    if (cSlm) cSlm.textContent = (Catalog.totalCourses || 1205).toLocaleString();
+    if (cPyq) cPyq.textContent = (Catalog.totalPyq || 959).toLocaleString();
+    if (cAsgn) cAsgn.textContent = (Catalog.totalAsgn || 77).toLocaleString();
   }
 
   // --- Peripheral Helpers & Event Listeners ---
@@ -1671,6 +2442,38 @@ class UIController {
         return;
       }
 
+      // Material Type Switcher (Tier 1 filter)
+      const typeBtn = e.target.closest('.material-type-switcher .type-btn');
+      if (typeBtn && typeBtn.dataset.type) {
+        this.activeType = typeBtn.dataset.type;
+        document.querySelectorAll('.material-type-switcher .type-btn').forEach(b =>
+          b.classList.toggle('active', b.dataset.type === this.activeType));
+        Analytics.trackFilter('type_' + this.activeType);
+        this.executeSearch();
+        this.syncUrlFromState();
+        return;
+      }
+
+      // Reset Category Filter from Empty Notice
+      if (e.target.closest('#resetCategoryFilterBtn')) {
+        this.activeLevel = 'ALL';
+        this.executeSearch();
+        this.syncUrlFromState();
+        return;
+      }
+
+      // Course PYQ Expandable Toggle
+      const pyqToggle = e.target.closest('.course-pyq-toggle');
+      if (pyqToggle) {
+        e.preventDefault();
+        pyqToggle.classList.toggle('open');
+        const drawer = pyqToggle.nextElementSibling;
+        if (drawer && drawer.classList.contains('course-pyq-drawer')) {
+          drawer.classList.toggle('open');
+        }
+        return;
+      }
+
       // Viewer Back
       if (e.target.closest('#viewerBack')) {
         if (this.navLock) return;
@@ -1703,7 +2506,7 @@ class UIController {
       if (e.target.closest('#viewerPanelShare')) {
         const panel = $('viewerPanel');
         if (panel?._data) {
-          this.shareContent(panel._data.name, panel._data.url);
+          this.shareContent(panel._data.name, panel._data.url, panel._data.type, panel._data.code);
         }
         return;
       }
@@ -1808,29 +2611,31 @@ class UIController {
         return;
       }
 
-      // Download Buttons (Card or Search item)
+      // Download Buttons (Card, Drawer, or Search item)
       const dlBtn = e.target.closest('.btn-download, .course-link');
       if (dlBtn) {
         e.preventDefault();
+        const type = dlBtn.dataset.type || 'SLM';
         const code = dlBtn.dataset.code || '';
-        const item = Catalog.getCourse(code);
-        if (item) {
-          Downloader.openModal({
-            url: item.course.pdf_url,
-            name: item.course.name,
-            code: item.course.code,
-            prog: item.prog.programme_name,
-            level: item.prog.level
-          });
-        } else {
-          Downloader.openModal({
-            url: dlBtn.href,
-            name: dlBtn.dataset.name || 'Course PDF',
-            code: dlBtn.dataset.code || '',
-            prog: dlBtn.dataset.prog || 'SGOU Programme',
-            level: dlBtn.dataset.level || 'UG'
-          });
-        }
+        const name = dlBtn.dataset.name || '';
+        const prog = dlBtn.dataset.prog || '';
+        const level = dlBtn.dataset.level || 'UG';
+        const examDate = dlBtn.dataset.examdate || '';
+        const batch = dlBtn.dataset.batch || '';
+        const semester = dlBtn.dataset.semester || '';
+        const url = dlBtn.href;
+
+        Downloader.openModal({
+          url,
+          name,
+          code,
+          prog,
+          level,
+          type,
+          examDate,
+          admissionBatch: batch,
+          semester
+        });
         return;
       }
 
@@ -1838,7 +2643,7 @@ class UIController {
       const shareBtn = e.target.closest('.btn-share');
       if (shareBtn) {
         e.preventDefault();
-        this.shareContent(shareBtn.dataset.name, shareBtn.dataset.url);
+        this.shareContent(shareBtn.dataset.name, shareBtn.dataset.url, shareBtn.dataset.type || 'SLM', shareBtn.dataset.code || '');
         return;
       }
 
@@ -1870,7 +2675,7 @@ class UIController {
         return;
       }
 
-      // Category Pill Click
+      // Category Pill Click (Level filter)
       const filterPill = e.target.closest('.pill');
       if (filterPill && filterPill.dataset.level) {
         this.activeLevel = filterPill.dataset.level;
@@ -1888,9 +2693,8 @@ class UIController {
         return;
       }
 
-      // Global Expand / Collapse All
-      if (e.target.closest('#expandAll')) { this.expandAll(); return; }
-      if (e.target.closest('#collapseAll')) { this.collapseAll(); return; }
+      // Global Expand / Collapse All (Single Minimal Button)
+      if (e.target.closest('#toggleAll')) { this.toggleAll(); return; }
     });
   }
 }
@@ -1908,14 +2712,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Register PWA Service Worker with auto-update
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(reg => {
+      if (reg.waiting) {
+        UI.showUpdateToast();
+      }
       reg.addEventListener('updatefound', () => {
-        reg.installing?.addEventListener('statechange', function () {
-          if (this.state === 'activated') {
-            UI.showToast('App updated — refresh for latest version', 3500);
+        const installingWorker = reg.installing;
+        if (!installingWorker) return;
+        installingWorker.addEventListener('statechange', function () {
+          if (this.state === 'installed' && navigator.serviceWorker.controller) {
+            UI.showUpdateToast();
+          } else if (this.state === 'activated') {
+            UI.showUpdateToast();
           }
         });
       });
     }).catch(() => { });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      UI.showUpdateToast();
+    });
   }
 
   // Load syllabus catalog data
@@ -1941,3 +2756,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
+
+// ============================================================================
+//  10. GLOBAL RESILIENCE & ERROR BOUNDARIES
+// ============================================================================
+window.addEventListener('error', (e) => {
+  console.warn('[SGOU Resilient Boundary] Recovered from runtime error:', e.error || e.message);
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+  console.warn('[SGOU Resilient Boundary] Handled unhandled rejection:', e.reason);
+});
+
