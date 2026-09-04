@@ -1,15 +1,15 @@
-const CACHE = 'sgou-v103';
+const CACHE = 'sgou-v106';
 const SHELL = [
     './',
     './index.html',
-    './style.css?v=20260904_08',
-    './script.js?v=20260904_08',
-    './manifest.json?v=20260904_08',
-    './icon.svg?v=20260904_08',
-    './icon-192.png?v=20260904_08',
-    './icon-512.png?v=20260904_08',
-    './apple-touch-icon.png?v=20260904_08',
-    './favicon-32x32.png?v=20260904_08',
+    './style.css?v=20260904_10',
+    './script.js?v=20260904_11',
+    './manifest.json?v=20260904_10',
+    './icon.svg?v=20260904_10',
+    './icon-192.png?v=20260904_10',
+    './icon-512.png?v=20260904_10',
+    './apple-touch-icon.png?v=20260904_10',
+    './favicon-32x32.png?v=20260904_10',
     './view.html',
     './opensearch.xml'
 ];

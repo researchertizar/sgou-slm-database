@@ -2487,38 +2487,63 @@ class UIController {
 
   initInstallPrompt() {
     const banner = $('installBanner');
-    let deferredPrompt = null;
+    if (!banner) return;
 
+    // If already running as installed PWA (standalone mode or confirmed installed), hide banner
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isInstalled = isStandalone || Storage.get('sgou-app-installed') === '1';
+
+    if (isInstalled) {
+      banner.style.display = 'none';
+      return;
+    }
+
+    // Capture beforeinstallprompt event if available
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
-      deferredPrompt = e;
+      window.deferredInstallPrompt = e;
       Analytics.trackPWA('prompt_available');
-      if (banner && !Storage.get('sgou-install-dismissed')) {
-        setTimeout(() => banner.classList.add('visible'), 2500);
-      }
+      banner.classList.add('visible');
     });
+
+    // Appear on every reload until it gets installed
+    setTimeout(() => {
+      banner.classList.add('visible');
+    }, 600);
 
     window.addEventListener('appinstalled', () => {
       Analytics.trackPWA('installed');
+      banner.classList.remove('visible');
+      banner.style.display = 'none';
+      Storage.set('sgou-app-installed', '1');
       this.showToast('SGOU Database successfully installed!');
     });
 
     $('installBtn')?.addEventListener('click', async () => {
-      if (!deferredPrompt) {
-        this.showToast("Use your browser's install option");
-        return;
+      const promptEvent = window.deferredInstallPrompt;
+      if (promptEvent) {
+        banner.classList.remove('visible');
+        promptEvent.prompt();
+        const choice = await promptEvent.userChoice;
+        Analytics.trackPWA(choice?.outcome === 'accepted' ? 'prompt_accepted' : 'prompt_declined');
+        if (choice?.outcome === 'accepted') {
+          Storage.set('sgou-app-installed', '1');
+          banner.style.display = 'none';
+        }
+        window.deferredInstallPrompt = null;
+      } else {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+          this.showToast('Tap Share (\u2191) & select "Add to Home Screen"');
+        } else {
+          this.showToast("Click the install icon in your address bar or browser menu (\u22ee) to install");
+        }
       }
-      banner?.classList.remove('visible');
-      deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      Analytics.trackPWA(choice?.outcome === 'accepted' ? 'prompt_accepted' : 'prompt_declined');
-      deferredPrompt = null;
     });
 
     $('installDismiss')?.addEventListener('click', () => {
-      banner?.classList.remove('visible');
+      banner.classList.remove('visible');
       Analytics.trackPWA('prompt_dismissed');
-      Storage.set('sgou-install-dismissed', '1');
     });
   }
 
@@ -2883,7 +2908,7 @@ const UI = new UIController();
 
 const PWAService = {
   APP_VERSION: 'v2026.09.04',
-  BUILD_ID: '20260904_08',
+  BUILD_ID: '20260904_10',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,
