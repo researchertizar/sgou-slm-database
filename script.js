@@ -1399,19 +1399,34 @@ class UIController {
     this.toastTimer = setTimeout(() => toast.classList.remove('visible'), durationMs);
   }
 
-  showUpdateToast() {
+  showUpdateToast(onUpdate) {
     const toast = $('toast');
     if (!toast) return;
     clearTimeout(this.toastTimer);
     toast.classList.add('has-action');
-    toast.innerHTML = `<span style="font-size:12px;font-weight:500">App updated!</span> <button class="toast-refresh-btn" id="toastRefreshBtn" onclick="window.location.reload(true)" title="Refresh page"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Refresh</button>`;
+    toast.innerHTML = `<span style="font-size:12px;font-weight:500">New version available!</span> <button class="toast-refresh-btn" id="toastRefreshBtn" title="Update now"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Update Now</button>`;
+
+    const btn = $('toastRefreshBtn');
+    if (btn) {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        btn.disabled = true;
+        btn.textContent = 'Updating...';
+        if (typeof onUpdate === 'function') {
+          onUpdate();
+        } else {
+          window.location.reload();
+        }
+      };
+    }
+
     requestAnimationFrame(() => {
       requestAnimationFrame(() => toast.classList.add('visible'));
     });
     this.toastTimer = setTimeout(() => {
       toast.classList.remove('visible');
       toast.classList.remove('has-action');
-    }, 25000);
+    }, 30000);
   }
 
   showSkeletons() {
@@ -2294,9 +2309,7 @@ class UIController {
 
   updateDownloadStats() {
     const badge = $('downloadsBadge');
-    const countEl = $('downloadCount');
     const history = Storage.getDownloadHistory();
-    const totalCount = Storage.getDownloadCount();
 
     if (badge) {
       if (history.length > 0) {
@@ -2305,10 +2318,6 @@ class UIController {
       } else {
         badge.style.display = 'none';
       }
-    }
-
-    if (countEl) {
-      countEl.textContent = totalCount > 0 ? `${totalCount} download${totalCount !== 1 ? 's' : ''} on this device` : '';
     }
   }
 
@@ -2869,36 +2878,306 @@ class UIController {
 const UI = new UIController();
 
 // ============================================================================
+//  8B. PWA SERVICE (Lifecycle, Zero-Data-Loss Updates & WebAPK Sync)
+// ============================================================================
+
+const PWAService = {
+  APP_VERSION: 'v2026.09.04',
+  BUILD_ID: '20260904_08',
+  registration: null,
+  isRefreshing: false,
+  _checkingUpdate: false,
+
+  /**
+   * Safeguards and backs up all student data from localStorage.
+   * Ensures personal downloads history and settings can never be lost.
+   * @returns {Object} Backup snapshot of student data
+   */
+  backupUserData() {
+    const backup = {};
+    const keys = ['sgou-theme', 'sgou-recent', 'sgou-dl-history', 'sgou-dl-count', 'sgou-saved-dir', 'sgou-install-dismissed'];
+    try {
+      keys.forEach(k => {
+        const v = localStorage.getItem(k);
+        if (v !== null) backup[k] = v;
+      });
+    } catch (_) {}
+    return backup;
+  },
+
+  /**
+   * Verifies and restores student data from backup if ever needed.
+   * @param {Object} backup - Backup snapshot
+   */
+  restoreUserData(backup) {
+    if (!backup || typeof backup !== 'object') return;
+    try {
+      Object.entries(backup).forEach(([k, v]) => {
+        if (localStorage.getItem(k) === null && v !== null) {
+          localStorage.setItem(k, v);
+        }
+      });
+    } catch (_) {}
+  },
+
+  init() {
+    this.bindUI();
+
+    if (!('serviceWorker' in navigator)) return;
+
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', { scope: './' })
+        .then(reg => {
+          this.registration = reg;
+
+          // 1. Proactive update check on startup
+          this.checkForUpdate();
+
+          // 2. Check for update when app returns to foreground (vital for mobile PWA / WebAPK)
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              this.checkForUpdate();
+            }
+          });
+
+          // 3. Check for update when device regains network
+          window.addEventListener('online', () => {
+            this.checkForUpdate();
+          });
+
+          // 4. Periodic background check every 30 minutes
+          setInterval(() => {
+            this.checkForUpdate();
+          }, 30 * 60 * 1000);
+
+          // 5. If a new worker is already waiting to take over
+          if (reg.waiting) {
+            this.notifyUpdate(reg.waiting);
+          }
+
+          // 6. Listen for incoming updates
+          reg.addEventListener('updatefound', () => {
+            const installing = reg.installing;
+            if (!installing) return;
+            installing.addEventListener('statechange', () => {
+              if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                this.notifyUpdate(installing);
+              }
+            });
+          });
+        })
+        .catch(err => {
+          console.warn('[PWA] Service worker registration failed:', err);
+        });
+
+      // 7. Reload exactly once when a new service worker takes control
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!this.isRefreshing) {
+          this.isRefreshing = true;
+          window.location.reload();
+        }
+      });
+    });
+  },
+
+  bindUI() {
+    // Header update button
+    const updateBtn = $('appUpdateBtn');
+    if (updateBtn) {
+      updateBtn.addEventListener('click', () => this.openUpdateModal());
+    }
+
+    // Modal Close buttons
+    $('updateModalClose')?.addEventListener('click', () => this.closeUpdateModal());
+    $('updateModalDoneBtn')?.addEventListener('click', () => this.closeUpdateModal());
+
+    // Backdrop click close
+    const modal = $('updateModal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeUpdateModal();
+      });
+    }
+
+    // Manual check button
+    $('btnCheckUpdate')?.addEventListener('click', () => this.checkManualUpdate());
+
+    // Force hard update button
+    $('btnForceUpdate')?.addEventListener('click', () => this.forceHardUpdate());
+
+    // Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal?.classList.contains('visible')) {
+        this.closeUpdateModal();
+      }
+    });
+  },
+
+  openUpdateModal() {
+    const modal = $('updateModal');
+    if (!modal) return;
+
+    const versionLabel = $('appVersionLabel');
+    if (versionLabel) {
+      versionLabel.textContent = this.APP_VERSION;
+    }
+
+    modal.classList.add('visible');
+  },
+
+  closeUpdateModal() {
+    const modal = $('updateModal');
+    if (modal) modal.classList.remove('visible');
+  },
+
+  checkForUpdate() {
+    if (this.registration && typeof this.registration.update === 'function') {
+      this.registration.update().catch(() => {});
+    }
+  },
+
+  async checkManualUpdate() {
+    if (this._checkingUpdate) return;
+    this._checkingUpdate = true;
+
+    const btn = $('btnCheckUpdate');
+    const btnText = $('btnCheckUpdateText');
+    const statusBox = $('updateStatusBox');
+    const statusText = $('updateStatusText');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('spin');
+    }
+    if (btnText) btnText.textContent = 'Checking...';
+
+    if (statusBox) statusBox.className = 'update-status-row checking';
+    if (statusText) statusText.textContent = 'Checking for updates...';
+
+    try {
+      const probeTime = Date.now();
+      await Promise.all([
+        fetch(`./sw.js?probe=${probeTime}`, { cache: 'no-store' }).catch(() => {}),
+        fetch(`./manifest.json?probe=${probeTime}`, { cache: 'no-store' }).catch(() => {})
+      ]);
+
+      if (this.registration && typeof this.registration.update === 'function') {
+        await this.registration.update();
+      }
+
+      if (this.registration?.waiting) {
+        if (statusBox) statusBox.className = 'update-status-row has-update';
+        if (statusText) statusText.textContent = 'Updating app...';
+        this.notifyUpdate(this.registration.waiting);
+        setTimeout(() => {
+          this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }, 600);
+        return;
+      }
+
+      await new Promise(r => setTimeout(r, 1000));
+
+      if (this.registration?.waiting) {
+        if (statusBox) statusBox.className = 'update-status-row has-update';
+        if (statusText) statusText.textContent = 'Reloading app...';
+        this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        return;
+      }
+
+      const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (statusBox) statusBox.className = 'update-status-row';
+      if (statusText) statusText.textContent = `Up to date (${nowStr})`;
+      $('updateBadgeDot')?.style.setProperty('display', 'none');
+    } catch (err) {
+      if (statusBox) statusBox.className = 'update-status-row';
+      if (statusText) statusText.textContent = 'Offline / check failed';
+    } finally {
+      this._checkingUpdate = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('spin');
+      }
+      if (btnText) btnText.textContent = 'Check for Updates';
+    }
+  },
+
+  /**
+   * Forces a complete application re-sync:
+   * Wipes ONLY CacheStorage, leaves student LocalStorage 100% untouched.
+   */
+  async forceHardUpdate() {
+    const btn = $('btnForceUpdate');
+    const statusText = $('updateStatusText');
+    const statusBox = $('updateStatusBox');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Clearing cache...';
+    }
+
+    if (statusBox) statusBox.className = 'update-status-row checking';
+    if (statusText) statusText.textContent = 'Clearing cache & reloading...';
+
+    // 1. Create safety snapshot of student data
+    const backup = this.backupUserData();
+
+    try {
+      // 2. Clear all CacheStorage entries strictly (Service Worker HTTP assets)
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+
+      // 3. Unregister existing service worker to force fresh registration
+      if (this.registration) {
+        await this.registration.unregister().catch(() => {});
+      }
+
+      // 4. Verify LocalStorage safety snapshot
+      this.restoreUserData(backup);
+
+      if (statusText) statusText.textContent = 'Cache cleared! Reloading fresh application...';
+
+      // 5. Force fresh reload from server
+      setTimeout(() => {
+        window.location.replace('/?updated=' + Date.now());
+      }, 500);
+    } catch (err) {
+      this.restoreUserData(backup);
+      window.location.reload();
+    }
+  },
+
+  notifyUpdate(worker) {
+    // Reveal pulsing badge on header update button
+    const dot = $('updateBadgeDot');
+    if (dot) dot.style.display = 'block';
+
+    const statusBox = $('updateStatusBox');
+    const statusText = $('updateStatusText');
+    if (statusBox) statusBox.className = 'update-status-row has-update';
+    if (statusText) statusText.textContent = 'New update is ready to install!';
+
+    UI.showUpdateToast(() => {
+      if (worker) {
+        worker.postMessage({ type: 'SKIP_WAITING' });
+      } else if (this.registration?.waiting) {
+        this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      } else {
+        window.location.reload();
+      }
+    });
+  }
+};
+
+// ============================================================================
 //  9. APPLICATION BOOTSTRAPPER (Service Worker & Life Cycle)
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', async () => {
   UI.init();
   Router.init();
-
-  // Register PWA Service Worker with auto-update
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').then(reg => {
-      if (reg.waiting) {
-        UI.showUpdateToast();
-      }
-      reg.addEventListener('updatefound', () => {
-        const installingWorker = reg.installing;
-        if (!installingWorker) return;
-        installingWorker.addEventListener('statechange', function () {
-          if (this.state === 'installed' && navigator.serviceWorker.controller) {
-            UI.showUpdateToast();
-          } else if (this.state === 'activated') {
-            UI.showUpdateToast();
-          }
-        });
-      });
-    }).catch(() => { });
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      UI.showUpdateToast();
-    });
-  }
+  PWAService.init();
 
   // Load syllabus catalog data
   try {

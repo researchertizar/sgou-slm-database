@@ -2072,51 +2072,43 @@ main {
 }
 
 /* ===========================
-   22. FOOTER
+/* ===========================
+   22. FOOTER (MINIMAL)
    =========================== */
 footer {
   text-align: center;
-  padding: 1.5rem 1rem;
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: var(--ink-muted);
-  border-top: 1px solid var(--border);
-  letter-spacing: .04em;
-  transition: border-color .4s;
+  padding: 1.25rem 1rem;
+  border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: .4rem;
-  flex-wrap: wrap;
 }
 
-.footer-sep {
-  opacity: .4;
-}
-
-.footer-count {
-  color: var(--accent);
-}
-
-.footer-credit {
-  display: block;
-  width: 100%;
+.footer-minimal {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
   font-family: 'DM Mono', monospace;
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--ink-muted);
-  letter-spacing: .03em;
-  margin-top: .3rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  letter-spacing: .02em;
 }
 
-.footer-credit a {
+.footer-minimal a {
   color: var(--accent);
   text-decoration: none;
   transition: opacity .15s;
 }
 
-.footer-credit a:hover {
-  opacity: .8;
+.footer-minimal a:hover {
   text-decoration: underline;
+  opacity: .85;
+}
+
+.footer-sep {
+  opacity: .4;
 }
 
 
@@ -3507,6 +3499,293 @@ footer {
 
 .guide-steps li strong {
   color: var(--ink);
+}
+
+/* ===========================
+   31B. TOAST & UPDATE NOTIFICATIONS
+   =========================== */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--surface);
+  padding: 0.65rem 1.15rem;
+  border-radius: 50px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 4px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 99999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 90vw;
+  white-space: nowrap;
+}
+
+.toast.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.has-action {
+  border-radius: 12px;
+  padding: 0.6rem 0.85rem 0.6rem 1.1rem;
+  background: #1a1714;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.toast-refresh-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.toast-refresh-btn:hover {
+  background: var(--accent-hover);
+  transform: scale(1.02);
+}
+
+.toast-refresh-btn:active {
+  transform: scale(0.98);
+}
+
+/* ===========================
+   31C. PWA INSTALL BANNER
+   =========================== */
+.install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+  padding: 0.75rem 1.25rem;
+  z-index: 9999;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.install-banner.visible {
+  transform: translateY(0);
+}
+
+.install-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.install-text {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.install-text svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.install-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.install-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.45rem 1.1rem;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.install-btn:hover {
+  background: var(--accent-hover);
+}
+
+.install-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--ink-muted);
+  font-size: 20px;
+  line-height: 1;
+  padding: 0.3rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.install-dismiss:hover {
+  color: var(--ink);
+}
+
+/* ===========================
+   31D. APP UPDATE CENTER & DATA SAFETY
+   =========================== */
+.update-badge-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
+  background: #10b981;
+  border: 1.5px solid var(--header-bg, #1a1714);
+  border-radius: 50%;
+  animation: pulse-update-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-update-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.75; }
+}
+
+.modal-header-icon.update-icon {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.update-modal-card {
+  max-width: 300px;
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.update-modal-card .modal-header {
+  padding: 0.85rem 1rem 0.65rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.update-modal-card .modal-header-text h3 {
+  font-size: 1.05rem;
+}
+
+.update-modal-card .modal-header-text p {
+  font-size: 10.5px;
+  opacity: 0.85;
+}
+
+.update-modal-body {
+  padding: 0.85rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.update-status-row {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: 12px;
+  color: var(--ink-soft);
+  min-height: 18px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.update-status-row.checking .status-dot {
+  background: var(--accent);
+  animation: pulse-update-dot 1s infinite ease-in-out;
+}
+
+.update-status-row.has-update .status-dot {
+  background: var(--accent);
+}
+
+.btn-update-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  padding: .5rem 1rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+
+.btn-update-check:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-update-check:active:not(:disabled) {
+  transform: scale(.98);
+}
+
+.btn-update-check:disabled {
+  opacity: .7;
+  cursor: not-allowed;
+}
+
+.btn-update-check.spin svg {
+  animation: spin-path 0.9s linear infinite;
+}
+
+@keyframes spin-path {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.update-minimal-footer {
+  text-align: center;
+  margin-top: .05rem;
+}
+
+.link-force-update {
+  background: transparent;
+  border: none;
+  color: var(--ink-muted);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding: 2px 4px;
+  transition: color .15s;
+}
+
+.link-force-update:hover {
+  color: var(--accent);
 }
 
 /* ===========================

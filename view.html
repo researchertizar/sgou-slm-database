@@ -11,6 +11,11 @@
     <meta name="author" content="Researcher Tizar">
     <meta name="theme-color" content="#1a1714">
     <meta name="robots" content="index, follow">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SGOU Database">
+    <meta name="application-name" content="SGOU Database">
     <link rel="canonical" href="https://sgou-slm-database.vercel.app/view.html">
     <title>Document Viewer — SGOU Academic Database</title>
 
@@ -35,10 +40,11 @@
     <meta name="twitter:creator" content="@researchertizar">
 
     <!-- Touch & Favicon Formats -->
-    <link rel="icon" type="image/svg+xml" href="icon.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json?v=20260904_08">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg?v=20260904_08">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20260904_08">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20260904_08">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=20260904_08">
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1659,6 +1665,22 @@
         })();
     </script>
 
+    <!-- PWA Service Worker Registration & Update Check -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').then(function (reg) {
+                    reg.update().catch(function () {});
+                    document.addEventListener('visibilitychange', function () {
+                        if (document.visibilityState === 'visible') reg.update().catch(function () {});
+                    });
+                }).catch(function () {});
+            });
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+                window.location.reload();
+            });
+        }
+    </script>
 </body>
 
 </html>

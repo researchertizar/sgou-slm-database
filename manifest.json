@@ -1,10 +1,16 @@
 {
-    "name": "SGOU Academic Database — By Researcher Tizar",
+    "id": "/",
+    "name": "SGOU Academic Database",
     "short_name": "SGOU Database",
     "description": "Comprehensive academic database for Sree Narayana Guru Open University (SGOU / SNGOU) — SLM textbooks, previous year question papers (PYQs), and assignments.",
-    "start_url": "./",
-    "scope": "./",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
+    "display_override": [
+        "window-controls-overlay",
+        "standalone",
+        "minimal-ui"
+    ],
     "orientation": "portrait-primary",
     "handle_links": "preferred",
     "background_color": "#0e0d0c",
@@ -19,10 +25,10 @@
             "name": "Search Database",
             "short_name": "Search",
             "description": "Search for courses, codes, question papers, and assignments",
-            "url": "./?q=",
+            "url": "/?q=",
             "icons": [
                 {
-                    "src": "icon-192.png",
+                    "src": "icon-192.png?v=20260904_08",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
@@ -32,10 +38,10 @@
             "name": "Previous Year Questions",
             "short_name": "PYQs",
             "description": "Browse SGOU previous year question papers",
-            "url": "./?type=pyq",
+            "url": "/?type=pyq",
             "icons": [
                 {
-                    "src": "icon-192.png",
+                    "src": "icon-192.png?v=20260904_08",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
@@ -45,10 +51,10 @@
             "name": "Assignment Booklets",
             "short_name": "Assignments",
             "description": "View continuous assessment assignment booklets",
-            "url": "./?type=assignment",
+            "url": "/?type=assignment",
             "icons": [
                 {
-                    "src": "icon-192.png",
+                    "src": "icon-192.png?v=20260904_08",
                     "sizes": "192x192",
                     "type": "image/png"
                 }
@@ -57,27 +63,46 @@
     ],
     "icons": [
         {
-            "src": "favicon-32x32.png",
+            "src": "favicon-32x32.png?v=20260904_08",
             "sizes": "32x32",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
-            "src": "icon-192.png",
+            "src": "icon-192.png?v=20260904_08",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "icon-512.png",
-            "sizes": "512x512",
+            "src": "icon-192.png?v=20260904_08",
+            "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "maskable"
         },
         {
-            "src": "icon.svg",
+            "src": "icon-512.png?v=20260904_08",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "icon-512.png?v=20260904_08",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icon.svg?v=20260904_08",
             "sizes": "any",
             "type": "image/svg+xml",
             "purpose": "any"
+        },
+        {
+            "src": "icon.svg?v=20260904_08",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "maskable"
         }
     ]
 }

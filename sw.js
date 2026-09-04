@@ -1,9 +1,26 @@
-const CACHE = 'sgou-v100';
-const SHELL = ['./', './index.html', './style.css?v=20260904_02', './script.js?v=20260904_05', './manifest.json', './icon.svg', './icon-192.png', './apple-touch-icon.png', './favicon-32x32.png', './view.html', './opensearch.xml'];
+const CACHE = 'sgou-v103';
+const SHELL = [
+    './',
+    './index.html',
+    './style.css?v=20260904_08',
+    './script.js?v=20260904_08',
+    './manifest.json?v=20260904_08',
+    './icon.svg?v=20260904_08',
+    './icon-192.png?v=20260904_08',
+    './icon-512.png?v=20260904_08',
+    './apple-touch-icon.png?v=20260904_08',
+    './favicon-32x32.png?v=20260904_08',
+    './view.html',
+    './opensearch.xml'
+];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
-    e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+    e.waitUntil(
+        caches.open(CACHE)
+            .then(c => c.addAll(SHELL))
+            .then(() => self.skipWaiting())
+    );
 });
 
 self.addEventListener('activate', e => {
@@ -14,10 +31,17 @@ self.addEventListener('activate', e => {
     );
 });
 
+self.addEventListener('message', e => {
+    if (e.data && e.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
 self.addEventListener('fetch', e => {
     if (e.request.method !== 'GET') return;
     const url = new URL(e.request.url);
 
+    // Never cache analytics / tracking / ads
     if (
         url.hostname === 'www.googletagmanager.com' ||
         url.hostname === 'www.google-analytics.com' ||
@@ -29,6 +53,31 @@ self.addEventListener('fetch', e => {
     ) return;
 
     if (url.pathname.startsWith('/api/')) return;
+
+    // Manifest bypass: Android WebAPK minting and mobile browsers must receive fresh manifest to detect app name/icon updates
+    if (url.pathname.endsWith('/manifest.json') || url.pathname === '/manifest.json') {
+        e.respondWith(
+            fetch(e.request, { cache: 'no-cache' })
+                .catch(() => caches.match(e.request))
+        );
+        return;
+    }
+
+    // App icons & touch icons bypass / revalidate
+    if (url.pathname.match(/\/(icon.*|apple-touch-icon.*|favicon.*)/)) {
+        e.respondWith(
+            fetch(e.request)
+                .then(r => {
+                    if (r.ok) {
+                        const clone = r.clone();
+                        caches.open(CACHE).then(c => c.put(e.request, clone));
+                    }
+                    return r;
+                })
+                .catch(() => caches.match(e.request))
+        );
+        return;
+    }
 
     if (FONT_HOSTS.some(h => url.hostname === h)) {
         e.respondWith(swr(e.request));

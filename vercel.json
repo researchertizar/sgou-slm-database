@@ -42,6 +42,36 @@
             ]
         },
         {
+            "source": "/manifest.json",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "no-cache, no-store, must-revalidate"
+                },
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                },
+                {
+                    "key": "Content-Type",
+                    "value": "application/manifest+json; charset=utf-8"
+                }
+            ]
+        },
+        {
+            "source": "/(icon.*|apple-touch-icon.*|favicon.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=0, must-revalidate"
+                },
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                }
+            ]
+        },
+        {
             "source": "/data/(.*)",
             "headers": [
                 {
