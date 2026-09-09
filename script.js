@@ -427,8 +427,8 @@ class CatalogService {
   }
 
   async load() {
-    const slmSources = ['./data/sgou_slm_data.json', './sgou_slm_data.json', '/data/sgou_slm_data.json', './data.json'];
-    const qSources = ['./data/sgou_questions_cleaned.json', './sgou_questions_cleaned.json', '/data/sgou_questions_cleaned.json'];
+    const slmSources = ['./data/sgou_slm_data.json', './sgou_slm_data.json'];
+    const qSources = ['./data/sgou_questions_cleaned.json', './sgou_questions_cleaned.json'];
 
     const fetchFirstValid = async (urls) => {
       for (const url of urls) {
@@ -494,9 +494,15 @@ class CatalogService {
         qProg.assignments.forEach(a => {
           const sKey = normSem(a.semester);
           if (!asgnBySem.has(sKey)) asgnBySem.set(sKey, []);
+          const cleanT = String(a.clean_title || a.title || '').trim();
           asgnBySem.get(sKey).push({
-            title: String(a.title || '').trim(),
+            title: cleanT || `${sKey.title()} Assignment Booklet`,
+            clean_title: cleanT || `${sKey.title()} Assignment Booklet`,
+            raw_title: String(a.raw_title || a.title || '').trim(),
             semester: sKey,
+            academic_year: String(a.academic_year || '').trim(),
+            admission_batch: String(a.admission_batch || 'Continuous Internal Assessment').trim(),
+            category: String(a.category || 'Continuous Internal Assessment').trim(),
             pdf_url: String(a.pdf_url || '').trim()
           });
           this.totalAsgn++;
@@ -694,13 +700,17 @@ class CatalogService {
         sem.assignments.forEach(asgn => {
           idx.push({
             type: 'ASSIGNMENT',
-            code: '',
-            name: asgn.title,
+            code: 'BOOKLET',
+            name: asgn.clean_title || asgn.title,
+            clean_title: asgn.clean_title || asgn.title,
+            admission_batch: asgn.admission_batch || 'Continuous Internal Assessment',
+            academic_year: asgn.academic_year || '',
+            category: asgn.category || 'Continuous Internal Assessment',
             pdf_url: asgn.pdf_url,
             progName: progRecord.programme_name,
             level: progRecord.level,
             semName: sem.semester,
-            tokens: `${asgn.title} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} assignment questions booklet`.toLowerCase()
+            tokens: `${asgn.title} ${asgn.clean_title} ${asgn.admission_batch} ${asgn.academic_year} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} assignment booklet cia continuous assessment questions`.toLowerCase()
           });
         });
       });
@@ -1587,6 +1597,12 @@ class UIController {
                 ${item.admissionBatch ? `<span class="pyq-batch-text">${esc(item.admissionBatch)}</span>` : ''}
               </div>
             ` : ''}
+            ${type === 'ASSIGNMENT' ? `
+              <div class="search-result-extra">
+                <span class="asgn-pill">CIA QUESTIONS</span>
+                <span class="pyq-batch-text">${esc(item.admission_batch || 'Continuous Internal Assessment')}</span>
+              </div>
+            ` : ''}
           </div>
           <div class="search-result-actions">
             <a class="btn-view" href="${ea(vUrl)}" title="View PDF" data-type="${ea(type)}" data-code="${ea(item.code || '')}" data-name="${ea(item.name)}" data-prog="${ea(item.progName)}" data-level="${ea(item.level)}" data-examdate="${ea(item.examDate || '')}" data-url="${ea(item.pdf_url)}">
@@ -1776,30 +1792,35 @@ class UIController {
                       const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
                       const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment`;
                       return `
-                        <div class="semester-assignment-card asgn-mode-hero">
-                          <div class="asgn-card-left">
-                            <div class="asgn-card-icon-wrap">
-                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 12h6M9 16h4"/></svg>
+                        <div class="course-item asgn-mode">
+                          <div class="course-main-row">
+                            <div class="course-header-group">
+                              <span class="course-code asgn-code">BOOKLET</span>
+                              <span class="course-name">${esc(s.semester)} Assignment Booklet</span>
                             </div>
-                            <div class="asgn-card-text">
-                              <span class="asgn-card-badge">Official Semester Assignment Booklet</span>
-                              <div class="asgn-card-title">${esc(formatAssignmentTitle(asgn.title))}</div>
-                              <div class="asgn-card-sub">Continuous Internal Assessment &bull; ${esc(s.semester)}</div>
-                            </div>
+                            <span class="asgn-count-chip">1 Booklet</span>
                           </div>
-                          <div class="asgn-card-actions">
-                            <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment Booklet PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                              <span>View Booklet</span>
-                            </a>
-                            <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                              <span>PDF</span>
-                            </a>
+                          <div class="course-pyq-drawer open">
+                            <div class="pyq-paper-item asgn-paper-item">
+                              <div class="pyq-paper-info">
+                                <span class="asgn-pill">CIA QUESTIONS</span>
+                                <span class="pyq-batch-tag">Continuous Internal Assessment</span>
+                              </div>
+                              <div class="pyq-paper-actions">
+                                <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment Booklet PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                  <span>View</span>
+                                </a>
+                                <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                  <span>PDF</span>
+                                </a>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       `;
-                    }).join('') : '<div style="padding:1.5rem;text-align:center;color:var(--ink-muted);font-size:13px">No assignments cataloged for this semester</div>'}
+                    }).join('') : '<div class="empty-category-notice">No assignments cataloged for this semester</div>'}
                   </div>
                 `;
               }
@@ -1922,25 +1943,31 @@ class UIController {
                     const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
                     const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment`;
                     return `
-                      <div class="semester-assignment-card">
-                        <div class="asgn-card-left">
-                          <div class="asgn-card-icon-wrap">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                      <div class="course-item asgn-mode">
+                        <div class="course-main-row">
+                          <div class="course-header-group">
+                            <span class="course-code asgn-code">ASSIGNMENT</span>
+                            <span class="course-name">${esc(s.semester)} Assignment Booklet</span>
                           </div>
-                          <div class="asgn-card-text">
-                            <div class="asgn-card-title">${esc(formatAssignmentTitle(asgn.title))}</div>
-                            <div class="asgn-card-sub">Semester Assignment Booklet &bull; SGOU</div>
-                          </div>
+                          <span class="asgn-count-chip">Booklet</span>
                         </div>
-                        <div class="asgn-card-actions">
-                          <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            <span>View</span>
-                          </a>
-                          <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                            <span>PDF</span>
-                          </a>
+                        <div class="course-pyq-drawer open">
+                          <div class="pyq-paper-item asgn-paper-item">
+                            <div class="pyq-paper-info">
+                              <span class="asgn-pill">CIA QUESTIONS</span>
+                              <span class="pyq-batch-tag">Continuous Internal Assessment</span>
+                            </div>
+                            <div class="pyq-paper-actions">
+                              <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span>View</span>
+                              </a>
+                              <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <span>PDF</span>
+                              </a>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     `;

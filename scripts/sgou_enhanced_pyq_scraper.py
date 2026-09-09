@@ -218,19 +218,66 @@ def extract_subject_name(raw_title: str, course_code: str) -> str:
     return clean_text(fallback) or "N/A"
 
 
+SEMESTER_NUM_RE = re.compile(
+    r"\b(?:SEMESTER|SEM)[-\s]*(10|[1-9]|I|II|III|IV|V|VI|VII|VIII|IX|X)\b",
+    re.IGNORECASE,
+)
+ROMAN_TO_INT = {
+    "I": "1", "II": "2", "III": "3", "IV": "4", "V": "5",
+    "VI": "6", "VII": "7", "VIII": "8", "IX": "9", "X": "10",
+}
+
+
+def normalize_semester_string(text: str) -> str:
+    m = SEMESTER_NUM_RE.search(text)
+    if not m:
+        return "N/A"
+    val = m.group(1).upper()
+    val = ROMAN_TO_INT.get(val, val)
+    return f"SEMESTER {val}"
+
+
+def parse_assignment(resource: Resource, course_title: str = "") -> dict[str, str]:
+    raw_title = clean_text(resource.title)
+
+    # 1. Infer clean semester
+    sem = normalize_semester_string(raw_title)
+    if sem == "N/A" and resource.semester:
+        sem = normalize_semester_string(resource.semester)
+    if sem == "N/A":
+        sem = resource.semester or "SEMESTER 1"
+
+    # 2. Extract admission batch / academic year
+    batch_match = ADMISSION_RE.search(raw_title)
+    admission_batch = clean_text(batch_match.group(1)) if batch_match else "Continuous Internal Assessment"
+
+    year_match = re.search(r"\b(20\d{2}\s*[-–]\s*(?:20)?\d{2})\b", raw_title)
+    academic_year = clean_text(year_match.group(1)) if year_match else ""
+
+    # 3. Clean title for display
+    sem_label = sem.title() if sem != "N/A" else "Semester"
+    clean_title = f"{sem_label} Assignment Booklet"
+
+    return {
+        "title": clean_title,
+        "raw_title": raw_title,
+        "clean_title": clean_title,
+        "semester": sem,
+        "academic_year": academic_year,
+        "admission_batch": admission_batch,
+        "category": "Continuous Internal Assessment",
+        "pdf_url": resource.pdf_url,
+    }
+
+
 def transform_course(course: dict[str, str], resources: Iterable[Resource]) -> dict:
     assignments: list[dict[str, str]] = []
     pyqs: list[dict[str, str]] = []
+    course_title = course.get("course_title") or "Untitled course"
 
     for resource in resources:
         if is_assignment(resource):
-            assignments.append(
-                {
-                    "title": clean_text(resource.title),
-                    "semester": resource.semester or "N/A",
-                    "pdf_url": resource.pdf_url,
-                }
-            )
+            assignments.append(parse_assignment(resource, course_title))
         else:
             pyqs.append(parse_pyq(resource))
 

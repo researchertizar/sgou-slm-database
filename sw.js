@@ -1,4 +1,4 @@
-const CACHE = 'sgou-v106';
+const CACHE = 'sgou-v107';
 const SHELL = [
     './',
     './index.html',
@@ -85,7 +85,7 @@ self.addEventListener('fetch', e => {
     }
 
     if (url.pathname.endsWith('.json')) {
-        e.respondWith(nf(e.request));
+        e.respondWith(swr(e.request));
         return;
     }
 
