@@ -262,11 +262,11 @@ class StorageService {
   // --- Specialized Domain Storage Helpers ---
 
   getTheme() {
-    return this.get('sgou-theme', null);
+    return this.get('sgou-theme-v2', null);
   }
 
   setTheme(theme) {
-    this.set('sgou-theme', theme);
+    this.set('sgou-theme-v2', theme);
   }
 
   getRecentSearches() {
@@ -1362,20 +1362,19 @@ class UIController {
   // --- Theme Management ---
 
   initTheme() {
-    const saved = Storage.getTheme();
-    if (saved) {
-      document.documentElement.setAttribute('data-theme', saved);
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      document.documentElement.setAttribute('data-theme', 'dark');
+    // 1. Honor theme pre-established by zero-FOUC head script
+    let theme = document.documentElement.getAttribute('data-theme');
+    if (theme !== 'dark' && theme !== 'light') {
+      const urlTheme = new URLSearchParams(window.location.search).get('theme');
+      if (urlTheme === 'dark' || urlTheme === 'light') {
+        theme = urlTheme;
+      } else {
+        const saved = Storage.getTheme();
+        theme = saved === 'dark' ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
     }
     this.syncMeta();
-
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-      if (!Storage.getTheme()) {
-        document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-        this.syncMeta();
-      }
-    });
   }
 
   toggleTheme() {
@@ -1391,7 +1390,24 @@ class UIController {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     const meta = $('meta[name="theme-color"]');
     if (meta) {
-      meta.setAttribute('content', isDark ? '#13110f' : '#181512');
+      meta.setAttribute('content', isDark ? '#13110f' : '#1a1714');
+    }
+    const toggleBtn = $('themeToggle');
+    if (toggleBtn) {
+      toggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      toggleBtn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+    const ogImg = document.querySelector('meta[property="og:image"]');
+    if (ogImg) {
+      ogImg.setAttribute('content', isDark
+        ? 'https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909'
+        : 'https://sgou-slm-database.vercel.app/og-image.png?v=20260909');
+    }
+    const twitterImg = document.querySelector('meta[name="twitter:image"]');
+    if (twitterImg) {
+      twitterImg.setAttribute('content', isDark
+        ? 'https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909'
+        : 'https://sgou-slm-database.vercel.app/og-image.png?v=20260909');
     }
   }
 
@@ -2947,7 +2963,7 @@ const PWAService = {
    */
   backupUserData() {
     const backup = {};
-    const keys = ['sgou-theme', 'sgou-recent', 'sgou-dl-history', 'sgou-dl-count', 'sgou-saved-dir', 'sgou-install-dismissed'];
+    const keys = ['sgou-theme-v2', 'sgou-theme', 'sgou-recent', 'sgou-dl-history', 'sgou-dl-count', 'sgou-saved-dir', 'sgou-install-dismissed'];
     try {
       keys.forEach(k => {
         const v = localStorage.getItem(k);

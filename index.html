@@ -18,6 +18,15 @@
     <meta name="application-name" content="SGOU Database">
     <link rel="canonical" href="https://sgou-slm-database.vercel.app/">
     <title>SGOU Academic Database | By Ahayas</title>
+    <script>
+        (function(){try{var p=new URLSearchParams(location.search);var ut=p.get('theme');if(ut==='dark'||ut==='light'){document.documentElement.setAttribute('data-theme',ut);try{localStorage.setItem('sgou-theme-v2',ut);}catch(_){}}else{var t=localStorage.getItem('sgou-theme-v2');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}}catch(_){}})();
+        if (location.search.indexOf('og=1') !== -1) { document.documentElement.classList.add('og-mode'); }
+    </script>
+    <style>
+        html.og-mode, html.og-mode body { overflow: hidden !important; scrollbar-width: none !important; }
+        html.og-mode ::-webkit-scrollbar { display: none !important; width: 0 !important; }
+        html.og-mode #installBanner, html.og-mode .install-banner { display: none !important; }
+    </style>
 
     <!-- Open Graph & Social Sharing (WhatsApp, LinkedIn, Facebook, Telegram) -->
     <meta property="og:site_name" content="SGOU Academic Database">
@@ -27,19 +36,25 @@
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_IN">
-    <meta property="og:image" content="https://sgou-slm-database.vercel.app/og-image.png">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/og-image.png">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/og-image.png?v=20260909">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/og-image.png?v=20260909">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="SGOU Academic Database — SGOU Portal by Ahayas">
+    <meta property="og:image:alt" content="SGOU Academic Database — Light Theme Preview">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="SGOU Academic Database — Dark Theme Preview">
 
     <!-- Twitter / X Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="SGOU Academic Database — By Ahayas">
     <meta name="twitter:description"
         content="Free academic portal for Sree Narayana Guru Open University (SNGOU): 1,200+ SLM books, 950+ PYQs, and 75+ assignments with offline PWA support.">
-    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/og-image.png">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/og-image.png?v=20260909">
     <meta name="twitter:image:alt" content="SGOU Academic Database Preview Banner">
     <meta name="twitter:creator" content="@researchertizar">
 
@@ -612,7 +627,7 @@
             <div class="modal-header">
                 <div class="modal-header-text">
                     <h3 id="updateModalTitle">Update App</h3>
-                    <p id="appVersionLabel">v2026.09.04</p>
+                    <p id="appVersionLabel">v2026.09.09</p>
                 </div>
                 <button class="modal-close" id="updateModalClose" aria-label="Close dialog">&times;</button>
             </div>
@@ -659,7 +674,7 @@
     <!-- Toast & Update Notification Container -->
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="script.js?v=20260904_11" defer></script>
+    <script src="script.js?v=20260909_02" defer></script>
 </body>
 
 </html>

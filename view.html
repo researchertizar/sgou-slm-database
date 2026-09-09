@@ -18,6 +18,9 @@
     <meta name="application-name" content="SGOU Database">
     <link rel="canonical" href="https://sgou-slm-database.vercel.app/view.html">
     <title>Document Viewer — SGOU Academic Database</title>
+    <script>
+        (function(){try{var p=new URLSearchParams(location.search);var ut=p.get('theme');if(ut==='dark'||ut==='light'){document.documentElement.setAttribute('data-theme',ut);try{localStorage.setItem('sgou-theme-v2',ut);}catch(_){}}else{var t=localStorage.getItem('sgou-theme-v2');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}}catch(_){}})();
+    </script>
 
     <!-- Open Graph & Social Cards -->
     <meta property="og:site_name" content="SGOU Academic Database">
@@ -26,17 +29,23 @@
         content="Preview, read, and download official SGOU SLM course textbooks, question papers, and assignments offline.">
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/view.html">
     <meta property="og:type" content="article">
-    <meta property="og:image" content="https://sgou-slm-database.vercel.app/og-image.png">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/og-image.png">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/og-image.png?v=20260909">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/og-image.png?v=20260909">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Document Viewer — Light Theme Preview">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Document Viewer — Dark Theme Preview">
 
     <!-- Twitter / X Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Document Viewer — SGOU Academic Database">
     <meta name="twitter:description"
         content="Preview and download SGOU distance education textbooks, question papers, and assignment booklets.">
-    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/og-image.png">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/og-image.png?v=20260909">
     <meta name="twitter:creator" content="@researchertizar">
 
     <!-- Touch & Favicon Formats -->
@@ -1661,7 +1670,7 @@
             function escH(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
             function escA(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-            try { var t = localStorage.getItem('sgou-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (_) { }
+            // Theme managed synchronously in <head>
         })();
     </script>
 

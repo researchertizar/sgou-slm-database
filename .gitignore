@@ -24,3 +24,6 @@ Thumbs.db
 .cache/
 scratch/
 .system_generated/
+__pycache__/
+*.pyc
+*.pyo

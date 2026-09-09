@@ -6,6 +6,18 @@
             "destination": "/view.html?course=:course"
         },
         {
+            "source": "/sgou_slm_data.json",
+            "destination": "/data/sgou_slm_data.json"
+        },
+        {
+            "source": "/sgou_questions_cleaned.json",
+            "destination": "/data/sgou_questions_cleaned.json"
+        },
+        {
+            "source": "/sgou_assignments_cleaned.json",
+            "destination": "/data/sgou_assignments_cleaned.json"
+        },
+        {
             "source": "/((?!view|.*\\.).*)",
             "destination": "/index.html"
         }
@@ -99,6 +111,32 @@
         },
         {
             "source": "/sgou_questions_cleaned.json",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=86400, stale-while-revalidate=604800"
+                },
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                }
+            ]
+        },
+        {
+            "source": "/data/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=86400, stale-while-revalidate=604800"
+                },
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                }
+            ]
+        },
+        {
+            "source": "/og-image(.*)",
             "headers": [
                 {
                     "key": "Cache-Control",
