@@ -2,7 +2,7 @@
 
 > **High-Performance, Offline-First Academic Repository for Sree Narayana Guru Open University (SGOU)**  
 > Engineered with pure vanilla web standards, S.O.L.I.D architecture, sub-100ms startup hydration, and edge streaming.  
-> **Developed by Researcher Tizar**
+> **Developed by Ahayas**
 
 ---
 
@@ -268,6 +268,6 @@ The platform ingests two primary JSON datasets located in the `data/` directory:
 
 ## License & Acknowledgments
 
-- **Platform Architecture & Development**: Created and maintained by **Researcher Tizar**.
+- **Platform Architecture & Development**: Created and maintained by **Ahayas**.
 - **Educational Disclaimer**: Materials, textbooks, syllabi, question papers, and course names are the intellectual property of **Sree Narayana Guru Open University (SGOU)**, Kollam, Kerala. This project is an open educational utility designed to assist distance education students.
 - **License**: Released under the [MIT License](https://opensource.org/licenses/MIT).

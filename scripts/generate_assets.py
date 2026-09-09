@@ -250,7 +250,7 @@ def generate_og_image():
 
     # Right: Author Credit
     font_author = get_font("segoeuib.ttf", 15)
-    auth_text = "Curated & Engineered by Researcher Tizar"
+    auth_text = "Curated & Engineered by Ahayas"
     abox = font_author.getbbox(auth_text)
     aw = abox[2] - abox[0]
     draw.text((W - 56 - aw, foot_y + 2), auth_text, font=font_author, fill=(224, 107, 82, 255))

@@ -2,7 +2,7 @@
  * ============================================================================
  *  SGOU SLM Browser — Production Application Core (S.O.L.I.D Architecture)
  * ============================================================================
- *  Author: Researcher Tizar
+ *  Author: Ahayas
  *  Institution: Sree Narayana Guru Open University (SGOU)
  *  
  *  Architecture adheres to S.O.L.I.D principles:

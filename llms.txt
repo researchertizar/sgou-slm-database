@@ -1,6 +1,6 @@
 # SGOU Academic Database
 > Academic repository for Sree Narayana Guru Open University (SGOU / SNGOU), Kollam, Kerala.
-> Curated and developed by Researcher Tizar.
+> Curated and developed by Ahayas.
 
 ## Overview
 The SGOU Academic Database (https://sgou-slm-database.vercel.app/) is a modern, client-side digital repository providing free, open access to university syllabus materials for distance education students:
@@ -30,4 +30,4 @@ The SGOU Academic Database (https://sgou-slm-database.vercel.app/) is a modern, 
 - SLM Textbook Dataset: https://sgou-slm-database.vercel.app/data/sgou_slm_data.json
 - Question Paper & Assignment Dataset: https://sgou-slm-database.vercel.app/data/sgou_questions_cleaned.json
 - Standalone Viewer: https://sgou-slm-database.vercel.app/view.html
-- Developer / Curator: Researcher Tizar (researchertizar)
+- Developer / Curator: Ahayas (researchertizar)

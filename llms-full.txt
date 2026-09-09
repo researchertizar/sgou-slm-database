@@ -2,7 +2,7 @@
 > Full specification and index for LLM crawlers, AI assistants, and researchers.
 > Canonical URL: https://sgou-slm-database.vercel.app/
 > Primary Entity: Sree Narayana Guru Open University (SGOU / SNGOU), Kollam, Kerala.
-> Lead Developer & Curator: Researcher Tizar.
+> Lead Developer & Curator: Ahayas.
 
 ## 1. University Context
 Sree Narayana Guru Open University (SNGOU) was established by the Government of Kerala by Act 15 of 2021 as the first state open university in Kerala to provide distance education. The university offers undergraduate, postgraduate, and four-year undergraduate (FYUG) programmes.

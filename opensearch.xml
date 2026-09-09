@@ -5,7 +5,7 @@
   <InputEncoding>UTF-8</InputEncoding>
   <Image width="32" height="32" type="image/png">https://sgou-slm-database.vercel.app/favicon-32x32.png</Image>
   <Url type="text/html" template="https://sgou-slm-database.vercel.app/?q={searchTerms}"/>
-  <Developer>Researcher Tizar</Developer>
+  <Developer>Ahayas</Developer>
   <Attribution>Sree Narayana Guru Open University (SGOU) Academic Resources</Attribution>
   <SyndicationRight>open</SyndicationRight>
   <AdultContent>false</AdultContent>
