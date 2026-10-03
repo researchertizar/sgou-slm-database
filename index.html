@@ -59,7 +59,7 @@
     <meta name="twitter:creator" content="@researchertizar">
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="manifest.json?v=20260904_10">
+    <link rel="manifest" href="manifest.json?v=20261003_04">
     <link rel="icon" type="image/svg+xml" href="icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png?v=20260904_10">
@@ -72,7 +72,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260904_10">
+    <link rel="stylesheet" href="style.css?v=20261003_04">
 
     <!-- Schema.org Knowledge Graph (JSON-LD) for Search Engines & AI Crawlers -->
     <script type="application/ld+json">
@@ -185,6 +185,9 @@
 </head>
 
 <body>
+    <!-- Accessibility Skip Link -->
+    <a href="#searchInput" class="skip-link">Skip to Search &amp; Courses</a>
+
     <!-- Offline status bar -->
     <div class="offline-bar" id="offlineBar" role="status" aria-live="polite">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -217,11 +220,20 @@
                             SGOU Academic Database
                             <span class="credit">by Ahayas</span>
                         </span>
+                    </h1>
                 </div>
                 <div class="header-actions">
                     <div class="action-island">
+                        <button class="header-action-btn" id="shortcutsBtn" aria-label="Keyboard Shortcuts (?)"
+                            title="Keyboard Shortcuts (?)">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="4" width="20" height="16" rx="3" />
+                                <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M6 12h.001M10 12h.001M14 12h.001M18 12h.001M8 16h8" />
+                            </svg>
+                        </button>
                         <button class="header-action-btn" id="myDownloadsBtn" aria-label="My Downloads"
-                            title="My Saved Downloads">
+                            title="My Saved Downloads (D)">
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -230,24 +242,7 @@
                             </svg>
                             <span class="downloads-badge" id="downloadsBadge" style="display:none">0</span>
                         </button>
-                        <button class="header-action-btn" id="storageHelpBtn" aria-label="Where do files go?"
-                            title="Where do downloads go?">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                                <line x1="12" y1="17" x2="12.01" y2="17" />
-                            </svg>
-                        </button>
-                        <button class="header-action-btn" id="appUpdateBtn" aria-label="App Updates & Maintenance"
-                            title="Check for Updates">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                            </svg>
-                            <span class="update-badge-dot" id="updateBadgeDot" style="display:none"></span>
-                        </button>
-                        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme (T)">
                             <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="5" />
@@ -275,17 +270,18 @@
     <div class="sticky-controls" id="stickyControls">
         <div class="controls-deck">
             <!-- Tier 1: Material Type Switcher (3 Core Sections) -->
-            <div class="material-type-switcher" id="materialTypeSwitcher" role="tablist" aria-label="Material Type">
-                <button class="type-btn active" data-type="SLM" role="tab" aria-selected="true">
+            <div class="material-type-switcher" id="materialTypeSwitcher" role="tablist" aria-label="Material Type" data-active="SLM">
+                <div class="switcher-slider" id="switcherSlider" aria-hidden="true"></div>
+                <button class="type-btn active" data-type="SLM" role="tab" aria-selected="true" title="SLM Books (Shortcut: 1)">
                     <svg class="type-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                     </svg>
-                    <span class="type-label">SLM Books</span>
+                    <span class="type-label"><span class="label-full">SLM Books</span><span class="label-short">SLM</span></span>
                     <span class="type-count" id="countSlm">1,205</span>
                 </button>
-                <button class="type-btn" data-type="PYQ" role="tab" aria-selected="false">
+                <button class="type-btn" data-type="PYQ" role="tab" aria-selected="false" title="Previous Year Questions (Shortcut: 2)">
                     <svg class="type-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -293,16 +289,16 @@
                         <line x1="16" y1="13" x2="8" y2="13" />
                         <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
-                    <span class="type-label">PYQs</span>
+                    <span class="type-label"><span class="label-full">PYQs</span><span class="label-short">PYQ</span></span>
                     <span class="type-count" id="countPyq">959</span>
                 </button>
-                <button class="type-btn" data-type="ASSIGNMENT" role="tab" aria-selected="false">
+                <button class="type-btn" data-type="ASSIGNMENT" role="tab" aria-selected="false" title="Assignment Booklets (Shortcut: 3)">
                     <svg class="type-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
                         <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
                     </svg>
-                    <span class="type-label">Assignments</span>
+                    <span class="type-label"><span class="label-full">Assignments</span><span class="label-short">Asgn</span></span>
                     <span class="type-count" id="countAsgn">77</span>
                 </button>
             </div>
@@ -316,10 +312,15 @@
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
                     <input type="text" id="searchInput"
-                        placeholder="Search courses, codes (e.g. B21CA01), question papers, topics..."
+                        placeholder="Search courses, codes (e.g. B21CA01)..."
                         autocomplete="off" aria-label="Search">
+                    <button class="search-clear" id="searchClear" aria-label="Clear search">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
                     <kbd class="search-kbd-hint" id="searchKbdHint" aria-hidden="true" title="Press / to search">/</kbd>
-                    <button class="search-clear" id="searchClear" aria-label="Clear">&times;</button>
                 </div>
                 <div class="recent-searches" id="recentSearches" aria-label="Recent searches"></div>
             </div>
@@ -379,17 +380,43 @@
     <div class="viewer-panel" id="viewerPanel">
         <div class="vp-topbar">
             <div class="vp-topbar-row">
-                <button class="vp-btn vp-back" id="viewerBack" aria-label="Go back" type="button">
+                <button class="vp-btn vp-back" id="viewerBack" aria-label="Go back to catalog" title="Go back to catalog (Esc)" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
-                    <span class="vp-back-text">Back</span>
                 </button>
                 <span class="vp-title" id="viewerPanelTitle">PDF</span>
                 <div class="vp-actions">
+                    <button class="vp-btn" id="viewerThemeToggle" aria-label="Toggle light / dark mode"
+                        title="Toggle theme (T)" type="button">
+                        <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5" />
+                            <line x1="12" y1="1" x2="12" y2="3" />
+                            <line x1="12" y1="21" x2="12" y2="23" />
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                            <line x1="1" y1="12" x2="3" y2="12" />
+                            <line x1="21" y1="12" x2="23" y2="12" />
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+                        </svg>
+                        <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                        </svg>
+                    </button>
+                    <button class="vp-btn" id="viewerPanelFilter" aria-label="Toggle eye comfort filter"
+                        title="Eye Comfort Filter (F)" type="button">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
                     <button class="vp-btn" id="viewerPanelExternal" aria-label="Open in browser"
-                        title="Open directly in browser" type="button">
+                        title="Open directly in browser (O)" type="button">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
@@ -397,7 +424,8 @@
                             <line x1="10" y1="14" x2="21" y2="3" />
                         </svg>
                     </button>
-                    <button class="vp-btn vp-dl" id="viewerPanelDownload" aria-label="Download PDF" type="button">
+                    <button class="vp-btn vp-dl" id="viewerPanelDownload" aria-label="Download PDF"
+                        title="Download PDF to device (D)" type="button">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -405,7 +433,7 @@
                             <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
                     </button>
-                    <button class="vp-btn" id="viewerPanelShare" aria-label="Share" type="button">
+                    <button class="vp-btn" id="viewerPanelShare" aria-label="Share" title="Share link (S)" type="button">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="18" cy="5" r="3" />
@@ -428,6 +456,43 @@
             <div class="vp-loading" id="viewerPanelLoading">
                 <div class="loading-spinner"></div>
                 <span>Loading PDF&hellip;</span>
+            </div>
+            <div class="vp-comfort-state" id="viewerPanelComfort" style="display:none">
+                <div class="vp-comfort-card">
+                    <div class="vp-comfort-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                    </div>
+                    <div class="vp-comfort-tag" id="vpComfortTag">OFFICIAL STUDY MATERIAL</div>
+                    <h3 class="vp-comfort-title" id="vpComfortTitle">Document</h3>
+                    <p class="vp-comfort-sub" id="vpComfortSub">Open in your device's native PDF reader or download for instant offline access.</p>
+                    <div class="vp-comfort-actions">
+                        <a class="vp-comfort-btn primary" id="vpComfortOpen" href="#" target="_blank" rel="noopener">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            <span>Open in Reader</span>
+                        </a>
+                        <button class="vp-comfort-btn secondary" id="vpComfortDownload" type="button">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Download PDF</span>
+                        </button>
+                        <button class="vp-comfort-btn tertiary" id="vpComfortDismiss" type="button" title="Attempt to view embedded PDF in page frame">
+                            <span>Try Embedded Frame</span>
+                        </button>
+                    </div>
+                </div>
             </div>
             <iframe id="viewerPanelFrame" title="PDF Viewer"></iframe>
         </div>
@@ -556,10 +621,21 @@
                 </div>
                 <button class="drawer-close" id="myDownloadsClose" aria-label="Close drawer">&times;</button>
             </div>
+            <div class="drawer-storage-tip">
+                <button class="drawer-tip-btn" id="drawerStorageHelpBtn" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                        <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    <span>Where do downloads go? Storage guide</span>
+                </button>
+            </div>
             <div class="drawer-body" id="myDownloadsList">
                 <!-- Dynamically populated -->
             </div>
             <div class="drawer-footer">
+                <button class="drawer-update-link" id="drawerUpdateBtn" type="button" title="Check for app updates">Check Updates</button>
                 <button class="drawer-clear-btn" id="myDownloadsClearBtn" type="button">Clear History</button>
             </div>
         </div>
@@ -652,6 +728,100 @@
         </div>
     </div>
 
+    <!-- ============ KEYBOARD SHORTCUTS MODAL ============ -->
+    <div class="modal-backdrop" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsModalTitle">
+        <div class="modal-card shortcuts-modal-card">
+            <div class="modal-header">
+                <div class="modal-header-icon help-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="3" />
+                        <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M6 12h.001M10 12h.001M14 12h.001M18 12h.001M8 16h8" />
+                    </svg>
+                </div>
+                <div class="modal-header-text">
+                    <h3 id="shortcutsModalTitle">Keyboard Shortcuts</h3>
+                    <p>Logical navigation &amp; quick power actions</p>
+                </div>
+                <button class="modal-close" id="shortcutsModalClose" aria-label="Close dialog">&times;</button>
+            </div>
+            <div class="modal-body shortcuts-modal-body">
+                <div class="shortcuts-section">
+                    <div class="shortcuts-section-title">General Navigation</div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Focus Search Bar</span>
+                        <div class="shortcut-keys"><kbd>/</kbd> or <kbd>Ctrl</kbd>+<kbd>K</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Toggle Theme (Light / Dark)</span>
+                        <div class="shortcut-keys"><kbd>T</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">My Saved Downloads</span>
+                        <div class="shortcut-keys"><kbd>D</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Open Keyboard Shortcuts</span>
+                        <div class="shortcut-keys"><kbd>?</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Dismiss Dialog / Reader / Clear Search</span>
+                        <div class="shortcut-keys"><kbd>Esc</kbd></div>
+                    </div>
+                </div>
+                <div class="shortcuts-section">
+                    <div class="shortcuts-section-title">Catalog &amp; Material Filtering</div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Filter Material Type</span>
+                        <div class="shortcut-keys"><kbd>1</kbd> SLM &nbsp;<kbd>2</kbd> PYQ &nbsp;<kbd>3</kbd> ASGN &nbsp;<kbd>0</kbd> All</div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Expand / Collapse All Programmes</span>
+                        <div class="shortcut-keys"><kbd>E</kbd> / <kbd>C</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Next / Previous Programme Card</span>
+                        <div class="shortcut-keys"><kbd>J</kbd> / <kbd>K</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Navigate Search Results</span>
+                        <div class="shortcut-keys"><kbd>&uarr;</kbd> <kbd>&darr;</kbd> &amp; <kbd>Enter</kbd></div>
+                    </div>
+                </div>
+                <div class="shortcuts-section">
+                    <div class="shortcuts-section-title">Document Reader View</div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Return to Catalog</span>
+                        <div class="shortcut-keys"><kbd>Esc</kbd> or <kbd>Backspace</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Toggle Theme</span>
+                        <div class="shortcut-keys"><kbd>T</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Cycle Eye Comfort Filter (Sepia / Dark / Normal)</span>
+                        <div class="shortcut-keys"><kbd>F</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Download Active Material</span>
+                        <div class="shortcut-keys"><kbd>D</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Share Material Link</span>
+                        <div class="shortcut-keys"><kbd>S</kbd></div>
+                    </div>
+                    <div class="shortcut-row">
+                        <span class="shortcut-desc">Open Directly in Browser</span>
+                        <div class="shortcut-keys"><kbd>O</kbd></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-primary full-width" id="shortcutsModalDoneBtn" type="button">Got it!</button>
+            </div>
+        </div>
+    </div>
+
     <!-- PWA Install Banner -->
     <div class="install-banner" id="installBanner" role="banner">
         <div class="install-inner">
@@ -674,7 +844,7 @@
     <!-- Toast & Update Notification Container -->
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="script.js?v=20260909_02" defer></script>
+    <script src="script.js?v=20261003_04" defer></script>
 </body>
 
 </html>

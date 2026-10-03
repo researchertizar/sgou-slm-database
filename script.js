@@ -308,6 +308,28 @@ class StorageService {
     this.set('sgou-dl-count', String(next));
     return next;
   }
+
+  getPinnedProgrammes() {
+    return this.getJSON('sgou-pinned-progs', []);
+  }
+
+  isProgrammePinned(progName) {
+    if (!progName) return false;
+    return this.getPinnedProgrammes().includes(progName);
+  }
+
+  togglePinProgramme(progName) {
+    if (!progName) return false;
+    let list = this.getPinnedProgrammes();
+    const isPinned = list.includes(progName);
+    if (isPinned) {
+      list = list.filter(p => p !== progName);
+    } else {
+      list.push(progName);
+    }
+    this.setJSON('sgou-pinned-progs', list);
+    return !isPinned;
+  }
 }
 
 const Storage = new StorageService();
@@ -496,8 +518,8 @@ class CatalogService {
           if (!asgnBySem.has(sKey)) asgnBySem.set(sKey, []);
           const cleanT = String(a.clean_title || a.title || '').trim();
           asgnBySem.get(sKey).push({
-            title: cleanT || `${sKey.title()} Assignment Booklet`,
-            clean_title: cleanT || `${sKey.title()} Assignment Booklet`,
+            title: cleanT || `${sKey} Assignment Booklet`,
+            clean_title: cleanT || `${sKey} Assignment Booklet`,
             raw_title: String(a.raw_title || a.title || '').trim(),
             semester: sKey,
             academic_year: String(a.academic_year || '').trim(),
@@ -887,6 +909,27 @@ class DownloadManager {
     this.lastBlobUrl = null;
   }
 
+  getCleanFilename(item) {
+    if (!item) return 'course_material';
+    const itemType = (item.type || 'SLM').toUpperCase();
+    if (itemType === 'PYQ') {
+      return (item.code ? item.code + '_' : '') + sanitize(item.name || 'exam_paper') + '_PYQ' + (item.examDate ? '_' + sanitize(item.examDate) : '');
+    } else if (itemType === 'ASSIGNMENT') {
+      return sanitize(item.prog || 'SGOU') + '_' + sanitize(item.semester || 'Semester') + '_Assignment';
+    } else {
+      return (item.code ? item.code + '_' : '') + sanitize(item.name || 'document') + '_SLM';
+    }
+  }
+
+  startDirectDownload(item) {
+    if (!item || !item.url) return;
+    this.activeItem = item;
+    const cleanDefault = this.getCleanFilename(item);
+    const inputEl = $('dlFilenameInput');
+    if (inputEl) inputEl.value = cleanDefault;
+    this.startDownload(false);
+  }
+
   openModal(item) {
     if (!item || !item.url) return;
     this.activeItem = item;
@@ -909,18 +952,15 @@ class DownloadManager {
     const destIcon = $('dlDestIcon');
 
     const itemType = (item.type || 'SLM').toUpperCase();
+    const cleanDefault = this.getCleanFilename(item);
 
-    let cleanDefault;
     if (itemType === 'PYQ') {
-      cleanDefault = (item.code ? item.code + '_' : '') + sanitize(item.name || 'exam_paper') + '_PYQ' + (item.examDate ? '_' + sanitize(item.examDate) : '');
       if (titleEl) titleEl.textContent = 'Download Question Paper';
       if (subtitleEl) subtitleEl.textContent = 'Previous Year Exam Paper';
     } else if (itemType === 'ASSIGNMENT') {
-      cleanDefault = sanitize(item.prog || 'SGOU') + '_' + sanitize(item.semester || 'Semester') + '_Assignment';
       if (titleEl) titleEl.textContent = 'Download Assignment';
       if (subtitleEl) subtitleEl.textContent = 'Official Semester Assignment Questions';
     } else {
-      cleanDefault = (item.code ? item.code + '_' : '') + sanitize(item.name || 'document') + '_SLM';
       if (titleEl) titleEl.textContent = 'Download Course SLM';
       if (subtitleEl) subtitleEl.textContent = 'Official Self-Learning Material';
     }
@@ -1349,6 +1389,7 @@ class UIController {
   init() {
     this.initTheme();
     this.showSkeletons();
+    this.initSwitcher();
     this.initDelegation();
     this.initKeyboard();
     this.initSearch();
@@ -1357,6 +1398,13 @@ class UIController {
     this.initOfflineDetection();
     this.initInstallPrompt();
     this.updateDownloadStats();
+  }
+
+  initSwitcher() {
+    const switcher = $('materialTypeSwitcher');
+    if (switcher) {
+      switcher.setAttribute('data-active', this.activeType || 'SLM');
+    }
   }
 
   // --- Theme Management ---
@@ -1378,12 +1426,22 @@ class UIController {
   }
 
   toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const doc = document.documentElement;
+    const current = doc.getAttribute('data-theme') || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
+
+    // 60fps instantaneous theme switching: suppress cascade transitions
+    doc.classList.add('theme-switching');
+    doc.setAttribute('data-theme', next);
     Storage.setTheme(next);
     this.syncMeta();
     Analytics.trackTheme(next);
+
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        doc.classList.remove('theme-switching');
+      });
+    });
   }
 
   syncMeta() {
@@ -1396,6 +1454,11 @@ class UIController {
     if (toggleBtn) {
       toggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
       toggleBtn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+    }
+    const viewerToggleBtn = $('viewerThemeToggle');
+    if (viewerToggleBtn) {
+      viewerToggleBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      viewerToggleBtn.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
     }
     const ogImg = document.querySelector('meta[property="og:image"]');
     if (ogImg) {
@@ -1491,7 +1554,10 @@ class UIController {
           Analytics.trackSearch(q, document.querySelectorAll('.search-result-item').length);
         }, 1500);
       }
-      if (clear) clear.classList.toggle('visible', q.length > 0);
+      const hasQuery = q.length > 0;
+      if (clear) clear.classList.toggle('visible', hasQuery);
+      const kbdHint = $('searchKbdHint');
+      if (kbdHint) kbdHint.style.display = hasQuery ? 'none' : '';
     });
 
     input.addEventListener('focus', () => {
@@ -1515,6 +1581,8 @@ class UIController {
     clear?.addEventListener('click', () => {
       input.value = '';
       clear.classList.remove('visible');
+      const kbdHint = $('searchKbdHint');
+      if (kbdHint) kbdHint.style.display = '';
       this.executeSearch();
       this.syncUrlFromState();
       input.focus();
@@ -1538,14 +1606,47 @@ class UIController {
 
       if (!matches.length) {
         const typeWord = this.activeType === 'PYQ' ? 'question papers' : this.activeType === 'ASSIGNMENT' ? 'assignments' : this.activeType === 'SLM' ? 'course textbooks' : 'materials';
+
+        let altSuggestion = null;
+        if (this.activeType && this.activeType !== 'ALL') {
+          const altTypes = ['SLM', 'PYQ', 'ASSIGNMENT'].filter(t => t !== this.activeType);
+          for (const altType of altTypes) {
+            const altMatches = Search.search(q, this.activeLevel, altType);
+            if (altMatches.length > 0) {
+              const altName = altType === 'SLM' ? 'SLM Books' : altType === 'PYQ' ? 'PYQs' : 'Assignments';
+              const altNoun = altType === 'SLM' ? 'textbook' : altType === 'PYQ' ? 'question paper' : 'assignment';
+              altSuggestion = {
+                type: altType,
+                name: altName,
+                noun: altNoun,
+                count: altMatches.length
+              };
+              break;
+            }
+          }
+          Search.currentMatches = [];
+          Search.renderedCount = 0;
+        }
+
         results.innerHTML = `
           <div class="search-results-header">No results</div>
           <div class="empty-state">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>
             </svg>
-            No ${typeWord} match &ldquo;${esc(q)}&rdquo;
-          </div>`;
+            <div class="empty-state-text">No ${typeWord} match &ldquo;${esc(q)}&rdquo;</div>
+            ${altSuggestion ? `
+              <div class="search-fallback-banner">
+                <div class="sf-msg">
+                  Found <strong>${altSuggestion.count} ${altSuggestion.noun}${altSuggestion.count !== 1 ? 's' : ''}</strong> available under <strong>${altSuggestion.name}</strong>!
+                </div>
+                <button class="sf-btn" id="searchFallbackBtn" data-target="${altSuggestion.type}">
+                  Switch to ${altSuggestion.name} &rarr;
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
       } else {
         const chunk = Search.getNextChunk();
         const typeNoun = this.activeType === 'PYQ' ? 'question paper' : this.activeType === 'ASSIGNMENT' ? 'assignment' : this.activeType === 'SLM' ? 'textbook' : 'material';
@@ -1738,7 +1839,16 @@ class UIController {
       return;
     }
 
-    grid.innerHTML = programmesList.map((prog, idx) => {
+    const pinnedList = Storage.getPinnedProgrammes();
+    const sortedList = [...programmesList].sort((a, b) => {
+      const aPin = pinnedList.includes(a.programme_name);
+      const bPin = pinnedList.includes(b.programme_name);
+      if (aPin && !bPin) return -1;
+      if (!aPin && bPin) return 1;
+      return 0;
+    });
+
+    grid.innerHTML = sortedList.map((prog, idx) => {
       let sems;
       if (activeType === 'ASSIGNMENT') {
         sems = prog.semesters.filter(s => s.assignments && s.assignments.length > 0);
@@ -1765,8 +1875,10 @@ class UIController {
         if (prog.totalAsgn > 0) metaParts.push(`${prog.totalAsgn} Asgn`);
       }
 
+      const isPinned = pinnedList.includes(prog.programme_name);
+
       return `
-        <div class="programme-card" data-level="${ea(prog.level)}" data-idx="${idx}" role="listitem">
+        <div class="programme-card${isPinned ? ' pinned' : ''}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-idx="${idx}" role="listitem">
           <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
             <div class="card-header-main">
               <div class="card-badge-row">
@@ -1775,6 +1887,11 @@ class UIController {
               </div>
               <h2 class="programme-title">${hl(formatProgName(prog.programme_name), query)}</h2>
             </div>
+            <button class="btn-pin-programme${isPinned ? ' active' : ''}" type="button" aria-label="${isPinned ? 'Unpin programme' : 'Pin to top of catalog'}" title="${isPinned ? 'Unpin programme' : 'Pin to top of catalog'}" data-prog="${ea(prog.programme_name)}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="${isPinned ? '#f59e0b' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </button>
             <div class="card-chevron" aria-hidden="true">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
@@ -1814,24 +1931,18 @@ class UIController {
                               <span class="course-code asgn-code">BOOKLET</span>
                               <span class="course-name">${esc(s.semester)} Assignment Booklet</span>
                             </div>
-                            <span class="asgn-count-chip">1 Booklet</span>
-                          </div>
-                          <div class="course-pyq-drawer open">
-                            <div class="pyq-paper-item asgn-paper-item">
-                              <div class="pyq-paper-info">
-                                <span class="asgn-pill">CIA QUESTIONS</span>
-                                <span class="pyq-batch-tag">Continuous Internal Assessment</span>
-                              </div>
-                              <div class="pyq-paper-actions">
-                                <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment Booklet PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                  <span>View</span>
-                                </a>
-                                <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                  <span>PDF</span>
-                                </a>
-                              </div>
+                            <div class="course-actions">
+                              <a class="btn-view" href="${ea(vUrlAsgn)}" title="View Assignment Booklet PDF" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-url="${ea(asgn.pdf_url)}">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span>View</span>
+                              </a>
+                              <a class="btn-download" href="${ea(asgn.pdf_url)}" data-type="ASSIGNMENT" data-fname="${ea(fnAsgn)}" data-name="${ea(asgn.title)}" data-prog="${ea(prog.programme_name)}" data-semester="${ea(s.semester)}" data-level="${ea(prog.level)}" target="_blank" rel="noopener noreferrer">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                <span>PDF</span>
+                              </a>
+                              <button class="btn-share" data-url="${ea(asgn.pdf_url)}" data-name="${ea(asgn.title)}" data-type="ASSIGNMENT" data-code="${ea(prog.programme_name + '_' + s.semester)}" aria-label="Share" title="Share link">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -1925,10 +2036,10 @@ class UIController {
                       const fn = sanitize(course.code + '_' + course.name) + '_SLM.pdf';
                       const vUrl = `/?course=${encodeURIComponent(course.code || course.name)}`;
                       return `
-                        <div class="course-item">
+                        <div class="course-item slm-mode">
                           <div class="course-main-row">
                             <div class="course-header-group">
-                              <span class="course-code">${esc(course.code)}</span>
+                              <span class="course-code slm-code">${esc(course.code)}</span>
                               <span class="course-name">${hl(course.name, query)}</span>
                             </div>
                             <div class="course-actions">
@@ -1995,10 +2106,10 @@ class UIController {
                     const hasPyqs = course.pyqs && course.pyqs.length > 0;
 
                     return `
-                      <div class="course-item">
+                      <div class="course-item slm-mode">
                         <div class="course-main-row">
                           <div class="course-header-group">
-                            <span class="course-code">${esc(course.code)}</span>
+                            <span class="course-code slm-code">${esc(course.code)}</span>
                             <span class="course-name">${hl(course.name, query)}</span>
                           </div>
                           <div class="course-actions">
@@ -2100,35 +2211,8 @@ class UIController {
       this.revealObserver.disconnect();
       this.revealObserver = null;
     }
-    document.body.classList.add('js-reveal');
-
-    if (!('IntersectionObserver' in window)) {
-      document.querySelectorAll('.programme-card').forEach(c => c.classList.add('revealed'));
-      return;
-    }
-
-    this.revealObserver = new IntersectionObserver((entries) => {
-      let delay = 0;
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const card = entry.target;
-          requestAnimationFrame(() => {
-            card.style.transitionDelay = delay + 'ms';
-            card.classList.add('revealed');
-            const onEnd = () => {
-              card.style.transitionDelay = '0ms';
-              card.classList.add('reveal-done');
-              card.removeEventListener('transitionend', onEnd);
-            };
-            card.addEventListener('transitionend', onEnd);
-          });
-          delay = Math.min(delay + 40, 240);
-          this.revealObserver.unobserve(card);
-        }
-      });
-    }, { threshold: 0.03, rootMargin: '0px 0px -30px 0px' });
-
-    document.querySelectorAll('.programme-card:not(.revealed)').forEach(el => this.revealObserver.observe(el));
+    document.body.classList.remove('js-reveal');
+    document.querySelectorAll('.programme-card').forEach(c => c.classList.add('revealed'));
   }
 
   toggleCard(card) {
@@ -2247,7 +2331,9 @@ class UIController {
 
     panel._data = { url: pdfUrl, name, code, prog, level, type, examDate };
     panel.classList.add('visible');
+    document.documentElement.classList.add('viewer-panel-open');
     document.body.classList.add('viewer-panel-open');
+    this.applyReaderFilter(localStorage.getItem('sgou-pdf-filter') || 'normal');
 
     // Sync clean course URL without hash or path prefix
     const viewParams = new URLSearchParams();
@@ -2257,9 +2343,22 @@ class UIController {
     if (examDate) viewParams.set('examdate', examDate);
     Router.updateUrlSilently(`/?${viewParams.toString()}`);
 
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    const isMobile = isIOS || isAndroid || window.innerWidth < 768;
+
     // Hardware-accelerated direct PDF preview without creating secondary iframe history entry
     const frame = $('viewerPanelFrame');
     const ld = $('viewerPanelLoading');
+    const comfort = $('viewerPanelComfort');
+
+    if (comfort) comfort.style.display = 'none';
+
+    // Pre-populate mobile comfort card details
+    if ($('vpComfortTitle')) $('vpComfortTitle').textContent = name || 'Academic Material';
+    if ($('vpComfortTag')) $('vpComfortTag').textContent = (type || 'SLM').toUpperCase() + ' DOCUMENT';
+    if ($('vpComfortOpen')) $('vpComfortOpen').href = pdfUrl;
+
     if (frame) {
       if (ld) {
         ld.classList.remove('hidden');
@@ -2282,15 +2381,33 @@ class UIController {
       } catch (e) {
         frame.src = fullUrl;
       }
-      setTimeout(onReady, 3500);
+
+      if (this._viewerTimeout) clearTimeout(this._viewerTimeout);
+      this._viewerTimeout = setTimeout(() => {
+        if (loaded) return;
+        if (isMobile) {
+          // On mobile devices where iframe PDF plugins are unsupported (Android Chrome) or unresponsive (iOS Safari), reveal comfort fallback card
+          if (ld) ld.classList.add('hidden');
+          if (comfort) comfort.style.display = 'flex';
+        } else {
+          onReady();
+        }
+      }, isMobile ? 1400 : 2800);
     }
   }
 
   hideViewerPanel(syncUrl = true) {
+    if (this._viewerTimeout) {
+      clearTimeout(this._viewerTimeout);
+      this._viewerTimeout = null;
+    }
     const panel = $('viewerPanel');
     if (!panel) return;
     panel.classList.remove('visible');
+    document.documentElement.classList.remove('viewer-panel-open');
     document.body.classList.remove('viewer-panel-open');
+    const comfort = $('viewerPanelComfort');
+    if (comfort) comfort.style.display = 'none';
     const frame = $('viewerPanelFrame');
     if (frame) {
       try {
@@ -2306,7 +2423,91 @@ class UIController {
     if (syncUrl) this.syncUrlFromState(false);
   }
 
+  // --- PDF Reader Eye-Comfort Filter ---
+
+  toggleReaderFilter() {
+    const frame = $('viewerPanelFrame');
+    if (!frame) return;
+    const modes = ['normal', 'sepia', 'dark'];
+    let current = 'normal';
+    try { current = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
+    const nextIdx = (modes.indexOf(current) + 1) % modes.length;
+    const next = modes[nextIdx];
+    try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
+    this.applyReaderFilter(next);
+  }
+
+  applyReaderFilter(mode) {
+    const frame = $('viewerPanelFrame');
+    const btn = $('viewerPanelFilter');
+    if (!frame) return;
+    frame.classList.remove('filter-sepia', 'filter-dark');
+    if (btn) btn.classList.remove('filter-active');
+    if (mode === 'sepia') {
+      frame.classList.add('filter-sepia');
+      if (btn) btn.classList.add('filter-active');
+      this.showToast('Reader Mode: Warm Sepia');
+    } else if (mode === 'dark') {
+      frame.classList.add('filter-dark');
+      if (btn) btn.classList.add('filter-active');
+      this.showToast('Reader Mode: Dark Invert');
+    } else {
+      this.showToast('Reader Mode: Standard');
+    }
+  }
+
   // --- My Downloads Library Drawer ---
+
+  toggleMyDownloads() {
+    const drawer = $('myDownloadsDrawer');
+    if (!drawer) return;
+    if (drawer.classList.contains('visible')) {
+      drawer.classList.remove('visible');
+    } else {
+      this.renderMyDownloads();
+      drawer.classList.add('visible');
+    }
+  }
+
+  openShortcutsModal() {
+    const modal = $('shortcutsModal');
+    if (modal) {
+      this._lastFocusBeforeShortcuts = document.activeElement;
+      modal.classList.add('visible');
+      Analytics.trackEngagement('shortcuts_modal_open');
+      const closeBtn = $('shortcutsModalClose') || $('shortcutsModalDoneBtn');
+      setTimeout(() => closeBtn?.focus(), 50);
+    }
+  }
+
+  closeShortcutsModal() {
+    const modal = $('shortcutsModal');
+    if (modal) {
+      modal.classList.remove('visible');
+      if (this._lastFocusBeforeShortcuts && typeof this._lastFocusBeforeShortcuts.focus === 'function') {
+        this._lastFocusBeforeShortcuts.focus();
+        this._lastFocusBeforeShortcuts = null;
+      }
+    }
+  }
+
+  setMaterialType(type) {
+    const targetType = (type || 'SLM').toUpperCase();
+    if (this.activeType === targetType) return;
+    this.activeType = targetType;
+    const switcher = $('materialTypeSwitcher');
+    if (switcher) {
+      switcher.setAttribute('data-active', this.activeType);
+    }
+    document.querySelectorAll('.material-type-switcher .type-btn').forEach(b => {
+      const isActive = b.dataset.type === this.activeType;
+      b.classList.toggle('active', isActive);
+      b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    Analytics.trackFilter('type_' + this.activeType);
+    this.executeSearch();
+    this.syncUrlFromState();
+  }
 
   renderMyDownloads() {
     const list = $('myDownloadsList');
@@ -2340,14 +2541,44 @@ class UIController {
           <div class="my-dl-name">${esc(h.name)}</div>
           <div class="my-dl-actions">
             <span class="my-dl-filename" title="${esc(h.filename)}">${esc(h.filename)}${h.size ? ' (' + esc(h.size) + ')' : ''}</span>
-            <a class="my-dl-btn" href="${ea(h.url)}" target="_blank" rel="noopener noreferrer">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              Open
-            </a>
+            <div class="my-dl-btns">
+              <button class="my-dl-btn my-dl-view-btn" data-url="${ea(h.url)}" data-name="${ea(h.name)}" data-code="${ea(h.code || '')}" data-type="${ea(type)}" type="button" title="View in document viewer">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                View
+              </button>
+              <a class="my-dl-btn" href="${ea(h.url)}" target="_blank" rel="noopener noreferrer" title="Open PDF in new tab">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            </div>
           </div>
         </div>
       `;
     }).join('');
+
+    // Asynchronously check CacheStorage for offline cached items
+    if ('caches' in window) {
+      caches.keys().then(keys => {
+        const cacheName = keys.find(k => k.startsWith('sgou-v')) || 'sgou-v121';
+        return caches.open(cacheName);
+      }).then(cache => {
+        history.forEach((h, i) => {
+          if (!h.url) return;
+          cache.match(h.url).then(match => {
+            if (match) {
+              const itemEl = list.children[i];
+              const topEl = itemEl ? itemEl.querySelector('.my-dl-item-top') : null;
+              if (topEl && !topEl.querySelector('.my-dl-cached')) {
+                const badge = document.createElement('span');
+                badge.className = 'my-dl-cached';
+                badge.textContent = 'Offline';
+                badge.title = 'Saved in local cache for offline reading';
+                topEl.appendChild(badge);
+              }
+            }
+          }).catch(() => {});
+        });
+      }).catch(() => {});
+    }
   }
 
   updateDownloadStats() {
@@ -2435,7 +2666,10 @@ class UIController {
     if (!qChanged && !lChanged && !tChanged) return;
 
     if (qChanged) input.value = query;
-    $('searchClear')?.classList.toggle('visible', query.length > 0);
+    const hasQuery = query.length > 0;
+    $('searchClear')?.classList.toggle('visible', hasQuery);
+    const kbdHint = $('searchKbdHint');
+    if (kbdHint) kbdHint.style.display = hasQuery ? 'none' : '';
 
     if (lChanged) {
       this.activeLevel = level;
@@ -2445,8 +2679,15 @@ class UIController {
 
     if (tChanged) {
       this.activeType = type;
-      document.querySelectorAll('.material-type-switcher .type-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.type === this.activeType));
+      const switcher = $('materialTypeSwitcher');
+      if (switcher) {
+        switcher.setAttribute('data-active', this.activeType);
+      }
+      document.querySelectorAll('.material-type-switcher .type-btn').forEach(b => {
+        const isActive = b.dataset.type === this.activeType;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      });
     }
 
     this.executeSearch();
@@ -2494,6 +2735,26 @@ class UIController {
       ([entry]) => sticky.classList.toggle('scrolled', !entry.isIntersecting),
       { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
     ).observe(sentinel);
+
+    // Mobile compact-on-scroll with hysteresis & requestAnimationFrame
+    let isCompact = false;
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const y = window.scrollY || window.pageYOffset || 0;
+          if (!isCompact && y > 120) {
+            isCompact = true;
+            sticky.classList.add('compact');
+          } else if (isCompact && y < 80) {
+            isCompact = false;
+            sticky.classList.remove('compact');
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
   }
 
   initBackToTop() {
@@ -2535,28 +2796,37 @@ class UIController {
     // If already running as installed PWA (standalone mode or confirmed installed), hide banner
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     const isInstalled = isStandalone || Storage.get('sgou-app-installed') === '1';
+    const isDismissed = Storage.get('sgou-install-dismissed') === '1';
 
-    if (isInstalled) {
+    if (isInstalled || isDismissed) {
       banner.style.display = 'none';
       return;
     }
+
+    const showBanner = () => {
+      if (document.documentElement.classList.contains('viewer-panel-open')) return;
+      banner.classList.add('visible');
+      document.body.classList.add('has-install-banner');
+    };
+
+    const hideBanner = () => {
+      banner.classList.remove('visible');
+      document.body.classList.remove('has-install-banner');
+    };
 
     // Capture beforeinstallprompt event if available
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       window.deferredInstallPrompt = e;
       Analytics.trackPWA('prompt_available');
-      banner.classList.add('visible');
+      if (!isDismissed && !isInstalled) {
+        showBanner();
+      }
     });
-
-    // Appear on every reload until it gets installed
-    setTimeout(() => {
-      banner.classList.add('visible');
-    }, 600);
 
     window.addEventListener('appinstalled', () => {
       Analytics.trackPWA('installed');
-      banner.classList.remove('visible');
+      hideBanner();
       banner.style.display = 'none';
       Storage.set('sgou-app-installed', '1');
       this.showToast('SGOU Database successfully installed!');
@@ -2565,7 +2835,7 @@ class UIController {
     $('installBtn')?.addEventListener('click', async () => {
       const promptEvent = window.deferredInstallPrompt;
       if (promptEvent) {
-        banner.classList.remove('visible');
+        hideBanner();
         promptEvent.prompt();
         const choice = await promptEvent.userChoice;
         Analytics.trackPWA(choice?.outcome === 'accepted' ? 'prompt_accepted' : 'prompt_declined');
@@ -2585,13 +2855,233 @@ class UIController {
     });
 
     $('installDismiss')?.addEventListener('click', () => {
-      banner.classList.remove('visible');
+      hideBanner();
+      Storage.set('sgou-install-dismissed', '1');
       Analytics.trackPWA('prompt_dismissed');
     });
   }
 
   initKeyboard() {
     document.addEventListener('keydown', e => {
+      const activeEl = document.activeElement;
+      const isInput = activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
+      const isSearchInput = activeEl === $('searchInput');
+      const isViewerOpen = $('viewerPanel')?.classList.contains('visible');
+      const isShortcutsOpen = $('shortcutsModal')?.classList.contains('visible');
+      const isDownloadsOpen = $('myDownloadsDrawer')?.classList.contains('visible');
+      const isStorageHelpOpen = $('storageHelpModal')?.classList.contains('visible');
+      const isUpdateOpen = $('updateModal')?.classList.contains('visible');
+      const isDownloadModalOpen = $('downloadModal')?.classList.contains('visible');
+
+      // 1. GLOBAL SHORTCUT: Search Focus (/ or Ctrl+K / Cmd+K)
+      if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !isInput)) {
+        e.preventDefault();
+        $('searchInput')?.focus();
+        $('searchInput')?.select();
+        Analytics.trackEngagement('keyboard_search_shortcut');
+        return;
+      }
+
+      // 2. GLOBAL SHORTCUT: Shortcuts Cheat Sheet Dialog (?)
+      if (e.key === '?' && !isInput) {
+        e.preventDefault();
+        if (isShortcutsOpen) {
+          this.closeShortcutsModal();
+        } else {
+          this.openShortcutsModal();
+        }
+        return;
+      }
+
+      // 3. ESCAPE HANDLING (Top-priority dismissal in reverse stack order)
+      if (e.key === 'Escape') {
+        if (isShortcutsOpen) {
+          this.closeShortcutsModal();
+          return;
+        }
+        if (isDownloadModalOpen) {
+          Downloader.closeModal();
+          return;
+        }
+        if (isDownloadsOpen) {
+          $('myDownloadsDrawer')?.classList.remove('visible');
+          return;
+        }
+        if (isStorageHelpOpen) {
+          $('storageHelpModal')?.classList.remove('visible');
+          return;
+        }
+        if (isUpdateOpen) {
+          $('updateModal')?.classList.remove('visible');
+          return;
+        }
+        if (isViewerOpen) {
+          e.preventDefault();
+          this.hideViewerPanel(true);
+          return;
+        }
+        if (isSearchInput) {
+          if (activeEl.value) {
+            activeEl.value = '';
+            $('searchClear')?.classList.remove('visible');
+            const kbdHint = $('searchKbdHint');
+            if (kbdHint) kbdHint.style.display = '';
+            this.executeSearch();
+            this.syncUrlFromState();
+          } else {
+            activeEl.blur();
+          }
+          return;
+        }
+        this.collapseAll();
+        return;
+      }
+
+      // 4. SEARCH SPOTLIGHT NAVIGATION (when focused in search input)
+      if (isSearchInput && $('searchResults')?.classList.contains('active')) {
+        const items = Array.from(document.querySelectorAll('.search-result-item'));
+        if (items.length > 0) {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let cur = items.findIndex(el => el.classList.contains('keyboard-selected'));
+            if (cur !== -1) items[cur].classList.remove('keyboard-selected');
+            cur = (cur + 1) % items.length;
+            items[cur].classList.add('keyboard-selected');
+            items[cur].scrollIntoView({ block: 'nearest' });
+            return;
+          }
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let cur = items.findIndex(el => el.classList.contains('keyboard-selected'));
+            if (cur !== -1) items[cur].classList.remove('keyboard-selected');
+            cur = cur <= 0 ? items.length - 1 : cur - 1;
+            items[cur].classList.add('keyboard-selected');
+            items[cur].scrollIntoView({ block: 'nearest' });
+            return;
+          }
+          if (e.key === 'Enter') {
+            const selected = document.querySelector('.search-result-item.keyboard-selected');
+            if (selected) {
+              e.preventDefault();
+              const actionBtn = selected.querySelector('.btn-view') || selected.querySelector('.btn-download');
+              actionBtn?.click();
+              return;
+            }
+          }
+        }
+      }
+
+      // 5. IF USER IS TYPING IN ANY INPUT (and not search nav/escape): ignore single-key shortcuts
+      if (isInput) return;
+
+      // 6. READER VIEW SHORTCUTS (Active only when in-app viewer panel is open)
+      if (isViewerOpen) {
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          this.hideViewerPanel(true);
+          return;
+        }
+        const keyLow = e.key.toLowerCase();
+        if (keyLow === 't') {
+          e.preventDefault();
+          this.toggleTheme(e);
+          return;
+        }
+        if (keyLow === 'f' || keyLow === 'c') {
+          e.preventDefault();
+          this.toggleReaderFilter();
+          return;
+        }
+        if (keyLow === 'd') {
+          e.preventDefault();
+          const panel = $('viewerPanel');
+          if (panel?._data) Downloader.startDirectDownload(panel._data);
+          return;
+        }
+        if (keyLow === 's') {
+          e.preventDefault();
+          const panel = $('viewerPanel');
+          if (panel?._data) this.shareContent(panel._data.name, panel._data.url, panel._data.type, panel._data.code);
+          return;
+        }
+        if (keyLow === 'o') {
+          e.preventDefault();
+          const panel = $('viewerPanel');
+          if (panel?._data?.url) window.open(panel._data.url, '_blank', 'noopener noreferrer');
+          return;
+        }
+        return; // Don't fall through to catalog shortcuts while viewer is active
+      }
+
+      // 7. CATALOG BROWSING SHORTCUTS (When viewing catalog)
+      const k = e.key.toLowerCase();
+
+      // Theme toggle (T)
+      if (k === 't') {
+        e.preventDefault();
+        this.toggleTheme(e);
+        return;
+      }
+
+      // My Saved Downloads drawer (D)
+      if (k === 'd') {
+        e.preventDefault();
+        this.toggleMyDownloads();
+        return;
+      }
+
+      // Expand / Collapse all programmes (E / C)
+      if (k === 'e') {
+        e.preventDefault();
+        this.expandAll();
+        return;
+      }
+      if (k === 'c') {
+        e.preventDefault();
+        this.collapseAll();
+        return;
+      }
+
+      // Quick material filter (1 = SLM, 2 = PYQ, 3 = Assignment, 0 = All)
+      if (e.key === '1') {
+        e.preventDefault();
+        this.setMaterialType('SLM');
+        return;
+      }
+      if (e.key === '2') {
+        e.preventDefault();
+        this.setMaterialType('PYQ');
+        return;
+      }
+      if (e.key === '3') {
+        e.preventDefault();
+        this.setMaterialType('ASSIGNMENT');
+        return;
+      }
+      if (e.key === '0') {
+        e.preventDefault();
+        this.setMaterialType('ALL');
+        return;
+      }
+
+      // Card navigation (J = Next programme, K = Previous programme)
+      if (k === 'j' || k === 'k') {
+        const cards = Array.from(document.querySelectorAll('.programme-card'));
+        if (cards.length > 0) {
+          e.preventDefault();
+          let idx = cards.findIndex(c => c.contains(activeEl) || c === activeEl);
+          if (k === 'j') {
+            idx = (idx + 1) % cards.length;
+          } else {
+            idx = idx <= 0 ? cards.length - 1 : idx - 1;
+          }
+          const targetHdr = cards[idx].querySelector('.card-header');
+          targetHdr?.focus();
+          cards[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
+      }
+
       // Toggle card on Enter/Space
       const hdr = e.target.closest?.('.card-header');
       if (hdr && (e.key === 'Enter' || e.key === ' ')) {
@@ -2600,53 +3090,6 @@ class UIController {
         if (card) this.toggleCard(card);
         return;
       }
-
-      // Quick Search shortcut (/ or Ctrl+K)
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        $('searchInput')?.focus();
-        Analytics.trackEngagement('keyboard_search_shortcut');
-        return;
-      }
-      if (e.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
-        e.preventDefault();
-        $('searchInput')?.focus();
-        Analytics.trackEngagement('keyboard_slash_shortcut');
-        return;
-      }
-
-      // Escape dismissal
-      if (e.key === 'Escape') {
-        if ($('downloadModal')?.classList.contains('visible')) {
-          Downloader.closeModal();
-          return;
-        }
-        if ($('myDownloadsDrawer')?.classList.contains('visible')) {
-          $('myDownloadsDrawer')?.classList.remove('visible');
-          return;
-        }
-        if ($('storageHelpModal')?.classList.contains('visible')) {
-          $('storageHelpModal')?.classList.remove('visible');
-          return;
-        }
-        if ($('viewerPanel')?.classList.contains('visible')) {
-          history.back();
-          return;
-        }
-        const input = $('searchInput');
-        if (document.activeElement === input) {
-          if (input.value) {
-            input.value = '';
-            $('searchClear')?.classList.remove('visible');
-            this.executeSearch();
-            this.syncUrlFromState();
-          } else {
-            input.blur();
-          }
-        } else {
-          this.collapseAll();
-        }
-      }
     });
   }
 
@@ -2654,21 +3097,31 @@ class UIController {
 
   initDelegation() {
     document.addEventListener('click', e => {
-      // Theme Toggle
-      if (e.target.closest('#themeToggle')) {
-        this.toggleTheme();
+      // Keyboard Shortcuts Dialog
+      if (e.target.closest('#shortcutsBtn')) {
+        this.openShortcutsModal();
+        return;
+      }
+      if (e.target.closest('#shortcutsModalClose') || e.target.closest('#shortcutsModalDoneBtn')) {
+        this.closeShortcutsModal();
+        return;
+      }
+      const shortcutsModal = $('shortcutsModal');
+      if (shortcutsModal && e.target === shortcutsModal) {
+        this.closeShortcutsModal();
+        return;
+      }
+
+      // Theme Toggle (both main header and reader view)
+      if (e.target.closest('#themeToggle') || e.target.closest('#viewerThemeToggle')) {
+        this.toggleTheme(e);
         return;
       }
 
       // Material Type Switcher (Tier 1 filter)
       const typeBtn = e.target.closest('.material-type-switcher .type-btn');
       if (typeBtn && typeBtn.dataset.type) {
-        this.activeType = typeBtn.dataset.type;
-        document.querySelectorAll('.material-type-switcher .type-btn').forEach(b =>
-          b.classList.toggle('active', b.dataset.type === this.activeType));
-        Analytics.trackFilter('type_' + this.activeType);
-        this.executeSearch();
-        this.syncUrlFromState();
+        this.setMaterialType(typeBtn.dataset.type);
         return;
       }
 
@@ -2705,6 +3158,12 @@ class UIController {
         return;
       }
 
+      // Viewer Eye-Comfort Filter Toggle
+      if (e.target.closest('#viewerPanelFilter')) {
+        this.toggleReaderFilter();
+        return;
+      }
+
       // Viewer External Open
       if (e.target.closest('#viewerPanelExternal')) {
         const panel = $('viewerPanel');
@@ -2715,12 +3174,21 @@ class UIController {
         return;
       }
 
-      // Viewer Download
-      if (e.target.closest('#viewerPanelDownload')) {
+      // Viewer Download (Direct 1-Click Streaming)
+      if (e.target.closest('#viewerPanelDownload') || e.target.closest('#vpComfortDownload')) {
         const panel = $('viewerPanel');
         if (panel?._data) {
-          Downloader.openModal(panel._data);
+          Downloader.startDirectDownload(panel._data);
         }
+        return;
+      }
+
+      // Viewer Comfort State Dismiss / Try Inline Viewer
+      if (e.target.closest('#vpComfortDismiss')) {
+        const comfort = $('viewerPanelComfort');
+        if (comfort) comfort.style.display = 'none';
+        const frame = $('viewerPanelFrame');
+        if (frame) frame.style.opacity = '1';
         return;
       }
 
@@ -2751,13 +3219,31 @@ class UIController {
         return;
       }
 
-      // Storage Help Modal
-      if (e.target.closest('#storageHelpBtn')) {
+      // View document directly from My Downloads drawer
+      const myDlViewBtn = e.target.closest('.my-dl-view-btn');
+      if (myDlViewBtn) {
+        const url = myDlViewBtn.dataset.url;
+        const name = myDlViewBtn.dataset.name;
+        const code = myDlViewBtn.dataset.code;
+        const type = myDlViewBtn.dataset.type;
+        $('myDownloadsDrawer')?.classList.remove('visible');
+        this.showViewerPanel(url, name, code, '', '', type);
+        return;
+      }
+
+      // Storage Help Modal (Triggerable from drawer tip or header)
+      if (e.target.closest('#storageHelpBtn') || e.target.closest('#drawerStorageHelpBtn')) {
         $('storageHelpModal')?.classList.add('visible');
         return;
       }
       if (e.target.closest('#storageHelpClose') || e.target.closest('#storageHelpDoneBtn')) {
         $('storageHelpModal')?.classList.remove('visible');
+        return;
+      }
+
+      // App Update Modal (Triggerable from drawer footer or header)
+      if (e.target.closest('#appUpdateBtn') || e.target.closest('#drawerUpdateBtn')) {
+        $('updateModal')?.classList.add('visible');
         return;
       }
       const guideTab = e.target.closest('.guide-tab');
@@ -2834,6 +3320,28 @@ class UIController {
         return;
       }
 
+      // Pin / Unpin Programme Star Click
+      const pinBtn = e.target.closest('.btn-pin-programme');
+      if (pinBtn && pinBtn.dataset.prog) {
+        e.preventDefault();
+        e.stopPropagation();
+        const progName = pinBtn.dataset.prog;
+        const isNowPinned = Storage.togglePinProgramme(progName);
+        this.showToast(isNowPinned ? `★ Pinned ${formatProgName(progName)} to top` : `Unpinned ${formatProgName(progName)}`);
+        const filteredProgrammes = Catalog.filter(this.activeLevel, this.activeType);
+        this.renderProgrammes(filteredProgrammes);
+        return;
+      }
+
+      // Cross-Category Search Fallback Switcher
+      const sfBtn = e.target.closest('#searchFallbackBtn');
+      if (sfBtn && sfBtn.dataset.target) {
+        e.preventDefault();
+        const nextType = sfBtn.dataset.target;
+        this.setMaterialType(nextType);
+        return;
+      }
+
       // Card Header Expansion
       const cardHeader = e.target.closest('.card-header');
       if (cardHeader && cardHeader.closest('.programme-card')) {
@@ -2855,7 +3363,7 @@ class UIController {
         return;
       }
 
-      // Download Buttons (Card, Drawer, or Search item)
+      // Download Buttons (Card, Drawer, or Search item) - 1-Click Fast Stream
       const dlBtn = e.target.closest('.btn-download, .course-link');
       if (dlBtn) {
         e.preventDefault();
@@ -2869,7 +3377,7 @@ class UIController {
         const semester = dlBtn.dataset.semester || '';
         const url = dlBtn.href;
 
-        Downloader.openModal({
+        const itemData = {
           url,
           name,
           code,
@@ -2879,7 +3387,14 @@ class UIController {
           examDate,
           admissionBatch: batch,
           semester
-        });
+        };
+
+        // Shift-click opens custom rename/folder modal; standard click downloads directly
+        if (e.shiftKey) {
+          Downloader.openModal(itemData);
+        } else {
+          Downloader.startDirectDownload(itemData);
+        }
         return;
       }
 
@@ -2950,8 +3465,8 @@ const UI = new UIController();
 // ============================================================================
 
 const PWAService = {
-  APP_VERSION: 'v2026.09.04',
-  BUILD_ID: '20260904_10',
+  APP_VERSION: 'v2026.10.03',
+  BUILD_ID: '20261003_04',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,

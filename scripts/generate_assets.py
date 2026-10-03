@@ -7,11 +7,53 @@ modern academic typography, and zero visibility defects.
 """
 
 import os
+import sys
 import subprocess
+import argparse
+import contextlib
+import http.server
+import threading
+import urllib.request
 from PIL import Image, ImageDraw, ImageFont
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONTS_DIR = r"C:\Windows\Fonts"
+
+@contextlib.contextmanager
+def local_server(url_override=None):
+    """Provides a guaranteed responsive HTTP server for headless screenshotting."""
+    if url_override:
+        yield url_override
+        return
+
+    # Check if a dev server is already running on localhost:3030
+    try:
+        req = urllib.request.Request("http://localhost:3030/", headers={"User-Agent": "AssetGenProbe/1.0"})
+        with urllib.request.urlopen(req, timeout=0.8) as resp:
+            if resp.status == 200:
+                print("  [*] Connected to running server at http://localhost:3030")
+                yield "http://localhost:3030"
+                return
+    except Exception:
+        pass
+
+    # Spin up temporary quiet local server
+    class QuietHandler(http.server.SimpleHTTPRequestHandler):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, directory=REPO_ROOT, **kwargs)
+        def log_message(self, *args):
+            pass
+
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), QuietHandler)
+    port = server.server_port
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    print(f"  [*] Started temporary server at http://127.0.0.1:{port}")
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        server.shutdown()
+        print("  [*] Cleaned up temporary server.")
 
 def get_font(name, size):
     path = os.path.join(FONTS_DIR, name)
@@ -54,31 +96,31 @@ def create_base_icon(size=512):
     return im
 
 def generate_icons():
-    """Generates all standard PWA and touch icon formats."""
+    """Generates all standard PWA and touch icon formats directly into REPO_ROOT."""
     print("Generating minimal touch icons...")
     base_icon = create_base_icon(512)
-    base_icon.save("icon-512.png", "PNG", optimize=True)
+    base_icon.save(os.path.join(REPO_ROOT, "icon-512.png"), "PNG", optimize=True)
 
     # 192x192
     icon_192 = base_icon.resize((192, 192), Image.Resampling.LANCZOS)
-    icon_192.save("icon-192.png", "PNG", optimize=True)
+    icon_192.save(os.path.join(REPO_ROOT, "icon-192.png"), "PNG", optimize=True)
 
     # Apple touch icon (180x180)
     icon_180 = base_icon.resize((180, 180), Image.Resampling.LANCZOS)
-    icon_180.save("apple-touch-icon.png", "PNG", optimize=True)
+    icon_180.save(os.path.join(REPO_ROOT, "apple-touch-icon.png"), "PNG", optimize=True)
 
     # Favicon 32x32 & 16x16
     icon_32 = base_icon.resize((32, 32), Image.Resampling.LANCZOS)
-    icon_32.save("favicon-32x32.png", "PNG", optimize=True)
+    icon_32.save(os.path.join(REPO_ROOT, "favicon-32x32.png"), "PNG", optimize=True)
 
     icon_16 = base_icon.resize((16, 16), Image.Resampling.LANCZOS)
-    icon_16.save("favicon-16x16.png", "PNG", optimize=True)
+    icon_16.save(os.path.join(REPO_ROOT, "favicon-16x16.png"), "PNG", optimize=True)
 
     # Multi-frame favicon.ico
-    base_icon.save("favicon.ico", format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
+    base_icon.save(os.path.join(REPO_ROOT, "favicon.ico"), format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
     print("  -> icon-512.png, icon-192.png, apple-touch-icon.png, favicon-32x32.png, favicon.ico generated.")
 
-def generate_og_image():
+def generate_og_image(base_url="http://localhost:3030"):
     """
     Renders an enhanced, pixel-perfect, high-DPI (2x Retina) browser mockup framing
     the authentic live platform in the default Scholarly Warm Linen light theme,
@@ -98,8 +140,8 @@ def generate_og_image():
     import numpy as np
     from PIL import ImageFilter
 
-    raw_temp_path = os.path.abspath("og_raw_retina.png")
-    target_url = "http://localhost:3030/?og=1"
+    raw_temp_path = os.path.join(REPO_ROOT, "og_raw_retina.png")
+    target_url = f"{base_url.rstrip('/')}/?og=1"
 
     # Capture in high-DPI (2x scale) for razor-sharp typography and borders
     cmd = [
@@ -108,7 +150,7 @@ def generate_og_image():
         "--disable-gpu",
         "--hide-scrollbars",
         "--force-device-scale-factor=2",
-        "--virtual-time-budget=2000",
+        "--virtual-time-budget=2500",
         f"--screenshot={raw_temp_path}",
         "--window-size=1200,640",
         target_url
@@ -117,6 +159,10 @@ def generate_og_image():
         subprocess.run(cmd, check=True, timeout=25)
     except Exception as e:
         print(f"  [!] Failed to capture headless screenshot: {e}")
+        return
+
+    if not os.path.exists(raw_temp_path):
+        print(f"  [!] Screenshot was not generated at {raw_temp_path}")
         return
 
     # Canvas and window specifications
@@ -259,7 +305,7 @@ def generate_og_image():
         except OSError:
             pass
 
-def generate_og_image_dark():
+def generate_og_image_dark(base_url="http://localhost:3030"):
     """
     Renders an ultra-premium, high-DPI (2x Retina) dark-mode browser mockup
     framing the authentic live platform in dark theme, placed on a moody graphite studio backdrop.
@@ -279,7 +325,7 @@ def generate_og_image_dark():
     from PIL import ImageFilter
 
     raw_temp_path = os.path.join(REPO_ROOT, "og_raw_retina_dark.png")
-    target_url = "http://localhost:3030/?og=1&theme=dark"
+    target_url = f"{base_url.rstrip('/')}/?og=1&theme=dark"
 
     # Capture in high-DPI (2x scale) with dark theme
     cmd = [
@@ -288,7 +334,7 @@ def generate_og_image_dark():
         "--disable-gpu",
         "--hide-scrollbars",
         "--force-device-scale-factor=2",
-        "--virtual-time-budget=2000",
+        "--virtual-time-budget=2500",
         f"--screenshot={raw_temp_path}",
         "--window-size=1200,640",
         target_url
@@ -297,6 +343,10 @@ def generate_og_image_dark():
         subprocess.run(cmd, check=True, timeout=25)
     except Exception as e:
         print(f"  [!] Failed to capture headless dark screenshot: {e}")
+        return
+
+    if not os.path.exists(raw_temp_path):
+        print(f"  [!] Dark screenshot was not generated at {raw_temp_path}")
         return
 
     cw, ch = 1200, 630
@@ -439,7 +489,18 @@ def generate_og_image_dark():
             pass
 
 if __name__ == "__main__":
-    generate_icons()
-    generate_og_image()
-    generate_og_image_dark()
-    print("All branding and media assets (light & dark) successfully regenerated!")
+    parser = argparse.ArgumentParser(description="Generate PWA icons and social preview cards for SGOU Database.")
+    parser.add_argument("--icons-only", action="store_true", help="Generate only touch icons and favicons (no browser needed)")
+    parser.add_argument("--og-only", action="store_true", help="Generate only social cards (og-image.png and og-image-dark.png)")
+    parser.add_argument("--url", default=None, help="Custom server URL for taking screenshots (default: auto-detect or spin up temporary server)")
+    args = parser.parse_args()
+
+    if not args.og_only:
+        generate_icons()
+
+    if not args.icons_only:
+        with local_server(args.url) as server_url:
+            generate_og_image(server_url)
+            generate_og_image_dark(server_url)
+
+    print("Branding and media assets regeneration complete!")

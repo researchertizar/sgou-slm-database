@@ -22,13 +22,24 @@ from bs4 import BeautifulSoup
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
 BASE_URL = "https://sgou.ac.in"
 QUESTIONS_URL = f"{BASE_URL}/examination/questions"
-DEFAULT_OUTPUT = "sgou_questions_cleaned.json"
+DEFAULT_OUTPUT = str(REPO_ROOT / "data" / "sgou_questions_cleaned.json")
 
 COURSE_PAGE_RE = re.compile(r"/questions-more/\d+")
 PDF_RE = re.compile(r"\.pdf(?:$|[?#])", re.IGNORECASE)
-COURSE_CODE_RE = re.compile(r"\b([A-Z0-9]{7,10})\b", re.IGNORECASE)
+SGOU_CODE_RE = re.compile(
+    r"\b(SG[BM]\d{2}[A-Z]{2}\d{2,3}[A-Z]{0,2}|[BM]\d{2}[A-Z]{2}\d{2,3}[A-Z]{0,2})\b",
+    re.IGNORECASE,
+)
+GENERIC_CODE_RE = re.compile(r"\b([A-Z0-9]{7,10})\b", re.IGNORECASE)
+STOPWORDS = {
+    "SEMESTER", "FEBRUARY", "GRADUATE", "EXAMINATIONS", "UNDER",
+    "MASTER", "BACHELOR", "PROGRAMME", "JANUARY", "DECEMBER",
+    "OCTOBER", "NOVEMBER", "SEPTEMBER", "AUGUST", "APRIL", "MARCH",
+    "QUESTION", "INTERNAL", "ASSESSMENT"
+}
 EXAM_DATE_RE = re.compile(
     r"\b(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|"
     r"SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+\d{4}\b",
@@ -169,11 +180,30 @@ def is_assignment(resource: Resource) -> bool:
     return "ASSIGNMENT" in title or "/examasgnmnt/" in url or "assignment" in url
 
 
+def extract_course_code(raw_title: str) -> str:
+    """Extracts valid SGOU course codes while rejecting common false positives."""
+    m = SGOU_CODE_RE.search(raw_title)
+    if m:
+        code = m.group(1).upper()
+        if code not in STOPWORDS:
+            return code
+
+    for gm in GENERIC_CODE_RE.finditer(raw_title):
+        candidate = gm.group(1).upper()
+        if (
+            candidate not in STOPWORDS
+            and any(c.isdigit() for c in candidate)
+            and any(c.isalpha() for c in candidate)
+        ):
+            return candidate
+
+    return "N/A"
+
+
 def parse_pyq(resource: Resource) -> dict[str, str]:
     raw_title = clean_text(resource.title)
 
-    code_match = COURSE_CODE_RE.search(raw_title)
-    course_code = code_match.group(1).upper() if code_match else "N/A"
+    course_code = extract_course_code(raw_title)
 
     date_match = EXAM_DATE_RE.search(raw_title)
     exam_date = date_match.group(0).upper() if date_match else "N/A"
@@ -184,7 +214,8 @@ def parse_pyq(resource: Resource) -> dict[str, str]:
     subject_name = extract_subject_name(raw_title, course_code)
 
     return {
-        "subject_name": subject_name,
+        "subject_name": raw_title,
+        "clean_subject_name": subject_name,
         "course_code": course_code,
         "semester": resource.semester or "N/A",
         "exam_date": exam_date,
@@ -194,16 +225,40 @@ def parse_pyq(resource: Resource) -> dict[str, str]:
 
 
 def extract_subject_name(raw_title: str, course_code: str) -> str:
+    """Extracts a clean, human-readable subject name without noisy headers."""
     candidate = raw_title
-    if course_code != "N/A":
+    if course_code and course_code != "N/A":
         parts = re.split(
-            re.escape(course_code) + r"\s*[–—-]\s*",
+            re.escape(course_code) + r"\s*[:–—\-]\s*",
             raw_title,
             maxsplit=1,
             flags=re.IGNORECASE,
         )
-        if len(parts) > 1:
+        if len(parts) > 1 and len(clean_text(parts[1])) > 2:
             candidate = parts[1]
+        else:
+            parts2 = re.split(
+                re.escape(course_code) + r"\s+",
+                raw_title,
+                maxsplit=1,
+                flags=re.IGNORECASE,
+            )
+            if len(parts2) > 1 and len(clean_text(parts2[1])) > 2:
+                candidate = parts2[1].lstrip("–—-: ")
+
+    if candidate == raw_title:
+        parts = re.split(r"\s*[–—-]\s*", raw_title)
+        if len(parts) > 1:
+            after = " ".join(parts[1:]).strip()
+            if len(after) > 3:
+                candidate = after
+
+    candidate = re.sub(
+        r"^(?:(?:B\.?[A-Z/.]+|M\.?[A-Z/.]+)\s+(?:DEGREE\s+)?EXAMINATIONS?,?\s*(?:[A-Za-z0-9]+\s+Semester\s+[^–\-—]+)?)\s*",
+        "",
+        candidate,
+        flags=re.IGNORECASE,
+    ).strip()
 
     # Remove metadata commonly appended in parentheses, plus an exam date that
     # may remain outside parentheses.
@@ -307,6 +362,54 @@ def save_json(data: object, output: Path) -> None:
     tmp.replace(output)
 
 
+def re_clean_dataset(input_path: Path, output_path: Path) -> dict:
+    """Cleans an existing questions/assignments JSON dataset in-place without scraping."""
+    with input_path.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    total_courses = len(data)
+    total_pyqs = 0
+    total_assignments = 0
+    repaired_codes = 0
+
+    for course in data:
+        for asg in course.get("assignments", []):
+            total_assignments += 1
+            raw = asg.get("raw_title") or asg.get("title", "")
+            sem = normalize_semester_string(raw)
+            if sem == "N/A" and asg.get("semester"):
+                sem = normalize_semester_string(asg["semester"])
+            if sem == "N/A":
+                sem = asg.get("semester") or "SEMESTER 1"
+            sem_label = sem.title() if sem != "N/A" else "Semester"
+            asg["semester"] = sem
+            asg["clean_title"] = f"{sem_label} Assignment Booklet"
+            asg["title"] = asg["clean_title"]
+
+        for py in course.get("previous_year_questions", []):
+            total_pyqs += 1
+            raw = py.get("subject_name", "")
+            old_code = py.get("course_code", "")
+            new_code = extract_course_code(raw)
+            if new_code != "N/A":
+                py["course_code"] = new_code
+                repaired_codes += 1
+            elif old_code in STOPWORDS:
+                py["course_code"] = "N/A"
+
+            clean_name = extract_subject_name(raw, py["course_code"])
+            if clean_name and clean_name != "N/A":
+                py["clean_subject_name"] = clean_name
+
+    save_json(data, output_path)
+    return {
+        "total_courses": total_courses,
+        "total_pyqs": total_pyqs,
+        "total_assignments": total_assignments,
+        "repaired_codes": repaired_codes,
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Scrape and clean SGOU previous-year questions and assignments."
@@ -315,6 +418,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=float, default=20.0, help="HTTP timeout in seconds")
     parser.add_argument("--delay", type=float, default=0.15, help="Delay between course requests")
     parser.add_argument("--limit", type=int, default=None, help="Scrape only the first N courses")
+    parser.add_argument("--clean-existing", action="store_true", help="Re-clean existing JSON dataset in place without network requests")
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
     return parser
 
@@ -326,10 +430,27 @@ def main() -> int:
         format="%(levelname)s: %(message)s",
     )
 
+    output = Path(args.output)
+
+    if args.clean_existing:
+        if not output.exists():
+            logging.error("Cannot re-clean non-existent file: %s", output)
+            return 1
+        logging.info("Re-cleaning existing dataset: %s", output)
+        stats = re_clean_dataset(output, output)
+        logging.info(
+            "Cleaned %d courses, %d PYQs (%d course codes repaired), %d assignments -> %s",
+            stats["total_courses"],
+            stats["total_pyqs"],
+            stats["repaired_codes"],
+            stats["total_assignments"],
+            output,
+        )
+        return 0
+
     try:
         tool = SGOUTool(timeout=args.timeout, delay=args.delay)
         cleaned_data = tool.scrape_all(limit=args.limit)
-        output = Path(args.output)
         save_json(cleaned_data, output)
     except (requests.RequestException, OSError, ValueError) as exc:
         logging.error("Fatal error: %s", exc)

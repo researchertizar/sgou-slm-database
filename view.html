@@ -49,7 +49,7 @@
     <meta name="twitter:creator" content="@researchertizar">
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20260904_10">
+    <link rel="manifest" href="/manifest.json?v=20261003_04">
     <link rel="icon" type="image/svg+xml" href="/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20260904_10">
@@ -59,10 +59,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <style>
+        @view-transition {
+            navigation: auto;
+        }
+
         :root {
+            color-scheme: light;
+            --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+            --font-mono: 'DM Mono', monospace;
             --bg: #f5f0e8;
             --bg-deep: #ebe4d6;
             --surface: #ffffff;
@@ -87,6 +95,7 @@
             --header-bg: #1a1714;
             --header-text: #f5f0e8;
             --header-sub: #a09888;
+            --highlight: #fdecc8;
             --toast-bg: #1a1714;
             --toast-text: #f5f0e8;
             --focus-ring: rgba(184, 67, 47, .35);
@@ -95,7 +104,27 @@
             --ease: cubic-bezier(.22, 1, .36, 1);
         }
 
+        code, kbd, .topbar-badge, .topbar-code, .topbar-btn, .chip-mono, .course-code {
+            font-feature-settings: "zero" 1, "tnum" 1;
+        }
+
+        #pdfFrame.filter-sepia {
+            filter: sepia(0.35) contrast(0.96) brightness(0.96);
+        }
+
+        #pdfFrame.filter-dark {
+            filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
+            background: #121110;
+        }
+
+        .topbar-btn.filter-active {
+            color: var(--accent) !important;
+            background: rgba(184, 67, 47, 0.18) !important;
+            border-color: var(--accent) !important;
+        }
+
         [data-theme="dark"] {
+            color-scheme: dark;
             --bg: #13110f;
             --bg-deep: #1b1916;
             --surface: #201e1a;
@@ -105,8 +134,8 @@
             --accent-light: #f29782;
             --ink: #ece7de;
             --ink-soft: #b8b0a2;
-            --ink-muted: #8c8375;
-            --border: #36322b;
+            --ink-muted: #9e9589;
+            --border: #38342e;
             --border-light: #2a2620;
             --ug: #34d399;
             --pg: #c084fc;
@@ -119,10 +148,16 @@
             --shadow-lg: 0 16px 45px rgba(0, 0, 0, .55);
             --header-bg: #0d0c0a;
             --header-text: #ece7de;
-            --header-sub: #8c8375;
+            --header-sub: #9e9589;
+            --highlight: rgba(224, 107, 82, 0.3);
             --toast-bg: #ece7de;
             --toast-text: #13110f;
             --focus-ring: rgba(224, 107, 82, .35);
+        }
+
+        ::selection {
+            background: var(--highlight);
+            color: var(--ink);
         }
 
         *,
@@ -133,33 +168,60 @@
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden !important;
+            margin: 0;
+            padding: 0;
+            overscroll-behavior: none;
+        }
+
+        /* Accessibility: High-contrast, clean focus rings for keyboard navigation */
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: var(--radius-xs, 4px);
+        }
+
+        :focus:not(:focus-visible) {
+            outline: none;
+        }
+
         html {
             -webkit-text-size-adjust: 100%;
-            height: 100%;
         }
 
         body {
-            font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+            font-family: var(--font-sans);
             background: var(--bg);
             color: var(--ink);
-            height: 100%;
-            height: 100dvh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
             -webkit-font-smoothing: antialiased;
+        }
+
+        [data-theme="light"] .icon-moon {
+            display: none;
+        }
+
+        [data-theme="dark"] .icon-sun {
+            display: none;
         }
 
         /* ===========================
            COMPACT TOPBAR
            =========================== */
         .topbar {
-            background: var(--header-bg);
-            color: var(--header-text);
+            background: var(--surface);
+            color: var(--ink);
             position: relative;
             z-index: 100;
             flex-shrink: 0;
-            transition: background .3s;
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: background .2s ease, border-color .2s ease, color .2s ease;
         }
 
         .topbar::after {
@@ -170,6 +232,7 @@
             right: 0;
             height: 2px;
             background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--accent));
+            opacity: .85;
         }
 
         /* Unified compact topbar */
@@ -224,7 +287,7 @@
         .topbar-badge {
             font-family: 'DM Mono', monospace;
             font-size: 10px;
-            font-weight: 600;
+            font-weight: 500;
             letter-spacing: .05em;
             padding: 2px 7px;
             border-radius: 4px;
@@ -256,10 +319,10 @@
         }
 
         .topbar-title {
-            font-family: 'DM Serif Display', Georgia, serif;
+            font-family: var(--font-serif);
             font-size: 13.5px;
             font-weight: 400;
-            color: var(--header-text);
+            color: var(--ink);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -267,12 +330,13 @@
         }
 
         .topbar-code {
-            font-family: 'DM Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 10px;
-            color: var(--header-sub);
-            background: rgba(255, 255, 255, .08);
+            color: var(--ink-soft);
+            background: var(--bg-deep);
+            border: 1px solid var(--border-light);
             padding: .1rem .35rem;
-            border-radius: 3px;
+            border-radius: 4px;
             letter-spacing: .04em;
             flex-shrink: 0;
             display: none;
@@ -286,45 +350,48 @@
         }
 
         .topbar-btn {
-            font-family: 'DM Mono', monospace;
+            font-family: var(--font-mono);
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 500;
             letter-spacing: .03em;
-            height: 30px;
-            padding: 0 .65rem;
-            border-radius: 5px;
-            border: 1px solid rgba(255, 255, 255, .14);
-            background: rgba(255, 255, 255, .06);
-            color: var(--header-text);
+            height: 32px;
+            min-width: 32px;
+            padding: 0 .45rem;
+            border-radius: var(--radius-sm, 6px);
+            border: 1px solid var(--border);
+            background: var(--bg-deep);
+            color: var(--ink);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: .35rem;
-            transition: background .15s, border-color .15s, transform .1s;
+            transition: background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;
             -webkit-tap-highlight-color: transparent;
             text-decoration: none;
             white-space: nowrap;
         }
 
         .topbar-btn:hover {
-            background: rgba(255, 255, 255, .15);
-            border-color: rgba(255, 255, 255, .28);
+            background: var(--surface-hover);
+            border-color: var(--ink-muted);
+            color: var(--ink);
         }
 
         .topbar-btn:active {
-            transform: scale(.95);
+            transform: scale(.93);
         }
 
         .topbar-btn.accent-btn {
             background: var(--accent);
             border-color: var(--accent);
             color: #fff;
-            box-shadow: 0 1px 4px rgba(184, 67, 47, .3);
         }
 
         .topbar-btn.accent-btn:hover {
             background: var(--accent-hover);
             border-color: var(--accent-hover);
+            color: #fff;
         }
 
         .topbar-btn.accent-btn.downloading {
@@ -333,14 +400,15 @@
         }
 
         .topbar-btn.icon-only {
-            width: 30px;
+            width: 32px;
+            height: 32px;
             padding: 0;
             justify-content: center;
         }
 
         .expand-toggle {
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             padding: 0;
             justify-content: center;
         }
@@ -972,6 +1040,38 @@
                 position: static;
             }
         }
+
+        /* Tactile Micro-Interactions */
+        .topbar-btn,
+        .detail-btn,
+        .accent-btn,
+        .btn-view {
+            transition: transform .12s cubic-bezier(0.22, 1, 0.36, 1), background .2s ease, border-color .2s ease, color .2s ease;
+        }
+
+        .topbar-btn:active,
+        .detail-btn:active,
+        .accent-btn:active,
+        .btn-view:active {
+            transform: scale(0.96);
+        }
+
+        /* Accessibility: Reduced Motion Safeguard */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            ::view-transition-group(*),
+            ::view-transition-old(*),
+            ::view-transition-new(*) {
+                animation: none !important;
+            }
+        }
     </style>
 
     <!-- Google Analytics 4 (GA4) -->
@@ -992,17 +1092,12 @@
     <!-- ============ UNIFIED TOPBAR ============ -->
     <header class="topbar" id="topbar">
         <div class="topbar-compact">
-            <a class="topbar-brand" href="./" title="Return to SGOU Academic Database">
-                <svg viewBox="0 0 512 512" aria-hidden="true">
-                    <rect width="512" height="512" rx="108" fill="var(--accent)" />
-                    <rect x="72" y="365" width="368" height="10" rx="5" fill="#fff" opacity=".4" />
-                    <text x="256" y="290" font-family="Georgia,serif" font-size="210" font-weight="bold" fill="#fff"
-                        text-anchor="middle" dominant-baseline="central">SG</text>
+            <a class="topbar-btn icon-only" href="./" aria-label="Return to SGOU Academic Database" title="Back to catalog (Esc)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
                 </svg>
-                <span>SGOU Database</span>
             </a>
-
-            <span class="topbar-sep" aria-hidden="true">/</span>
 
             <div class="topbar-meta">
                 <span class="topbar-badge" id="topbarBadge">SLM TEXTBOOK</span>
@@ -1011,29 +1106,53 @@
             </div>
 
             <div class="topbar-actions">
-                <button class="topbar-btn accent-btn" id="topbarDownload" aria-label="Download PDF"
-                    title="Download PDF to device">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
+                <button class="topbar-btn icon-only" id="topbarThemeToggle" aria-label="Toggle theme"
+                    title="Toggle theme (T)" type="button">
+                    <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5" />
+                        <line x1="12" y1="1" x2="12" y2="3" />
+                        <line x1="12" y1="21" x2="12" y2="23" />
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                        <line x1="1" y1="12" x2="3" y2="12" />
+                        <line x1="21" y1="12" x2="23" y2="12" />
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
                     </svg>
-                    <span class="btn-text-full">PDF</span>
-                    <span class="btn-text-short">PDF</span>
+                    <svg class="icon-moon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
                 </button>
-                <a class="topbar-btn" id="btnOpenDirect" href="#" target="_blank" rel="noopener"
-                    aria-label="Open original PDF in separate tab" title="Open in separate tab">
-                    <span class="desktop-label">Open</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                <button class="topbar-btn icon-only" id="topbarFilter" aria-label="Toggle eye comfort filter"
+                    title="Eye Comfort Filter (F)" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                </button>
+                <a class="topbar-btn icon-only" id="btnOpenDirect" href="#" target="_blank" rel="noopener"
+                    aria-label="Open original PDF in separate tab" title="Open directly in browser (O)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                         <polyline points="15 3 21 3 21 9" />
                         <line x1="10" y1="14" x2="21" y2="3" />
                     </svg>
                 </a>
+                <button class="topbar-btn accent-btn icon-only" id="topbarDownload" aria-label="Download PDF"
+                    title="Download PDF to device (D)" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                </button>
                 <button class="topbar-btn icon-only expand-toggle" id="expandToggle" aria-label="Toggle details drawer"
-                    title="Show course details">
+                    title="Show course details (I)" type="button">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                         stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="6 9 12 15 18 9" />
@@ -1205,6 +1324,8 @@
 
     <script>
         (function () {
+            var params = new URLSearchParams(window.location.search);
+            var hash = (window.location.hash || '').replace(/^#\/?/, '');
             var pathParts = (window.location.pathname || '').split('/');
             var pathCode = (pathParts[1] === 'view' && pathParts[2]) ? decodeURIComponent(pathParts[2]) : '';
             var rawCode = params.get('code') || params.get('course') || pathCode || decodeURIComponent(hash || '');
@@ -1354,16 +1475,25 @@
                         if (!Array.isArray(data)) throw new Error('Not array');
                         var foundQ = null;
                         var codeUp = courseCode.toUpperCase().trim();
+                        var SGOU_CODE_RE = /\b(SG[BM]\d{2}[A-Z]{2}\d{3}[A-Z]{2}|[BM]\d{2}[A-Z]{2}\d{2}[A-Z]{2})\b/i;
+                        var NOT_CODES = new Set(['SEMESTER', 'FEBRUARY', 'GRADUATE', 'EXAMINATIONS', 'UNDER', 'MASTER', 'BACHELOR', 'PROGRAMME']);
+                        function getCode(py) {
+                            var raw = String(py.course_code || py.code || '').trim().toUpperCase();
+                            if (raw && /^[A-Z0-9]{8,13}$/.test(raw) && !NOT_CODES.has(raw)) return raw;
+                            var m = String(py.subject_name || '').match(SGOU_CODE_RE);
+                            return m ? m[1].toUpperCase() : (raw && !NOT_CODES.has(raw) ? raw : '');
+                        }
+
                         data.forEach(function(p) {
                             (p.previous_year_questions || []).forEach(function(py) {
                                 if (foundQ) return;
+                                var pyCode = getCode(py);
                                 var subj = (py.subject_name || '').toUpperCase();
-                                var pyCode = (py.course_code || py.code || '').toUpperCase().trim();
-                                if (pyCode === codeUp || subj.includes(codeUp)) {
+                                if ((pyCode && pyCode === codeUp) || subj.includes(codeUp)) {
                                     foundQ = {
                                         pdfUrl: py.pdf_url,
                                         name: py.subject_name,
-                                        code: py.course_code || courseCode,
+                                        code: pyCode || courseCode,
                                         prog: p.course_title,
                                         level: p.course_title && (p.course_title.includes('M.') || p.course_title.includes('MASTER')) ? 'PG' : 'UG',
                                         examDate: py.exam_date,
@@ -1374,13 +1504,15 @@
                             });
                             (p.assignments || []).forEach(function(asg) {
                                 if (foundQ) return;
-                                var subj = (asg.subject_name || asg.name || '').toUpperCase();
+                                var asgKey = (p.course_title + '_' + (asg.semester || '')).toUpperCase();
                                 var asgCode = (asg.course_code || asg.code || '').toUpperCase().trim();
-                                if (asgCode === codeUp || subj.includes(codeUp)) {
+                                var asgTitle = (asg.clean_title || asg.title || asg.raw_title || asg.subject_name || asg.name || '').trim();
+                                var subj = asgTitle.toUpperCase();
+                                if (asgKey === codeUp || (asgCode && asgCode === codeUp) || (codeUp.length > 3 && (subj.includes(codeUp) || asgKey.includes(codeUp)))) {
                                     foundQ = {
                                         pdfUrl: asg.pdf_url,
-                                        name: asg.subject_name || asg.name,
-                                        code: asg.course_code || courseCode,
+                                        name: asgTitle || (asg.semester ? asg.semester + ' Assignment Booklet' : 'Assignment Booklet'),
+                                        code: asg.course_code || (p.course_title + '_' + (asg.semester || '')),
                                         prog: p.course_title,
                                         level: p.course_title && (p.course_title.includes('M.') || p.course_title.includes('MASTER')) ? 'PG' : 'UG',
                                         semester: asg.semester,
@@ -1669,6 +1801,117 @@
 
             function escH(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
             function escA(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+            // Reader Eye-Comfort Filter (Normal / Warm Sepia / Dark Invert)
+            (function initReaderFilter() {
+                var filterBtn = document.getElementById('topbarFilter');
+                var frame = document.getElementById('pdfFrame');
+                if (!filterBtn || !frame) return;
+
+                var modes = ['normal', 'sepia', 'dark'];
+                function applyMode(m) {
+                    frame.classList.remove('filter-sepia', 'filter-dark');
+                    filterBtn.classList.remove('filter-active');
+                    if (m === 'sepia') {
+                        frame.classList.add('filter-sepia');
+                        filterBtn.classList.add('filter-active');
+                        filterBtn.setAttribute('title', 'Eye Comfort: Warm Sepia (Click to change)');
+                    } else if (m === 'dark') {
+                        frame.classList.add('filter-dark');
+                        filterBtn.classList.add('filter-active');
+                        filterBtn.setAttribute('title', 'Eye Comfort: Dark Invert (Click to change)');
+                    } else {
+                        filterBtn.setAttribute('title', 'Eye Comfort: Standard (Click to change)');
+                    }
+                }
+
+                var saved = 'normal';
+                try { saved = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
+                applyMode(saved);
+
+                filterBtn.addEventListener('click', function () {
+                    var cur = 'normal';
+                    try { cur = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
+                    var nextIdx = (modes.indexOf(cur) + 1) % modes.length;
+                    var next = modes[nextIdx];
+                    try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
+                    applyMode(next);
+                });
+
+                // Topbar Theme Toggle
+                var themeBtn = document.getElementById('topbarThemeToggle');
+                if (themeBtn) {
+                    function syncThemeMeta() {
+                        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                        var meta = document.querySelector('meta[name="theme-color"]');
+                        if (meta) meta.setAttribute('content', isDark ? '#13110f' : '#ffffff');
+                        themeBtn.setAttribute('title', isDark ? 'Switch to light mode (T)' : 'Switch to dark mode (T)');
+                        themeBtn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+                    }
+                    syncThemeMeta();
+                    themeBtn.addEventListener('click', function () {
+                        var cur = document.documentElement.getAttribute('data-theme') || 'light';
+                        var next = cur === 'dark' ? 'light' : 'dark';
+                        document.documentElement.setAttribute('data-theme', next);
+                        try { localStorage.setItem('sgou-theme-v2', next); } catch (_) {}
+                        syncThemeMeta();
+                    });
+                }
+
+                // Keyboard Shortcuts for Standalone Viewer
+                document.addEventListener('keydown', function (e) {
+                    var activeEl = document.activeElement;
+                    var isInput = activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
+                    if (isInput) return;
+
+                    var k = e.key.toLowerCase();
+                    if (e.key === 'Escape' || e.key === 'Backspace') {
+                        e.preventDefault();
+                        window.location.href = './';
+                        return;
+                    }
+                    if (k === 't') {
+                        e.preventDefault();
+                        document.getElementById('topbarThemeToggle')?.click();
+                        return;
+                    }
+                    if (k === 'f' || k === 'c') {
+                        e.preventDefault();
+                        document.getElementById('topbarFilter')?.click();
+                        return;
+                    }
+                    if (k === 'd') {
+                        e.preventDefault();
+                        document.getElementById('topbarDownload')?.click();
+                        return;
+                    }
+                    if (k === 's') {
+                        e.preventDefault();
+                        document.getElementById('bottomShare')?.click();
+                        return;
+                    }
+                    if (k === 'o') {
+                        e.preventDefault();
+                        document.getElementById('btnOpenDirect')?.click();
+                        return;
+                    }
+                    if (k === 'i') {
+                        e.preventDefault();
+                        document.getElementById('expandToggle')?.click();
+                        return;
+                    }
+                    if (e.key === '?') {
+                        e.preventDefault();
+                        var t = document.getElementById('toast');
+                        if (t) {
+                            t.textContent = 'Shortcuts: [Esc] Back \u00B7 [T] Theme \u00B7 [F] Comfort \u00B7 [D] Download \u00B7 [S] Share \u00B7 [O] Open \u00B7 [I] Details';
+                            t.classList.add('visible');
+                            setTimeout(function () { t.classList.remove('visible'); }, 4000);
+                        }
+                        return;
+                    }
+                });
+            })();
 
             // Theme managed synchronously in <head>
         })();

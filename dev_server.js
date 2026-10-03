@@ -59,10 +59,13 @@ const server = http.createServer((req, res) => {
       }
       if (!filename.toLowerCase().endsWith('.pdf')) filename += '.pdf';
 
-      https.get(upstream, upstreamRes => {
+      const upstreamReq = https.get(upstream, upstreamRes => {
         if (upstreamRes.statusCode >= 300 && upstreamRes.statusCode < 400 && upstreamRes.headers.location) {
-          res.writeHead(302, { Location: upstreamRes.headers.location });
-          return res.end();
+          if (!res.headersSent) {
+            res.writeHead(302, { Location: upstreamRes.headers.location });
+            res.end();
+          }
+          return;
         }
 
         const headers = {
@@ -79,9 +82,19 @@ const server = http.createServer((req, res) => {
 
         res.writeHead(upstreamRes.statusCode || 200, headers);
         upstreamRes.pipe(res);
-      }).on('error', err => {
-        res.writeHead(502, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Upstream fetch failed', message: err.message }));
+      });
+
+      upstreamReq.on('error', err => {
+        if (!res.headersSent) {
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Upstream fetch failed', message: err.message }));
+        } else {
+          res.destroy();
+        }
+      });
+
+      req.on('close', () => {
+        upstreamReq.destroy();
       });
       return;
     } catch (err) {

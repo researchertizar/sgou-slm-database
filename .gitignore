@@ -27,3 +27,9 @@ scratch/
 __pycache__/
 *.pyc
 *.pyo
+
+# Screen recordings and media captures
+sr/
+*.mp4
+*.webm
+

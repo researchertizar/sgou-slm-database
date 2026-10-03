@@ -1,10 +1,10 @@
-const CACHE = 'sgou-v109';
+const CACHE = 'sgou-v121';
 const SHELL = [
     './',
     './index.html',
-    './style.css?v=20260904_10',
-    './script.js?v=20260909_02',
-    './manifest.json?v=20260904_10',
+    './style.css?v=20261003_04',
+    './script.js?v=20261003_04',
+    './manifest.json?v=20261003_04',
     './icon.svg?v=20260904_10',
     './icon-192.png?v=20260904_10',
     './icon-512.png?v=20260904_10',
@@ -79,6 +79,19 @@ self.addEventListener('fetch', e => {
         return;
     }
 
+    // Navigation requests: HTML SPA Routing fallback (ensures offline deep links always load app shell)
+    if (e.request.mode === 'navigate') {
+        e.respondWith(
+            fetch(e.request).catch(async () => {
+                const c = await caches.open(CACHE);
+                return (await c.match(e.request)) ||
+                       (await c.match('./index.html')) ||
+                       (await c.match('./'));
+            })
+        );
+        return;
+    }
+
     if (FONT_HOSTS.some(h => url.hostname === h)) {
         e.respondWith(swr(e.request));
         return;
@@ -96,16 +109,6 @@ self.addEventListener('fetch', e => {
 
     e.respondWith(fetch(e.request).catch(() => new Response('Offline', { status: 503 })));
 });
-
-async function nf(req) {
-    try {
-        const r = await fetch(req);
-        if (r.ok) { const c = await caches.open(CACHE); c.put(req, r.clone()); }
-        return r;
-    } catch (_) {
-        return (await caches.match(req)) || new Response('[]', { headers: { 'Content-Type': 'application/json' } });
-    }
-}
 
 async function swr(req) {
     const c = await caches.open(CACHE);
