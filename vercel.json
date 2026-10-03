@@ -14,10 +14,6 @@
             "destination": "/data/sgou_questions_cleaned.json"
         },
         {
-            "source": "/sgou_assignments_cleaned.json",
-            "destination": "/data/sgou_assignments_cleaned.json"
-        },
-        {
             "source": "/((?!view|.*\\.).*)",
             "destination": "/index.html"
         }
@@ -26,6 +22,10 @@
         {
             "source": "/(.*)",
             "headers": [
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net blob:; connect-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://www.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';"
+                },
                 {
                     "key": "X-Content-Type-Options",
                     "value": "nosniff"

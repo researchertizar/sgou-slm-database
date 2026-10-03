@@ -100,7 +100,7 @@ export default async function handler(req) {
 
         if (!upstream.ok) {
             // Direct redirect fallback to ensure user still gets the file
-            return Response.redirect(raw, 302);
+            return Response.redirect(parsed.href, 302);
         }
 
         const userAgent = req.headers.get('user-agent') || '';
@@ -127,7 +127,7 @@ export default async function handler(req) {
 
     } catch (err) {
         // On any timeout or edge error, fallback to direct CDN redirect
-        return Response.redirect(raw, 302);
+        return Response.redirect(parsed.href, 302);
     }
 }
 

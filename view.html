@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net blob:; connect-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://www.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta name="description"
         content="Document Viewer — Preview, read, and download Sree Narayana Guru Open University (SGOU / SNGOU) SLM textbooks, previous year question papers (PYQs), and assignment booklets.">
     <meta name="keywords"
@@ -47,6 +49,61 @@
         content="Preview and download SGOU distance education textbooks, question papers, and assignment booklets.">
     <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/og-image.png?v=20260909">
     <meta name="twitter:creator" content="@researchertizar">
+
+    <!-- Search Engine Webmaster Verification Hooks -->
+    <meta name="google-site-verification" content="google-site-verification-token">
+    <meta name="msvalidate.01" content="msvalidate-token">
+
+    <!-- Schema.org Structured Data for Digital Document Viewer -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": "https://sgou-slm-database.vercel.app/view.html#webpage",
+          "url": "https://sgou-slm-database.vercel.app/view.html",
+          "name": "SGOU Document Reader & Academic Viewer",
+          "description": "Read, preview, and download official Self-Learning Material (SLM) textbooks, previous year question papers, and assignments for Sree Narayana Guru Open University (SNGOU).",
+          "isPartOf": {
+            "@type": "WebSite",
+            "name": "SGOU Academic Database",
+            "url": "https://sgou-slm-database.vercel.app/"
+          },
+          "inLanguage": ["en-IN", "ml-IN"],
+          "breadcrumb": {
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Home",
+                "item": "https://sgou-slm-database.vercel.app/"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Document Viewer",
+                "item": "https://sgou-slm-database.vercel.app/view.html"
+              }
+            ]
+          }
+        },
+        {
+          "@type": "DigitalDocument",
+          "@id": "https://sgou-slm-database.vercel.app/view.html#document",
+          "name": "SGOU Course Academic Document",
+          "encodingFormat": "application/pdf",
+          "isAccessibleForFree": true,
+          "publisher": {
+            "@type": "EducationalOrganization",
+            "name": "Sree Narayana Guru Open University",
+            "url": "https://sgou.ac.in"
+          }
+        }
+      ]
+    }
+    </script>
 
     <!-- Touch & Favicon Formats -->
     <link rel="manifest" href="/manifest.json?v=20261003_04">
@@ -671,78 +728,6 @@
             }
         }
 
-        /* Comfort Fallback State (UX Principle: Never show a dead blank screen) */
-        .viewer-comfort-state {
-            position: absolute;
-            inset: 0;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg);
-            padding: 1.5rem;
-            z-index: 12;
-            text-align: center;
-        }
-
-        .comfort-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2rem 2.25rem;
-            max-width: 520px;
-            width: 100%;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: .75rem;
-        }
-
-        .comfort-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
-            background: var(--ug-bg);
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: .25rem;
-        }
-
-        .comfort-tag {
-            font-family: 'DM Mono', monospace;
-            font-size: 10.5px;
-            letter-spacing: .06em;
-            color: var(--ug);
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .comfort-title {
-            font-family: 'DM Serif Display', Georgia, serif;
-            font-size: 20px;
-            color: var(--ink);
-            line-height: 1.3;
-            margin: 0;
-        }
-
-        .comfort-prog {
-            font-size: 13px;
-            color: var(--ink-muted);
-            line-height: 1.4;
-            margin: 0;
-        }
-
-        .comfort-buttons {
-            display: flex;
-            gap: .6rem;
-            margin-top: .75rem;
-            width: 100%;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
 
         .comfort-btn {
             display: inline-flex;
@@ -779,20 +764,6 @@
 
         .comfort-btn.secondary:hover {
             border-color: var(--ink);
-        }
-
-        .comfort-note {
-            display: flex;
-            align-items: flex-start;
-            gap: .45rem;
-            font-size: 11.5px;
-            color: var(--ink-muted);
-            line-height: 1.45;
-            margin-top: .5rem;
-            text-align: left;
-            background: var(--bg-deep);
-            padding: .65rem .85rem;
-            border-radius: 6px;
         }
 
         /* Error */
@@ -1093,9 +1064,10 @@
     <header class="topbar" id="topbar">
         <div class="topbar-compact">
             <a class="topbar-btn icon-only" href="./" aria-label="Return to SGOU Academic Database" title="Back to catalog (Esc)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                     stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="15 18 9 12 15 6" />
+                    <path d="M19 12H5" />
+                    <polyline points="12 19 5 12 12 5" />
                 </svg>
             </a>
 
@@ -1220,53 +1192,6 @@
                         </svg>
                         <span>Open in Separate Tab</span>
                     </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="viewer-comfort-state" id="viewerComfortState">
-            <div class="comfort-card">
-                <div class="comfort-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                        <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                </div>
-                <div class="comfort-tag" id="comfortTag">OFFICIAL STUDY MATERIAL</div>
-                <h2 class="comfort-title" id="comfortTitle">Reading and Writing English</h2>
-                <p class="comfort-prog" id="comfortProg">Bachelor of Science (Data Science and Analytics) · SNGOU</p>
-                <div class="comfort-buttons">
-                    <button class="comfort-btn primary" id="comfortDownload">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
-                        <span>Download PDF Document</span>
-                    </button>
-                    <a class="comfort-btn secondary" id="comfortOpen" href="#" target="_blank" rel="noopener">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                            <polyline points="15 3 21 3 21 9"></polyline>
-                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                        </svg>
-                        <span>Open in Separate Tab</span>
-                    </a>
-                </div>
-                <div class="comfort-note">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <span>If the preview above does not render in your browser plugin, tap <strong>Download PDF</strong> to view smoothly on your device.</span>
                 </div>
             </div>
         </div>
@@ -1625,17 +1550,6 @@
                 if (ldSub) ldSub.textContent = formattedProg + ' \u00B7 ' + typeLabel;
                 if (ldOpen) ldOpen.href = pdfUrl;
 
-                // Populate Comfort Fallback Card
-                var cmfTitle = document.getElementById('comfortTitle');
-                var cmfProg = document.getElementById('comfortProg');
-                var cmfTag = document.getElementById('comfortTag');
-                var cmfDl = document.getElementById('comfortDownload');
-                var cmfOpen = document.getElementById('comfortOpen');
-                if (cmfTitle) cmfTitle.textContent = (name || 'Document') + (code ? ' (' + code + ')' : '');
-                if (cmfProg) cmfProg.textContent = formattedProg + (level ? ' (' + level + ')' : '') + ' \u00B7 SNGOU';
-                if (cmfTag) cmfTag.textContent = typeLabel;
-                if (cmfOpen) cmfOpen.href = pdfUrl;
-
                 var cleanCode = code ? code + '_' : '';
                 var cleanName = (name || 'doc').replace(/[^a-zA-Z0-9 _\-]/g, '').trim();
                 var fn;
@@ -1730,26 +1644,23 @@
                 loadTimers.forEach(function (t) { clearTimeout(t); });
                 loadTimers = [];
 
-                var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-                var isAndroid = /Android/.test(navigator.userAgent);
-                var isMobile = isIOS || isAndroid;
-
                 var loadingEl = document.getElementById('viewerLoading');
-                var comfortEl = document.getElementById('viewerComfortState');
 
                 if (loadingEl) loadingEl.style.display = 'flex';
-                if (comfortEl) comfortEl.style.display = 'none';
+
+                var fullTarget = url ? (url + '#toolbar=1&navpanes=0') : '';
+
                 if (frame) {
-                    frame.style.opacity = '0';
-                    var fullTarget = url + '#toolbar=1&navpanes=0';
+                    frame.style.display = 'block';
+                    frame.style.opacity = '1';
                     try {
                         if (frame.contentWindow) {
-                            frame.contentWindow.location.replace(fullTarget);
+                            frame.contentWindow.location.replace(fullTarget || 'about:blank');
                         } else {
-                            frame.src = fullTarget;
+                            frame.src = fullTarget || 'about:blank';
                         }
                     } catch (e) {
-                        frame.src = fullTarget;
+                        frame.src = fullTarget || 'about:blank';
                     }
                 }
 
@@ -1767,18 +1678,7 @@
                     };
                 }
 
-                // If mobile or if desktop plugin takes > 3.5s to respond
-                var tid = setTimeout(function () {
-                    if (done) return;
-                    if (isMobile) {
-                        // Mobile devices do not support iframe inline PDF viewer plugins
-                        if (loadingEl) loadingEl.style.display = 'none';
-                        if (comfortEl) comfortEl.style.display = 'flex';
-                    } else {
-                        // On desktop, reveal frame
-                        onReady();
-                    }
-                }, isMobile ? 1200 : 3500);
+                var tid = setTimeout(onReady, 3500);
                 loadTimers.push(tid);
             }
 

@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net blob:; connect-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://www.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta name="description"
         content="SGOU Academic Database — Comprehensive digital repository for Sree Narayana Guru Open University (SNGOU), Kollam. Access 1,200+ SLM textbooks, 950+ previous year question papers (PYQs), and 75+ assignment booklets for FYUG, UG, and PG courses. Fast, offline-capable, and completely free.">
     <meta name="keywords"
@@ -72,9 +74,14 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20261003_04">
+    <link rel="stylesheet" href="style.css?v=20261003_10">
 
     <!-- Schema.org Knowledge Graph (JSON-LD) for Search Engines & AI Crawlers -->
+    <!-- Search Engine Webmaster Verification Hooks -->
+    <meta name="google-site-verification" content="google-site-verification-token">
+    <meta name="msvalidate.01" content="msvalidate-token">
+
+    <!-- Schema.org Knowledge Graph (JSON-LD) for Google Rich Results & AI Discovery -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -89,14 +96,20 @@
             "SNGOU Academic Portal",
             "SGOU SLM Browser",
             "SGOU Study Material Repository",
-            "Sree Narayana Guru Open University Database"
+            "Sree Narayana Guru Open University Database",
+            "ശ്രീനാരായണഗുരു ഓപ്പൺ യൂണിവേഴ്സിറ്റി സ്റ്റഡി മെറ്റീരിയൽ",
+            "SGOU ചോദ്യപേപ്പറുകൾ",
+            "SGOU പാഠപുസ്തകങ്ങൾ",
+            "SGOU അസൈൻമെന്റുകൾ",
+            "Kollam Open University SLM Books"
           ],
-          "description": "Free digital repository for Sree Narayana Guru Open University (SNGOU), Kollam, offering free access to SLM textbooks, previous year question papers (PYQs), and assignment booklets.",
-          "inLanguage": "en-IN",
+          "description": "Comprehensive digital repository for Sree Narayana Guru Open University (SNGOU), Kollam. Free open access to 1,200+ SLM textbooks, 950+ previous year question papers (PYQs), and assignment booklets for FYUG, UG, and PG distance education courses.",
+          "inLanguage": ["en-IN", "ml-IN"],
           "publisher": {
             "@type": "Person",
             "name": "Ahayas",
-            "jobTitle": "LEAD Engineer & Curator"
+            "jobTitle": "Lead Engineer & Academic Curator",
+            "url": "https://sgou-slm-database.vercel.app/"
           },
           "potentialAction": {
             "@type": "SearchAction",
@@ -108,17 +121,145 @@
           }
         },
         {
+          "@type": "BreadcrumbList",
+          "@id": "https://sgou-slm-database.vercel.app/#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://sgou-slm-database.vercel.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Self-Learning Material (SLM)",
+              "item": "https://sgou-slm-database.vercel.app/?type=slm"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Question Papers (PYQ)",
+              "item": "https://sgou-slm-database.vercel.app/?type=pyq"
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "name": "Assignment Booklets",
+              "item": "https://sgou-slm-database.vercel.app/?type=assignment"
+            }
+          ]
+        },
+        {
           "@type": "EducationalOrganization",
           "@id": "https://sgou.ac.in/#organization",
           "name": "Sree Narayana Guru Open University",
-          "alternateName": ["SGOU", "SNGOU", "Sreenarayanaguru Open University"],
+          "alternateName": [
+            "SGOU",
+            "SNGOU",
+            "Sreenarayanaguru Open University",
+            "ശ്രീനാരായണഗുരു ഓപ്പൺ യൂണിവേഴ്സിറ്റി"
+          ],
           "url": "https://sgou.ac.in",
           "address": {
             "@type": "PostalAddress",
             "addressLocality": "Kollam",
             "addressRegion": "Kerala",
+            "postalCode": "691012",
             "addressCountry": "IN"
           }
+        },
+        {
+          "@type": "ItemList",
+          "@id": "https://sgou-slm-database.vercel.app/#courses",
+          "name": "SGOU Academic Degree Programmes & Study Materials",
+          "description": "Curriculum listing of all undergraduate, postgraduate, and four-year undergraduate programmes offered by SGOU with downloadable textbooks and exam papers.",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "item": {
+                "@type": "Course",
+                "name": "Bachelor of Arts in English (FYUG & UG)",
+                "description": "Official SGOU B.A. English language and literature course modules, previous exam papers, and continuous assessment questions.",
+                "provider": { "@id": "https://sgou.ac.in/#organization" },
+                "isAccessibleForFree": true,
+                "inLanguage": "en"
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "item": {
+                "@type": "Course",
+                "name": "Bachelor of Commerce (B.Com)",
+                "description": "Official SGOU B.Com modules including Financial Accounting, Corporate Accounting, and Business Management SLMs.",
+                "provider": { "@id": "https://sgou.ac.in/#organization" },
+                "isAccessibleForFree": true,
+                "inLanguage": "en"
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "item": {
+                "@type": "Course",
+                "name": "Bachelor of Computer Applications (BCA)",
+                "description": "Official SGOU BCA textbooks covering Programming in C, Python, Database Systems, Computer Fundamentals, and Mathematics.",
+                "provider": { "@id": "https://sgou.ac.in/#organization" },
+                "isAccessibleForFree": true,
+                "inLanguage": "en"
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "item": {
+                "@type": "Course",
+                "name": "Bachelor of Business Administration (BBA)",
+                "description": "Official SGOU BBA management, business mathematics, organizational behavior textbooks and exam questions.",
+                "provider": { "@id": "https://sgou.ac.in/#organization" },
+                "isAccessibleForFree": true,
+                "inLanguage": "en"
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 5,
+              "item": {
+                "@type": "Course",
+                "name": "Master of Arts in English (M.A. English)",
+                "description": "Postgraduate course textbooks in British Literature, Literary Theory, Criticism, and Linguistics.",
+                "provider": { "@id": "https://sgou.ac.in/#organization" },
+                "isAccessibleForFree": true,
+                "inLanguage": "en"
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 6,
+              "item": {
+                "@type": "Course",
+                "name": "Master of Commerce (M.Com)",
+                "description": "Postgraduate M.Com financial management, corporate accounting, and research methodology course textbooks and exam papers.",
+                "provider": { "@id": "https://sgou.ac.in/#organization" },
+                "isAccessibleForFree": true,
+                "inLanguage": "en"
+              }
+            },
+            {
+              "@type": "ListItem",
+              "position": 7,
+              "item": {
+                "@type": "Course",
+                "name": "Master of Social Work (MSW)",
+                "description": "SGOU MSW social work principles, community development, and research project guidance notes.",
+                "provider": { "@id": "https://sgou.ac.in/#organization" },
+                "isAccessibleForFree": true,
+                "inLanguage": "en"
+              }
+            }
+          ]
         },
         {
           "@type": "FAQPage",
@@ -137,7 +278,7 @@
               "name": "Where can I find SGOU previous year question papers (PYQ)?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "The SGOU Academic Database indexes 950+ previous year exam question papers categorized by course code, degree level, and semester examination date."
+                "text": "The SGOU Academic Database indexes 950+ previous year exam question papers categorized by course code, degree level, and semester examination date on https://sgou-slm-database.vercel.app/?type=pyq."
               }
             },
             {
@@ -145,15 +286,15 @@
               "name": "Are SGOU assignment booklets available for all semesters?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Yes, official assignment booklets for continuous internal assessment across undergraduate and postgraduate programmes are indexed under the Assignments section."
+                "text": "Yes, official assignment booklets for continuous internal assessment across undergraduate and postgraduate programmes are indexed under https://sgou-slm-database.vercel.app/?type=assignment."
               }
             },
             {
               "@type": "Question",
-              "name": "Does the SGOU Academic Database work offline?",
+              "name": "Does the SGOU Academic Database work offline without internet?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Yes, the SGOU Academic Database is an offline-first Progressive Web Application (PWA). Opened study materials and syllabus records are cached locally for offline study."
+                "text": "Yes, the SGOU Academic Database is an offline-first Progressive Web Application (PWA). Opened study materials and syllabus records are cached locally on your device for offline study."
               }
             },
             {
@@ -161,7 +302,7 @@
               "name": "Who developed the SGOU Academic Database?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "The SGOU Academic Database was curated and engineered by Ahayas as an open-access educational utility for distance learning students."
+                "text": "The SGOU Academic Database was curated and engineered by Ahayas (researchertizar) as an open-access educational utility for distance learning students."
               }
             }
           ]
@@ -328,10 +469,15 @@
             <!-- Tier 2: Unified Contextual Toolbar -->
             <div class="controls-toolbar">
                 <div class="toolbar-left">
-                    <div class="filters" id="filters" role="group" aria-label="Level filter"></div>
+                    <div class="filters" id="filters" role="group" aria-label="Level filter">
+                        <button class="pill active" data-level="ALL">All <span class="pill-count">37</span></button>
+                        <button class="pill" data-level="FYUG">FYUG <span class="pill-count">24</span></button>
+                        <button class="pill" data-level="UG">UG <span class="pill-count">2</span></button>
+                        <button class="pill" data-level="PG">PG <span class="pill-count">11</span></button>
+                    </div>
                 </div>
                 <div class="toolbar-center">
-                    <div class="stats" id="stats" aria-live="polite"></div>
+                    <div class="stats" id="stats" aria-live="polite">37 programmes &bull; 1,205 courses</div>
                 </div>
                 <div class="toolbar-right">
                     <div class="view-controls" id="viewControls">
@@ -358,6 +504,67 @@
         </section>
         <div class="search-results" id="searchResults" role="region" aria-label="Search results"></div>
         <div class="programme-grid" id="grid" role="list" aria-label="Programmes"></div>
+
+        <!-- Semantic Zero-JS Search & AI Crawler Directory Fallback -->
+        <noscript>
+            <div class="crawler-academic-catalog" style="padding:2rem 1.5rem;max-width:1100px;margin:2rem auto;background:#fff;border:1px solid #d6cfc2;border-radius:12px;font-family:sans-serif;color:#1a1714;line-height:1.6">
+                <h2 style="font-size:1.5rem;margin-bottom:0.5rem;color:#b8432f">SGOU Academic Programmes &amp; Study Materials Directory</h2>
+                <p style="color:#6b6358;margin-bottom:1.5rem">Complete curriculum directory for Sree Narayana Guru Open University (SNGOU), Kollam. Access official Self-Learning Material (SLM) textbooks, previous year exam question papers (PYQs), and continuous internal assessment booklets.</p>
+
+                <h3 style="font-size:1.2rem;border-bottom:2px solid #235090;padding-bottom:4px;color:#235090;margin-top:1.5rem">Four Year Undergraduate Programmes (FYUG)</h3>
+                <ul style="columns:2;column-gap:2rem;margin:1rem 0;padding-left:1.5rem">
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ENGLISH)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. English (FYUG - 4 Years)</a> — 37 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20COMMERCE%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">Bachelor of Commerce (B.Com FYUG - 4 Years)</a> — 38 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20BUSINESS%20ADMINISTRATION%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">Bachelor of Business Administration (BBA FYUG - 4 Years)</a> — 38 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(MALAYALAM)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. Malayalam (FYUG - 4 Years)</a> — 37 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(HISTORY)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. History (FYUG - 4 Years)</a> — 36 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(SOCIOLOGY)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. Sociology (FYUG - 4 Years)</a> — 37 Courses</li>
+                </ul>
+
+                <h3 style="font-size:1.2rem;border-bottom:2px solid #1f5a43;padding-bottom:4px;color:#1f5a43;margin-top:1.5rem">Undergraduate Degree Programmes (UG - 3 Years)</h3>
+                <ul style="columns:2;column-gap:2rem;margin:1rem 0;padding-left:1.5rem">
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20ENGLISH%20LANGUAGE%20AND%20LITERATURE" style="color:#1a1714;text-decoration:underline">B.A. English Language &amp; Literature</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20COMMERCE" style="color:#1a1714;text-decoration:underline">Bachelor of Commerce (B.Com)</a> — 43 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20COMPUTER%20APPLICATIONS" style="color:#1a1714;text-decoration:underline">Bachelor of Computer Applications (BCA)</a> — 43 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20BUSINESS%20ADMINISTRATION" style="color:#1a1714;text-decoration:underline">Bachelor of Business Administration (BBA)</a> — 43 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20MALAYALAM%20LANGUAGE%20AND%20LITERATURE" style="color:#1a1714;text-decoration:underline">B.A. Malayalam Language &amp; Literature</a> — 48 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20HISTORY" style="color:#1a1714;text-decoration:underline">B.A. History</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ECONOMICS)" style="color:#1a1714;text-decoration:underline">B.A. Economics</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20SOCIOLOGY" style="color:#1a1714;text-decoration:underline">B.A. Sociology</a> — 48 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(PHILOSOPHY)" style="color:#1a1714;text-decoration:underline">B.A. Philosophy</a> — 48 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(POLITICAL%20SCIENCE)" style="color:#1a1714;text-decoration:underline">B.A. Political Science</a> — 30 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(PSYCHOLOGY)" style="color:#1a1714;text-decoration:underline">B.A. Psychology</a> — 29 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(HINDI)" style="color:#1a1714;text-decoration:underline">B.A. Hindi</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(SANSKRIT)" style="color:#1a1714;text-decoration:underline">B.A. Sanskrit</a> — 44 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ARABIC)" style="color:#1a1714;text-decoration:underline">B.A. Arabic</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20SCIENCE%20(DATA%20SCIENCE%20AND%20ANALYTICS)" style="color:#1a1714;text-decoration:underline">B.Sc Data Science &amp; Analytics</a> — 36 Courses</li>
+                </ul>
+
+                <h3 style="font-size:1.2rem;border-bottom:2px solid #5e3370;padding-bottom:4px;color:#5e3370;margin-top:1.5rem">Postgraduate Degree Programmes (PG - 2 Years)</h3>
+                <ul style="columns:2;column-gap:2rem;margin:1rem 0;padding-left:1.5rem">
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ENGLISH)" style="color:#1a1714;text-decoration:underline">M.A. English Language &amp; Literature</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20COMMERCE" style="color:#1a1714;text-decoration:underline">Master of Commerce (M.Com)</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(MALAYALAM)" style="color:#1a1714;text-decoration:underline">M.A. Malayalam</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(HISTORY)" style="color:#1a1714;text-decoration:underline">M.A. History</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ECONOMICS)" style="color:#1a1714;text-decoration:underline">M.A. Economics</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(SOCIOLOGY)" style="color:#1a1714;text-decoration:underline">M.A. Sociology</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(POLITICAL%20SCIENCE)" style="color:#1a1714;text-decoration:underline">M.A. Political Science</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(PUBLIC%20ADMINISTRATION)" style="color:#1a1714;text-decoration:underline">M.A. Public Administration</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(PHILOSOPHY)" style="color:#1a1714;text-decoration:underline">M.A. Philosophy</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(HINDI)" style="color:#1a1714;text-decoration:underline">M.A. Hindi</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(SANSKRIT)" style="color:#1a1714;text-decoration:underline">M.A. Sanskrit</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ARABIC)" style="color:#1a1714;text-decoration:underline">M.A. Arabic</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20COMPUTER%20APPLICATIONS" style="color:#1a1714;text-decoration:underline">Master of Computer Applications (MCA)</a> — 6 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20BUSINESS%20ADMINISTRATION" style="color:#1a1714;text-decoration:underline">Master of Business Administration (MBA)</a> — 5 Courses</li>
+                </ul>
+
+                <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #d6cfc2;display:flex;gap:1.5rem;font-size:0.9rem">
+                    <a href="/?type=slm" style="color:#b8432f;font-weight:600">Browse All Textbooks (SLM) &rarr;</a>
+                    <a href="/?type=pyq" style="color:#b8432f;font-weight:600">Browse Exam Question Papers (PYQ) &rarr;</a>
+                    <a href="/?type=assignment" style="color:#b8432f;font-weight:600">Browse Assignment Booklets &rarr;</a>
+                </div>
+            </div>
+        </noscript>
     </main>
 
     <!-- Back to top -->
@@ -381,38 +588,20 @@
         <div class="vp-topbar">
             <div class="vp-topbar-row">
                 <button class="vp-btn vp-back" id="viewerBack" aria-label="Go back to catalog" title="Go back to catalog (Esc)" type="button">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                         stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="15 18 9 12 15 6" />
+                        <path d="M19 12H5" />
+                        <polyline points="12 19 5 12 12 5" />
                     </svg>
                 </button>
                 <span class="vp-title" id="viewerPanelTitle">PDF</span>
                 <div class="vp-actions">
-                    <button class="vp-btn" id="viewerThemeToggle" aria-label="Toggle light / dark mode"
-                        title="Toggle theme (T)" type="button">
-                        <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="5" />
-                            <line x1="12" y1="1" x2="12" y2="3" />
-                            <line x1="12" y1="21" x2="12" y2="23" />
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                            <line x1="1" y1="12" x2="3" y2="12" />
-                            <line x1="21" y1="12" x2="23" y2="12" />
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                        </svg>
-                        <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                        </svg>
-                    </button>
-                    <button class="vp-btn" id="viewerPanelFilter" aria-label="Toggle eye comfort filter"
-                        title="Eye Comfort Filter (F)" type="button">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <button class="vp-btn" id="viewerPanelFilter" aria-label="Toggle reader eye comfort mode"
+                        title="Eye Comfort: Normal / Sepia / Dark (F)" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                            <circle cx="12" cy="12" r="3" />
+                            <circle cx="12" cy="12" r="5" />
+                            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
                         </svg>
                     </button>
                     <button class="vp-btn" id="viewerPanelExternal" aria-label="Open in browser"
@@ -455,44 +644,7 @@
         <div class="vp-body">
             <div class="vp-loading" id="viewerPanelLoading">
                 <div class="loading-spinner"></div>
-                <span>Loading PDF&hellip;</span>
-            </div>
-            <div class="vp-comfort-state" id="viewerPanelComfort" style="display:none">
-                <div class="vp-comfort-card">
-                    <div class="vp-comfort-icon">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                    </div>
-                    <div class="vp-comfort-tag" id="vpComfortTag">OFFICIAL STUDY MATERIAL</div>
-                    <h3 class="vp-comfort-title" id="vpComfortTitle">Document</h3>
-                    <p class="vp-comfort-sub" id="vpComfortSub">Open in your device's native PDF reader or download for instant offline access.</p>
-                    <div class="vp-comfort-actions">
-                        <a class="vp-comfort-btn primary" id="vpComfortOpen" href="#" target="_blank" rel="noopener">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                <polyline points="15 3 21 3 21 9"></polyline>
-                                <line x1="10" y1="14" x2="21" y2="3"></line>
-                            </svg>
-                            <span>Open in Reader</span>
-                        </a>
-                        <button class="vp-comfort-btn secondary" id="vpComfortDownload" type="button">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            <span>Download PDF</span>
-                        </button>
-                        <button class="vp-comfort-btn tertiary" id="vpComfortDismiss" type="button" title="Attempt to view embedded PDF in page frame">
-                            <span>Try Embedded Frame</span>
-                        </button>
-                    </div>
-                </div>
+                <span>Loading PDF preview&hellip;</span>
             </div>
             <iframe id="viewerPanelFrame" title="PDF Viewer"></iframe>
         </div>
@@ -514,7 +666,12 @@
                     <h3 id="dlModalTitle">Download Course Material</h3>
                     <p id="dlModalSubtitle">Customized naming & destination</p>
                 </div>
-                <button class="modal-close" id="dlModalClose" aria-label="Close dialog">&times;</button>
+                <button class="modal-close" id="dlModalClose" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="dl-course-info">
@@ -590,8 +747,12 @@
                 <span class="dp-status" id="dpStatus">Downloading PDF&hellip;</span>
                 <span class="dp-filename" id="dpFilename">document.pdf</span>
             </div>
-            <button class="dp-cancel" id="dpCancelBtn" aria-label="Cancel download"
-                title="Cancel download">&times;</button>
+            <button class="dp-cancel" id="dpCancelBtn" aria-label="Cancel download" title="Cancel download" type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
         </div>
         <div class="dp-bar-track">
             <div class="dp-bar-fill" id="dpBarFill" style="width: 0%"></div>
@@ -601,8 +762,21 @@
             <span class="dp-percent" id="dpPercent">0%</span>
         </div>
         <div class="dp-success-actions" id="dpSuccessActions" style="display:none">
-            <button class="dp-btn-open" id="dpOpenBtn" type="button">Open PDF</button>
-            <button class="dp-btn-dismiss" id="dpDismissBtn" type="button">Dismiss</button>
+            <button class="dp-btn-open" id="dpOpenBtn" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                <span>Open PDF</span>
+            </button>
+            <button class="dp-btn-dismiss" id="dpDismissBtn" type="button" aria-label="Dismiss" title="Dismiss">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span>Dismiss</span>
+            </button>
         </div>
     </div>
 
@@ -619,7 +793,12 @@
                     </svg>
                     <h3 id="drawerTitle">Saved Materials</h3>
                 </div>
-                <button class="drawer-close" id="myDownloadsClose" aria-label="Close drawer">&times;</button>
+                <button class="drawer-close" id="myDownloadsClose" aria-label="Close drawer" title="Close drawer (Esc)" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="drawer-storage-tip">
                 <button class="drawer-tip-btn" id="drawerStorageHelpBtn" type="button">
@@ -635,8 +814,19 @@
                 <!-- Dynamically populated -->
             </div>
             <div class="drawer-footer">
-                <button class="drawer-update-link" id="drawerUpdateBtn" type="button" title="Check for app updates">Check Updates</button>
-                <button class="drawer-clear-btn" id="myDownloadsClearBtn" type="button">Clear History</button>
+                <button class="drawer-update-link" id="drawerUpdateBtn" type="button" title="Check for app updates">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                    <span>Check Updates</span>
+                </button>
+                <button class="drawer-clear-btn" id="myDownloadsClearBtn" type="button" title="Clear all download history">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    <span>Clear History</span>
+                </button>
             </div>
         </div>
     </div>
@@ -657,7 +847,12 @@
                     <h3 id="helpTitle">Where do my downloads go?</h3>
                     <p>Device storage guide</p>
                 </div>
-                <button class="modal-close" id="storageHelpClose" aria-label="Close dialog">&times;</button>
+                <button class="modal-close" id="storageHelpClose" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="guide-tabs" role="tablist">
@@ -705,7 +900,12 @@
                     <h3 id="updateModalTitle">Update App</h3>
                     <p id="appVersionLabel">v2026.09.09</p>
                 </div>
-                <button class="modal-close" id="updateModalClose" aria-label="Close dialog">&times;</button>
+                <button class="modal-close" id="updateModalClose" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body update-modal-body">
                 <div class="update-status-row" id="updateStatusBox">
@@ -743,7 +943,12 @@
                     <h3 id="shortcutsModalTitle">Keyboard Shortcuts</h3>
                     <p>Logical navigation &amp; quick power actions</p>
                 </div>
-                <button class="modal-close" id="shortcutsModalClose" aria-label="Close dialog">&times;</button>
+                <button class="modal-close" id="shortcutsModalClose" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body shortcuts-modal-body">
                 <div class="shortcuts-section">
@@ -836,7 +1041,12 @@
             </div>
             <div class="install-actions">
                 <button class="install-btn" id="installBtn">INSTALL</button>
-                <button class="install-dismiss" id="installDismiss" aria-label="Dismiss">&times;</button>
+                <button class="install-dismiss" id="installDismiss" aria-label="Dismiss prompt" title="Dismiss" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
@@ -844,7 +1054,7 @@
     <!-- Toast & Update Notification Container -->
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="script.js?v=20261003_04" defer></script>
+    <script src="script.js?v=20261003_10" defer></script>
 </body>
 
 </html>

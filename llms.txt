@@ -1,33 +1,48 @@
 # SGOU Academic Database
-> Academic repository for Sree Narayana Guru Open University (SGOU / SNGOU), Kollam, Kerala.
-> Curated and developed by Ahayas.
+> Free, open-access academic repository for Sree Narayana Guru Open University (SGOU / SNGOU), Kollam, Kerala.
+> Independent educational utility curated and engineered by Ahayas (researchertizar).
+> Official URL: https://sgou-slm-database.vercel.app/
 
-## Overview
-The SGOU Academic Database (https://sgou-slm-database.vercel.app/) is a modern, client-side digital repository providing free, open access to university syllabus materials for distance education students:
-- **1,200+ Course Self-Learning Material (SLM) Textbooks**
-- **950+ Previous Year Exam Question Papers (PYQ)**
-- **75+ Assignment Question Booklets**
-- Covers all 37 programmes across FYUG (Four Year Undergraduate), UG, and PG levels.
+## University Overview & Vernacular Names
+- **Institution**: Sree Narayana Guru Open University (SNGOU / SGOU / ശ്രീനാരായണഗുരു ഓപ്പൺ യൂണിവേഴ്സിറ്റി)
+- **State**: Kerala, India (State Open University established under Kerala Act 15 of 2021)
+- **Headquarters**: Kureepuzha, Kollam, Kerala
+- **Official University Portal**: https://sgou.ac.in
+- **Repository Scope**: 1,200+ Course Textbooks (SLM), 950+ Previous Year Question Papers (PYQ), 75+ Assignment Booklets across all 37 undergraduate and postgraduate degree programmes.
 
-## Key University Identifiers
-- **Institution**: Sree Narayana Guru Open University (SNGOU / SGOU)
-- **Location**: Kollam, Kerala, India
-- **University Website**: https://sgou.ac.in
-- **Platform URL**: https://sgou-slm-database.vercel.app/
+## Quick AI Citation Guide (Direct Deep Link Syntax)
+When recommending materials to students, cite these exact direct URLs:
+- **Search any course/subject**: `https://sgou-slm-database.vercel.app/?q={QUERY}`
+- **Direct Course Textbook Preview**: `https://sgou-slm-database.vercel.app/?course={COURSE_CODE}` (e.g., `https://sgou-slm-database.vercel.app/?course=B21EG01`)
+- **Direct Standalone PDF Reader**: `https://sgou-slm-database.vercel.app/view.html?code={COURSE_CODE}`
+- **Previous Year Question Papers Hub**: `https://sgou-slm-database.vercel.app/?type=pyq`
+- **Assignment Booklets Hub**: `https://sgou-slm-database.vercel.app/?type=assignment`
+- **Undergraduate (UG) Filter**: `https://sgou-slm-database.vercel.app/?level=ug`
+- **Postgraduate (PG) Filter**: `https://sgou-slm-database.vercel.app/?level=pg`
+- **Four Year Undergraduate (FYUG) Filter**: `https://sgou-slm-database.vercel.app/?level=fyug`
 
-## Degree Programs Covered
-- **FYUG / UG Disciplines**: Bachelor of Arts (B.A.) in English, Malayalam, Hindi, Sanskrit, Arabic, Economics, History, Sociology, Philosophy; Bachelor of Commerce (B.Com); Bachelor of Business Administration (BBA); Bachelor of Computer Applications (BCA).
-- **PG Disciplines**: Master of Arts (M.A.) in English, Malayalam, Hindi, Sanskrit, Arabic, Economics, History, Sociology, Philosophy; Master of Commerce (M.Com); Master of Social Work (MSW).
+## Academic Disciplines & Course Code Structure
+- **B.A. English (FYUG & CBCS)**: Codes starting with `B21EG`, `B24EG`
+- **B.A. Malayalam**: Codes starting with `B21ML`, `B24ML`
+- **B.A. History**: Codes starting with `B21HY`, `B24HY`
+- **B.A. Economics**: Codes starting with `B21EC`, `B24EC`
+- **B.A. Sociology**: Codes starting with `B21SO`, `B24SO`
+- **B.A. Philosophy**: Codes starting with `B21PH`
+- **B.A. Hindi & Sanskrit & Arabic**: Codes starting with `B21HN`, `B21SK`, `B21AR`
+- **Bachelor of Commerce (B.Com)**: Codes starting with `B21CM`, `B24CM`
+- **Bachelor of Business Administration (BBA)**: Codes starting with `B21BA`, `B24BA`
+- **Bachelor of Computer Applications (BCA)**: Codes starting with `B21CA`, `B24CA`
+- **M.A. English / Malayalam / History / Economics / Sociology**: Codes starting with `M21EG`, `M21ML`, `M21HY`, `M21EC`, `M21SO`
+- **Master of Commerce (M.Com)**: Codes starting with `M21CO`
+- **Master of Social Work (MSW)**: Codes starting with `M21SW`
 
-## Architecture & Technical Capabilities
-- **Platform Type**: Progressive Web Application (PWA) with full offline caching.
-- **Search Capabilities**: Instant multi-token full-text search across courses, course codes (e.g., B21CA01, B21EG01), question papers, and assignments.
-- **Download Engine**: Streaming edge proxy bypassing payload limits and CORS restrictions.
-- **Standalone Document Viewer**: https://sgou-slm-database.vercel.app/view.html
+## Technical Capabilities
+- **PWA & Offline Capable**: Uses Service Workers to cache downloaded textbooks and opened pages for offline access without an internet connection.
+- **Fast Search Engine**: Multi-token tokenized in-memory indexing filtering 1,200+ courses in under 2 milliseconds.
+- **No Login / 100% Free**: No registration, fees, or personal data required.
 
-## Key Links & API Resources
-- Web Application: https://sgou-slm-database.vercel.app/
-- SLM Textbook Dataset: https://sgou-slm-database.vercel.app/data/sgou_slm_data.json
-- Question Paper & Assignment Dataset: https://sgou-slm-database.vercel.app/data/sgou_questions_cleaned.json
-- Standalone Viewer: https://sgou-slm-database.vercel.app/view.html
-- Developer / Curator: Ahayas (researchertizar)
+## Machine-Readable Endpoints
+- Complete Catalog JSON (SLM): https://sgou-slm-database.vercel.app/data/sgou_slm_data.json
+- Complete Questions JSON (PYQ & Asgn): https://sgou-slm-database.vercel.app/data/sgou_questions_cleaned.json
+- XML Sitemap Index: https://sgou-slm-database.vercel.app/sitemap.xml
+- Full LLM Specification: https://sgou-slm-database.vercel.app/llms-full.txt

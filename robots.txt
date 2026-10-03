@@ -1,17 +1,79 @@
+# ============================================================================
+#  SGOU Academic Database — robots.txt
+#  https://sgou-slm-database.vercel.app/
+# ============================================================================
+
+# General Search Engines (Google, Bing, Yahoo, DuckDuckGo, Yandex, Baidu)
 User-agent: *
 Allow: /
+Crawl-delay: 1
 
-# Explicit AI Search Crawler Permissions
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: YandexBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# ============================================================================
+# AI Assistants, Search LLMs & Retrieval Engines (Explicitly Welcomed)
+# ============================================================================
+
+# OpenAI (ChatGPT Search, GPT-4o, Operator)
 User-agent: GPTBot
 Allow: /
 
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Perplexity AI Search Engine
 User-agent: PerplexityBot
+Allow: /
+
+# Anthropic Claude
+User-agent: ClaudeBot
 Allow: /
 
 User-agent: Claude-Web
 Allow: /
 
+# Google Gemini & AI Overviews
 User-agent: Google-Extended
 Allow: /
 
+User-agent: GoogleOther
+Allow: /
+
+# Apple Intelligence & Siri Search
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+
+# ============================================================================
+# Sitemaps & Machine-Readable AI Indices
+# ============================================================================
 Sitemap: https://sgou-slm-database.vercel.app/sitemap.xml
+Sitemap: https://sgou-slm-database.vercel.app/sitemap-main.xml
+Sitemap: https://sgou-slm-database.vercel.app/sitemap-programmes.xml
+Sitemap: https://sgou-slm-database.vercel.app/sitemap-courses.xml
+
+# LLM Context Specification (llms.txt standard)
+# https://sgou-slm-database.vercel.app/llms.txt
+# https://sgou-slm-database.vercel.app/llms-full.txt
