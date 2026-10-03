@@ -1,9 +1,9 @@
-const CACHE = 'sgou-v128';
+const CACHE = 'sgou-v129';
 const SHELL = [
     './',
     './index.html',
-    './style.css?v=20261003_11',
-    './script.js?v=20261003_11',
+    './style.css?v=20261003_12',
+    './script.js?v=20261003_12',
     './manifest.json?v=20261003_04',
     './icon.svg?v=20260904_10',
     './icon-192.png?v=20260904_10',
@@ -58,7 +58,7 @@ self.addEventListener('fetch', e => {
     if (url.pathname.endsWith('/manifest.json') || url.pathname === '/manifest.json') {
         e.respondWith(
             fetch(e.request, { cache: 'no-cache' })
-                .catch(() => caches.match(e.request))
+                .catch(async () => (await caches.match(e.request)) || new Response('Offline', { status: 503 }))
         );
         return;
     }
@@ -68,13 +68,13 @@ self.addEventListener('fetch', e => {
         e.respondWith(
             fetch(e.request)
                 .then(r => {
-                    if (r.ok) {
+                    if (r && (r.ok || r.type === 'opaque')) {
                         const clone = r.clone();
                         caches.open(CACHE).then(c => c.put(e.request, clone));
                     }
                     return r;
                 })
-                .catch(() => caches.match(e.request))
+                .catch(async () => (await caches.match(e.request)) || new Response('Offline', { status: 503 }))
         );
         return;
     }
@@ -86,7 +86,8 @@ self.addEventListener('fetch', e => {
                 const c = await caches.open(CACHE);
                 return (await c.match(e.request)) ||
                        (await c.match('./index.html')) ||
-                       (await c.match('./'));
+                       (await c.match('./')) ||
+                       new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/html' } });
             })
         );
         return;
@@ -113,6 +114,28 @@ self.addEventListener('fetch', e => {
 async function swr(req) {
     const c = await caches.open(CACHE);
     const cached = await c.match(req);
-    const fp = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => cached);
-    return cached || fp;
+    if (cached) {
+        fetch(req)
+            .then(r => {
+                if (r && (r.ok || r.type === 'opaque')) {
+                    c.put(req, r.clone());
+                }
+            })
+            .catch(() => {});
+        return cached;
+    }
+
+    try {
+        const res = await fetch(req);
+        if (res && (res.ok || res.type === 'opaque')) {
+            c.put(req, res.clone());
+        }
+        return res;
+    } catch {
+        return new Response('Network unavailable or blocked', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/plain' }
+        });
+    }
 }
