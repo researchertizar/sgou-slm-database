@@ -67,7 +67,8 @@ def ping_indexnow():
 
     endpoints = [
         "https://api.indexnow.org/indexnow",
-        "https://www.bing.com/indexnow"
+        "https://www.bing.com/indexnow",
+        "https://yandex.com/indexnow"
     ]
 
     for ep in endpoints:
@@ -76,7 +77,7 @@ def ping_indexnow():
             data=data_bytes,
             headers={
                 "Content-Type": "application/json; charset=utf-8",
-                "User-Agent": "SGOU-IndexNow-Pinger/1.0"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
             }
         )
         try:

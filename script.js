@@ -1374,8 +1374,15 @@ class RouterService {
       if (t && t !== 'slm' && t !== 'all') newParams.set('type', t);
       const ex = params.get('examdate') || '';
       if (ex) newParams.set('examdate', ex);
-    } else if (/^[A-Z0-9_-]+$/i.test(path) && !path.includes('/')) {
-      newParams.set('course', decodeURIComponent(path));
+    } else if (!path.includes('/')) {
+      const candidate = decodeURIComponent(path).trim();
+      // Guard: Never treat in-page DOM element IDs (e.g. searchInput, main, content) as course codes
+      const isDomElement = typeof document !== 'undefined' && !!document.getElementById(candidate);
+      const isKnownCourse = Catalog.courseMap && Catalog.courseMap.has(candidate.toLowerCase());
+      const isCoursePattern = /^[BM][0-9]{2}[A-Z]{2}[0-9]{2}[A-Z0-9]*$/i.test(candidate);
+      if (!isDomElement && (isKnownCourse || isCoursePattern)) {
+        newParams.set('course', candidate);
+      }
     }
 
     const qs = newParams.toString();
@@ -1389,8 +1396,16 @@ class RouterService {
     // --- Step 1: Backward-Compatible Legacy Hash Migration ---
     const rawHash = window.location.hash.slice(1);
     if (rawHash && rawHash !== '/') {
-      const cleanUrl = this._convertHashToCleanUrl(rawHash);
-      history.replaceState(null, '', cleanUrl);
+      // If hash points to an existing in-page element (e.g. #searchInput), jump focus and do not pollute query string
+      const anchorEl = document.getElementById(rawHash);
+      if (anchorEl) {
+        anchorEl.focus?.({ preventScroll: false });
+        anchorEl.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+        history.replaceState(null, '', window.location.pathname || '/');
+      } else {
+        const cleanUrl = this._convertHashToCleanUrl(rawHash);
+        history.replaceState(null, '', cleanUrl);
+      }
     }
 
     // --- Step 2: Parse Modern Clean Query Parameters ---
@@ -1406,15 +1421,6 @@ class RouterService {
       const docProg = params.get('prog') || (item ? item.prog.programme_name : '');
       const docLevel = params.get('level') || (item ? item.prog.level : 'UG');
 
-      Analytics.trackPageView(window.location.pathname + window.location.search, `${docName} (${courseCode}) — SGOU Academic Database`);
-      Analytics.trackViewItem({
-        code: courseCode,
-        name: docName,
-        type: qType,
-        prog: docProg,
-        level: docLevel
-      });
-
       let pdfUrl = params.get('url') || '';
       if (!pdfUrl && item) {
         if (qType === 'PYQ' && item.course.pyqs && item.course.pyqs.length > 0) {
@@ -1424,6 +1430,36 @@ class RouterService {
           pdfUrl = item.course.pdf_url;
         }
       }
+
+      // Defensive Guard: If course does not exist in the catalogue and has no direct PDF URL,
+      // never open an empty/broken viewer modal! Clean URL and show search results instead.
+      if (!item && !pdfUrl) {
+        console.warn(`[Router] Course "${courseCode}" not found in catalogue. Diverting to search.`);
+        history.replaceState(null, '', window.location.pathname || '/');
+        UI.hideViewerPanel(false);
+        if (courseCode !== 'searchInput') {
+          UI.restoreState(courseCode, 'ALL', 'ALL');
+          UI.showToast(`Course "${courseCode}" not found in database. Showing search results.`, 3500);
+        } else {
+          UI.restoreState('', 'ALL', 'ALL');
+          const searchInput = $('searchInput');
+          if (searchInput) {
+            searchInput.focus();
+            searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+        this.isResolving = false;
+        return;
+      }
+
+      Analytics.trackPageView(window.location.pathname + window.location.search, `${docName} (${courseCode}) — SGOU Academic Database`);
+      Analytics.trackViewItem({
+        code: courseCode,
+        name: docName,
+        type: qType,
+        prog: docProg,
+        level: docLevel
+      });
 
       UI.showViewerPanel(pdfUrl, docName, item ? item.course.code : courseCode, docProg, docLevel, qType, qExam);
       this.isResolving = false;
@@ -3294,6 +3330,18 @@ class UIController {
 
   initDelegation() {
     document.addEventListener('click', e => {
+      // Accessibility Skip Link: smoothly focus search input without polluting URL or triggering router
+      const skipLink = e.target.closest('.skip-link');
+      if (skipLink) {
+        e.preventDefault();
+        const searchInput = $('searchInput');
+        if (searchInput) {
+          searchInput.focus({ preventScroll: false });
+          searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+      }
+
       // Keyboard Shortcuts Dialog
       if (e.target.closest('#shortcutsBtn')) {
         this.openShortcutsModal();
