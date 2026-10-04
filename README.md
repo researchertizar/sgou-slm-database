@@ -128,15 +128,15 @@ Vercel's Free Hobby plan includes **100 GB of Fast Data Transfer / month**. The 
 To ensure high reliability across all platforms without layout freezes or blank frames:
 
 1. **Desktop Browsers**:
-   - Embeds native browser PDF engine directly inside `<iframe id="viewerPdfFrame">` with `#toolbar=1&navpanes=0`.
+   - Embeds native browser PDF engine directly inside `<iframe id="viewerPanelFrame">` with `#toolbar=1&navpanes=0`.
    - Utilizes CloudFront HTTP Range requests for instant page-to-page seeking without waiting for full multi-megabyte downloads.
 2. **Mobile Devices (Touch / Android / iOS)**:
-   - Mobile Safari and Chrome frequently block raw PDF rendering inside iframes, rendering a blank white screen.
-   - The platform automatically detects touch/mobile user agents and seamlessly routes previews through **Google Docs Viewer** (`https://docs.google.com/viewer?url=...&embedded=true`).
+   - Routes previews through **Google Docs Document Viewer (GView)** (`https://docs.google.com/gview?url=...&embedded=true`).
+   - Includes an automated 5-second fallback to direct CloudFront URL if the document is oversized or GView encounters connectivity delays.
 3. **Ghosting & Overlay Prevention**:
-   - Earlier implementations utilized a fallback timer overlay (`#vpLoadingFallback`) that caused ghosting behind active PDFs. This has been completely removed in favor of a clean CSS-contained loader (`#viewerPanelLoading`) that transitions to `display: none !important;` the instant the iframe triggers `onload`.
-4. **Direct Download Fallback**:
-   - The viewer top bar provides an always-accessible direct download button (`#viewerDirectDownload`) that initiates an immediate fetch of the original CloudFront binary.
+   - Clean CSS-contained loader (`#viewerPanelLoading`) that transitions to `display: none !important;` the instant the iframe triggers `onload`.
+4. **Direct Browser Open & Download Controls**:
+   - The viewer top bar provides an always-accessible "Open in Browser" button (`#viewerPanelExternal`) to launch direct native reading in a separate tab, alongside instant direct download (`#viewerPanelDownload`).
 
 ---
 
