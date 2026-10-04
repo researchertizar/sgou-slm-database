@@ -179,7 +179,7 @@ Students can "star" or "pin" their degree programmes to keep them anchored at th
 The platform operates as a standalone Progressive Web App with zero external runtime dependencies.
 
 ### Cache Strategy
-- **Service Worker Version**: `sgou-v132` with asset versioning query parameters (`v=20261004_02`).
+- **Service Worker Version**: `sgou-v133` with asset versioning query parameters (`v=20261005_01`).
 - **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `view.html`, `manifest.json`, `opensearch.xml`, and touch icons are served instantaneously from CacheStorage.
 - **Academic Datasets (Network-First with Cache Fallback)**: `data/sgou_slm_data.json` and `data/sgou_questions_cleaned.json` fetch latest updates from the network with instant fallback to local cached versions if offline.
 - **Google Fonts (Stale-While-Revalidate)**: Font stylesheets and `.woff2` files are cached with strict Content Security Policy (`connect-src https://fonts.googleapis.com https://fonts.gstatic.com`).

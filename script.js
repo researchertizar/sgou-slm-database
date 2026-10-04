@@ -3822,8 +3822,8 @@ const UI = new UIController();
 // ============================================================================
 
 const PWAService = {
-  APP_VERSION: 'v2026.10.04',
-  BUILD_ID: '20261004_02',
+  APP_VERSION: 'v2026.10.05',
+  BUILD_ID: '20261005_01',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,
