@@ -2438,8 +2438,13 @@ class UIController {
       requestAnimationFrame(() => {
         setTimeout(() => {
           const rect = card.getBoundingClientRect();
-          if (rect.bottom > window.innerHeight + 40) {
-            window.scrollTo({ top: window.scrollY + rect.top - 72, behavior: 'smooth' });
+          const stickyEl = document.querySelector('.sticky-controls');
+          const stickyH = (stickyEl ? stickyEl.offsetHeight : 0) + 16;
+          if (rect.top < stickyH || rect.bottom > window.innerHeight + 40) {
+            window.scrollTo({
+              top: Math.max(0, window.scrollY + rect.top - stickyH),
+              behavior: 'smooth'
+            });
           }
         }, 320);
       });
@@ -2555,24 +2560,57 @@ class UIController {
       clearTimeout(this._viewerTimeout);
       this._viewerTimeout = null;
     }
+    if (this._fallbackTimeout) {
+      clearTimeout(this._fallbackTimeout);
+      this._fallbackTimeout = null;
+    }
 
     if (frame) {
       frame.style.opacity = '1';
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+      const fallbackEl = $('vpLoadingFallback');
+      const fallbackDl = $('vpBtnDownload');
+      const fallbackOpen = $('vpBtnOpenTab');
+      const loadingText = $('vpLoadingText');
+
+      if (loadingText) {
+        loadingText.textContent = isMobile ? 'Preparing reader preview…' : 'Loading PDF preview…';
+      }
+      if (fallbackEl) fallbackEl.style.display = 'none';
+
+      if (fallbackOpen) {
+        fallbackOpen.href = pdfUrl || '#';
+      }
+      if (fallbackDl) {
+        fallbackDl.onclick = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          Downloader.startDirectDownload(panel._data);
+        };
+      }
+
       if (ld) {
         ld.classList.remove('hidden');
-        ld.innerHTML = '<div class="loading-spinner"></div><span>Loading PDF preview&hellip;</span>';
       }
+
       let loaded = false;
       const onReady = () => {
         if (loaded) return;
         loaded = true;
+        if (this._fallbackTimeout) {
+          clearTimeout(this._fallbackTimeout);
+          this._fallbackTimeout = null;
+        }
         if (ld) ld.classList.add('hidden');
       };
       frame.onload = onReady;
 
-      // Native high-resilience direct PDF preview: Direct browser streaming via CloudFront with HTTP Range requests.
-      // Completely eliminates external 25MB file size limits, 400 Bad Request errors, and iframe history hijacking.
-      const fullUrl = pdfUrl ? (pdfUrl + '#toolbar=1&navpanes=0') : '';
+      // Direct native PDF streaming on desktop (CloudFront HTTP Range requests without 25MB limits).
+      // On mobile browsers (Android Chrome, iOS Safari), direct iframe embedding of raw PDFs triggers Chromium error
+      // "This content is blocked. Contact the site owner to fix the issue." We route through Google Docs Viewer for mobile.
+      const fullUrl = pdfUrl
+        ? (isMobile ? ('https://docs.google.com/viewer?url=' + encodeURIComponent(pdfUrl) + '&embedded=true') : (pdfUrl + '#toolbar=1&navpanes=0'))
+        : '';
 
       try {
         if (frame.contentWindow) {
@@ -2584,7 +2622,14 @@ class UIController {
         frame.src = fullUrl || 'about:blank';
       }
 
-      this._viewerTimeout = setTimeout(onReady, 3500);
+      // Promptly show instant fallback card if connection is slow or file exceeds preview threshold
+      this._fallbackTimeout = setTimeout(() => {
+        if (!loaded && fallbackEl) {
+          fallbackEl.style.display = 'flex';
+        }
+      }, isMobile ? 1500 : 2500);
+
+      this._viewerTimeout = setTimeout(onReady, isMobile ? 5000 : 4000);
     }
   }
 
@@ -2593,6 +2638,12 @@ class UIController {
       clearTimeout(this._viewerTimeout);
       this._viewerTimeout = null;
     }
+    if (this._fallbackTimeout) {
+      clearTimeout(this._fallbackTimeout);
+      this._fallbackTimeout = null;
+    }
+    const fallbackEl = $('vpLoadingFallback');
+    if (fallbackEl) fallbackEl.style.display = 'none';
     const panel = $('viewerPanel');
     if (!panel) return;
     const wasVisible = panel.classList.contains('visible');
@@ -3330,18 +3381,6 @@ class UIController {
 
   initDelegation() {
     document.addEventListener('click', e => {
-      // Accessibility Skip Link: smoothly focus search input without polluting URL or triggering router
-      const skipLink = e.target.closest('.skip-link');
-      if (skipLink) {
-        e.preventDefault();
-        const searchInput = $('searchInput');
-        if (searchInput) {
-          searchInput.focus({ preventScroll: false });
-          searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        return;
-      }
-
       // Keyboard Shortcuts Dialog
       if (e.target.closest('#shortcutsBtn')) {
         this.openShortcutsModal();
