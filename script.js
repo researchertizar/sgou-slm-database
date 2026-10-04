@@ -2578,11 +2578,7 @@ class UIController {
         }
       };
       frame.onload = onReady;
-
-      // Earlier stable PDF loader: Google Docs Viewer (gview) with direct URL fallback (as in commits 10-15)
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
-      const gview = 'https://docs.google.com/gview?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
-      const fullUrl = isMobile ? gview : (pdfUrl + '#toolbar=1&navpanes=0');
+      const fullUrl = pdfUrl ? (pdfUrl + '#toolbar=1&navpanes=0') : '';
 
       try {
         if (frame.contentWindow) {
@@ -2594,21 +2590,7 @@ class UIController {
         frame.src = fullUrl || 'about:blank';
       }
 
-      // Fallback after 5s to direct URL on mobile if gview does not complete or stalls
-      if (isMobile && pdfUrl) {
-        this._viewerFallbackTimer = setTimeout(() => {
-          if (!loaded) {
-            try {
-              if (frame.contentWindow) frame.contentWindow.location.replace(pdfUrl);
-              else frame.src = pdfUrl;
-            } catch (_) {
-              frame.src = pdfUrl;
-            }
-          }
-        }, 5000);
-      }
-
-      this._viewerTimeout = setTimeout(onReady, isMobile ? 8000 : 3500);
+      this._viewerTimeout = setTimeout(onReady, 3500);
     }
   }
 
@@ -2616,10 +2598,6 @@ class UIController {
     if (this._viewerTimeout) {
       clearTimeout(this._viewerTimeout);
       this._viewerTimeout = null;
-    }
-    if (this._viewerFallbackTimer) {
-      clearTimeout(this._viewerFallbackTimer);
-      this._viewerFallbackTimer = null;
     }
     const ld = $('viewerPanelLoading');
     if (ld) {

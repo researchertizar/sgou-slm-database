@@ -1648,10 +1648,7 @@
 
                 if (loadingEl) loadingEl.style.display = 'flex';
 
-                var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
-                var fullTarget = url
-                    ? (isMobile ? ('https://docs.google.com/gview?url=' + encodeURIComponent(url) + '&embedded=true') : (url + '#toolbar=1&navpanes=0'))
-                    : '';
+                var fullTarget = url ? (url + '#toolbar=1&navpanes=0') : '';
 
                 if (frame) {
                     frame.style.display = 'block';
@@ -1681,21 +1678,7 @@
                     };
                 }
 
-                if (isMobile && url) {
-                    var fbTimer = setTimeout(function () {
-                        if (!done && frame) {
-                            try {
-                                if (frame.contentWindow) frame.contentWindow.location.replace(url);
-                                else frame.src = url;
-                            } catch (_) {
-                                frame.src = url;
-                            }
-                        }
-                    }, 5000);
-                    loadTimers.push(fbTimer);
-                }
-
-                var tid = setTimeout(onReady, isMobile ? 8000 : 3500);
+                var tid = setTimeout(onReady, 3500);
                 loadTimers.push(tid);
             }
 

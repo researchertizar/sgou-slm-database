@@ -123,19 +123,17 @@ Vercel's Free Hobby plan includes **100 GB of Fast Data Transfer / month**. The 
 
 ---
 
-## Dual-Tier PDF Viewer Architecture
+## Native PDF Viewer Architecture
 
-To ensure high reliability across all platforms without layout freezes or blank frames:
+To ensure high reliability across all platforms without external service dependencies, 25MB file size limits, or unauthorized "gview" download prompts on mobile devices:
 
-1. **Desktop Browsers**:
-   - Embeds native browser PDF engine directly inside `<iframe id="viewerPanelFrame">` with `#toolbar=1&navpanes=0`.
+1. **Direct CloudFront Native Streaming**:
+   - Embeds the document directly inside `<iframe id="viewerPanelFrame">` using the canonical CloudFront URL (`pdfUrl + '#toolbar=1&navpanes=0'`).
    - Utilizes CloudFront HTTP Range requests for instant page-to-page seeking without waiting for full multi-megabyte downloads.
-2. **Mobile Devices (Touch / Android / iOS)**:
-   - Routes previews through **Google Docs Document Viewer (GView)** (`https://docs.google.com/gview?url=...&embedded=true`).
-   - Includes an automated 5-second fallback to direct CloudFront URL if the document is oversized or GView encounters connectivity delays.
-3. **Ghosting & Overlay Prevention**:
-   - Clean CSS-contained loader (`#viewerPanelLoading`) that transitions to `display: none !important;` the instant the iframe triggers `onload`.
-4. **Direct Browser Open & Download Controls**:
+   - Eliminates external Google Docs / GView third-party intermediaries, guaranteeing 100% privacy, stability, and zero quota or billing risks.
+2. **Zero-Ghosting Loading State**:
+   - Clean CSS-contained loader (`#viewerPanelLoading`) that transitions to `display: none !important;` the instant the iframe triggers `onload` or after a 3.5s timeout.
+3. **Direct Browser Open & Download Controls**:
    - The viewer top bar provides an always-accessible "Open in Browser" button (`#viewerPanelExternal`) to launch direct native reading in a separate tab, alongside instant direct download (`#viewerPanelDownload`).
 
 ---
