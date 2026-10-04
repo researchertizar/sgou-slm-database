@@ -1825,7 +1825,7 @@ class UIController {
         fn = (item.code ? item.code + '_' : '') + sanitize(item.name) + '_SLM.pdf';
       }
 
-      const vUrl = `/?course=${encodeURIComponent(item.code || item.name)}${type && type !== 'SLM' ? '&type=' + encodeURIComponent(type.toLowerCase()) : ''}${item.examDate ? '&examdate=' + encodeURIComponent(item.examDate) : ''}`;
+      const vUrl = `/?course=${encodeURIComponent(item.code || item.name)}${type && type !== 'SLM' ? '&type=' + encodeURIComponent(type.toLowerCase()) : ''}${item.examDate ? '&examdate=' + encodeURIComponent(item.examDate) : ''}${item.pdf_url ? '&url=' + encodeURIComponent(item.pdf_url) : ''}${item.name ? '&name=' + encodeURIComponent(item.name) : ''}${item.progName ? '&prog=' + encodeURIComponent(item.progName) : ''}&level=${encodeURIComponent(item.level || '')}`;
 
       return `
         <div class="search-result-item" data-idx="${idx}">
@@ -2011,7 +2011,7 @@ class UIController {
             <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
               ${s.assignments && s.assignments.length > 0 ? s.assignments.map(asgn => {
                 const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
-                const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment`;
+                const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment&url=${encodeURIComponent(asgn.pdf_url)}&name=${encodeURIComponent(asgn.title)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
                 return `
                   <div class="course-item asgn-mode">
                     <div class="course-main-row">
@@ -2057,7 +2057,7 @@ class UIController {
                   <div class="course-pyq-drawer open">
                     ${course.pyqs.map(py => {
                       const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                      const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
+                      const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
                       return `
                         <div class="pyq-paper-item">
                           <div class="pyq-paper-info">
@@ -2089,7 +2089,7 @@ class UIController {
                   </div>
                   ${s.generalPyqs.map(py => {
                     const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                    const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
+                    const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(py.clean_name || py.subject_name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
                     return `
                       <div class="pyq-paper-item">
                         <div class="pyq-paper-info">
@@ -2122,7 +2122,7 @@ class UIController {
             <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
               ${s.courses.map(course => {
                 const fn = sanitize(course.code + '_' + course.name) + '_SLM.pdf';
-                const vUrl = `/?course=${encodeURIComponent(course.code || course.name)}`;
+                const vUrl = `/?course=${encodeURIComponent(course.code || course.name)}&type=slm&url=${encodeURIComponent(course.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
                 return `
                   <div class="course-item slm-mode">
                     <div class="course-main-row">
@@ -2156,7 +2156,7 @@ class UIController {
           <div class="semester-content${si === 0 ? ' active' : ''}" id="p${idx}s${si}" role="tabpanel">
             ${s.assignments && s.assignments.length > 0 ? s.assignments.map(asgn => {
               const fnAsgn = sanitize(prog.programme_name) + '_' + sanitize(s.semester) + '_Assignment.pdf';
-              const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment`;
+              const vUrlAsgn = `/?course=${encodeURIComponent(prog.programme_name + '_' + s.semester)}&type=assignment&url=${encodeURIComponent(asgn.pdf_url)}&name=${encodeURIComponent(asgn.title)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
               return `
                 <div class="course-item asgn-mode">
                   <div class="course-main-row">
@@ -2190,7 +2190,7 @@ class UIController {
 
             ${s.courses.map(course => {
               const fn = sanitize(course.code + '_' + course.name) + '_SLM.pdf';
-              const vUrl = `/?course=${encodeURIComponent(course.code || course.name)}`;
+              const vUrl = `/?course=${encodeURIComponent(course.code || course.name)}&type=slm&url=${encodeURIComponent(course.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
               const hasPyqs = course.pyqs && course.pyqs.length > 0;
 
               return `
@@ -2225,7 +2225,7 @@ class UIController {
                       <div class="course-pyq-drawer">
                         ${course.pyqs.map(py => {
                           const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                          const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
+                          const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
                           return `
                             <div class="pyq-paper-item">
                               <div class="pyq-paper-info">
@@ -2260,7 +2260,7 @@ class UIController {
                 </div>
                 ${s.generalPyqs.map(py => {
                   const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                  const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}`;
+                  const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(py.clean_name || py.subject_name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
                   return `
                     <div class="pyq-paper-item">
                       <div class="pyq-paper-info">
@@ -2553,6 +2553,7 @@ class UIController {
       history.replaceState({ ...(history.state || {}), viewerOpen: true }, '', targetUrl);
     } catch (_) {}
 
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
     const frame = $('viewerPanelFrame');
     const ld = $('viewerPanelLoading');
 
@@ -2562,35 +2563,69 @@ class UIController {
     }
 
     if (frame) {
-      frame.style.opacity = '1';
-      if (ld) {
-        ld.style.display = 'flex';
-        ld.classList.remove('hidden');
-        ld.innerHTML = '<div class="loading-spinner"></div><span>Loading PDF preview&hellip;</span>';
-      }
-      let loaded = false;
-      const onReady = () => {
-        if (loaded) return;
-        loaded = true;
+      if (isMobile) {
+        frame.style.display = 'none';
+        try { frame.src = 'about:blank'; } catch (_) {}
+        // Mobile view: Render instant native viewer card so students never see a blank iframe
         if (ld) {
-          ld.classList.add('hidden');
-          ld.style.display = 'none';
+          ld.style.display = 'flex';
+          ld.classList.remove('hidden');
+          ld.innerHTML = `
+            <div class="vp-mobile-card">
+              <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <div class="vp-mobile-title">${esc(name || 'Academic Document')}</div>
+              <a href="${ea(pdfUrl)}" target="_blank" rel="noopener noreferrer" class="btn-vp-mobile-open" id="vpMobileOpenBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                <span>Open in PDF Reader</span>
+              </a>
+              <button type="button" class="btn-vp-mobile-dl" id="vpMobileDlBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download Document</span>
+              </button>
+            </div>
+          `;
+          $('vpMobileDlBtn')?.addEventListener('click', () => {
+            Downloader.startDirectDownload(panel._data);
+          });
         }
-      };
-      frame.onload = onReady;
-      const fullUrl = pdfUrl ? (pdfUrl + '#toolbar=1&navpanes=0') : '';
+      } else {
+        frame.style.display = 'block';
+        frame.style.opacity = '1';
+        if (ld) {
+          ld.style.display = 'flex';
+          ld.classList.remove('hidden');
+          ld.innerHTML = '<div class="loading-spinner"></div><span>Loading PDF preview&hellip;</span>';
+        }
 
-      try {
-        if (frame.contentWindow) {
-          frame.contentWindow.location.replace(fullUrl || 'about:blank');
-        } else {
+        let loaded = false;
+        const onReady = () => {
+          if (loaded) return;
+          loaded = true;
+          if (ld) {
+            ld.classList.add('hidden');
+            ld.style.display = 'none';
+          }
+        };
+        frame.onload = onReady;
+        const fullUrl = pdfUrl ? (pdfUrl + '#toolbar=1&navpanes=0') : '';
+
+        try {
+          if (frame.contentWindow) {
+            frame.contentWindow.location.replace(fullUrl || 'about:blank');
+          } else {
+            frame.src = fullUrl || 'about:blank';
+          }
+        } catch (e) {
           frame.src = fullUrl || 'about:blank';
         }
-      } catch (e) {
-        frame.src = fullUrl || 'about:blank';
-      }
 
-      this._viewerTimeout = setTimeout(onReady, 3500);
+        this._viewerTimeout = setTimeout(onReady, 3500);
+      }
     }
   }
 
@@ -2603,6 +2638,7 @@ class UIController {
     if (ld) {
       ld.classList.add('hidden');
       ld.style.display = 'none';
+      ld.innerHTML = '<div class="loading-spinner"></div><span>Loading PDF preview&hellip;</span>';
     }
     const panel = $('viewerPanel');
     if (!panel) return;
@@ -2612,6 +2648,7 @@ class UIController {
     document.body.classList.remove('viewer-panel-open');
     const frame = $('viewerPanelFrame');
     if (frame) {
+      frame.style.display = '';
       try {
         if (frame.contentWindow) {
           frame.contentWindow.location.replace('about:blank');
@@ -3456,6 +3493,12 @@ class UIController {
         const code = myDlViewBtn.dataset.code;
         const type = myDlViewBtn.dataset.type;
         $('myDownloadsDrawer')?.classList.remove('visible');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+        if (isMobile && url && url.startsWith('http')) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+          Analytics.trackEngagement('mobile_direct_view');
+          return;
+        }
         this._viewerOpenedInSession = true;
         this.showViewerPanel(url, name, code, '', '', type);
         return;
@@ -3532,6 +3575,20 @@ class UIController {
         const type = viewBtn.dataset.type || 'SLM';
         const examDate = viewBtn.dataset.examdate || '';
         const url = viewBtn.dataset.url || '';
+
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+        let targetUrl = url;
+        if (!targetUrl && href && href.includes('url=')) {
+          try {
+            const u = new URL(href, window.location.origin);
+            targetUrl = u.searchParams.get('url') || '';
+          } catch (_) {}
+        }
+        if (isMobile && targetUrl && targetUrl.startsWith('http')) {
+          window.open(targetUrl, '_blank', 'noopener,noreferrer');
+          Analytics.trackEngagement('mobile_direct_view');
+          return;
+        }
 
         this._viewerOpenedInSession = true;
         if (href) {

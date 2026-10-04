@@ -1645,6 +1645,32 @@
                 loadTimers = [];
 
                 var loadingEl = document.getElementById('viewerLoading');
+                var isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
+
+                if (isMobileDevice) {
+                    if (frame) {
+                        frame.style.display = 'none';
+                        try { frame.src = 'about:blank'; } catch (_) {}
+                    }
+                    if (loadingEl) {
+                        loadingEl.style.display = 'flex';
+                        var ring = loadingEl.querySelector('.loading-spinner-ring');
+                        if (ring) ring.style.display = 'none';
+                        var sub = document.getElementById('loadingSub');
+                        if (sub) sub.textContent = 'Tap below to read in your phone\'s native PDF reader';
+                        var ldOpen = document.getElementById('loadingDirectBtn');
+                        if (ldOpen) {
+                            var span = ldOpen.querySelector('span');
+                            if (span) span.textContent = 'Open in PDF Reader';
+                            ldOpen.className = 'comfort-btn primary';
+                        }
+                        var ldDl = document.getElementById('loadingDownloadBtn');
+                        if (ldDl) {
+                            ldDl.className = 'comfort-btn secondary';
+                        }
+                    }
+                    return;
+                }
 
                 if (loadingEl) loadingEl.style.display = 'flex';
 
