@@ -32,4 +32,9 @@ __pycache__/
 sr/
 *.mp4
 *.webm
+*.wav
+*.aac
+*.m4a
+*.mp3
+sr_frames*/
 

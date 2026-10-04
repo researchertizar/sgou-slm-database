@@ -1490,10 +1490,14 @@ main {
 
 .programme-card.pinned {
   border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.04) 0%, var(--surface) 40%);
+  box-shadow: 0 4px 18px rgba(245, 158, 11, 0.12), var(--shadow-sm);
 }
 
 [data-theme="dark"] .programme-card.pinned {
   border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, var(--surface) 40%);
+  box-shadow: 0 4px 22px rgba(245, 158, 11, 0.18), var(--shadow-sm);
 }
 
 .btn-pin-programme {
@@ -1527,6 +1531,16 @@ main {
 .btn-pin-programme.active {
   color: #f59e0b;
   /* Scholar Gold */
+}
+
+.btn-pin-programme.active svg {
+  animation: starPop .35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes starPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.4) rotate(15deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 .programme-card.open .card-chevron {
@@ -3115,72 +3129,7 @@ body.viewer-panel-open {
 .vp-loading.hidden {
   opacity: 0;
   pointer-events: none;
-}
-
-.vp-loading-fallback {
-  margin-top: .85rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .65rem;
-  max-width: 320px;
-  text-align: center;
-  padding: .85rem 1.1rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius, 10px);
-  box-shadow: var(--shadow-md);
-  animation: fadeIn .25s ease forwards;
-}
-
-.vp-fallback-msg {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  color: var(--ink-soft);
-  margin: 0;
-  line-height: 1.45;
-}
-
-.vp-fallback-btns {
-  display: flex;
-  gap: .5rem;
-  width: 100%;
-  justify-content: center;
-}
-
-.vp-fallback-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  padding: .45rem .85rem;
-  border-radius: 6px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  transition: all .15s ease;
-  border: 1px solid transparent;
-}
-
-.vp-fallback-btn.primary {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-
-.vp-fallback-btn.primary:hover {
-  background: var(--accent-hover);
-}
-
-.vp-fallback-btn.secondary {
-  background: var(--bg);
-  color: var(--ink);
-  border-color: var(--border);
-}
-
-.vp-fallback-btn.secondary:hover {
-  background: var(--surface-hover);
+  display: none !important;
 }
 
 .loading-spinner {

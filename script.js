@@ -2560,54 +2560,27 @@ class UIController {
       clearTimeout(this._viewerTimeout);
       this._viewerTimeout = null;
     }
-    if (this._fallbackTimeout) {
-      clearTimeout(this._fallbackTimeout);
-      this._fallbackTimeout = null;
-    }
 
     if (frame) {
       frame.style.opacity = '1';
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
-      const fallbackEl = $('vpLoadingFallback');
-      const fallbackDl = $('vpBtnDownload');
-      const fallbackOpen = $('vpBtnOpenTab');
-      const loadingText = $('vpLoadingText');
-
-      if (loadingText) {
-        loadingText.textContent = isMobile ? 'Preparing reader preview…' : 'Loading PDF preview…';
-      }
-      if (fallbackEl) fallbackEl.style.display = 'none';
-
-      if (fallbackOpen) {
-        fallbackOpen.href = pdfUrl || '#';
-      }
-      if (fallbackDl) {
-        fallbackDl.onclick = (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          Downloader.startDirectDownload(panel._data);
-        };
-      }
-
       if (ld) {
+        ld.style.display = 'flex';
         ld.classList.remove('hidden');
+        ld.innerHTML = '<div class="loading-spinner"></div><span>Loading PDF preview&hellip;</span>';
       }
-
       let loaded = false;
       const onReady = () => {
         if (loaded) return;
         loaded = true;
-        if (this._fallbackTimeout) {
-          clearTimeout(this._fallbackTimeout);
-          this._fallbackTimeout = null;
+        if (ld) {
+          ld.classList.add('hidden');
+          ld.style.display = 'none';
         }
-        if (ld) ld.classList.add('hidden');
       };
       frame.onload = onReady;
 
-      // Direct native PDF streaming on desktop (CloudFront HTTP Range requests without 25MB limits).
-      // On mobile browsers (Android Chrome, iOS Safari), direct iframe embedding of raw PDFs triggers Chromium error
-      // "This content is blocked. Contact the site owner to fix the issue." We route through Google Docs Viewer for mobile.
+      // Stable PDF loader: Direct native streaming for desktop, Google Docs viewer for mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
       const fullUrl = pdfUrl
         ? (isMobile ? ('https://docs.google.com/viewer?url=' + encodeURIComponent(pdfUrl) + '&embedded=true') : (pdfUrl + '#toolbar=1&navpanes=0'))
         : '';
@@ -2622,14 +2595,7 @@ class UIController {
         frame.src = fullUrl || 'about:blank';
       }
 
-      // Promptly show instant fallback card if connection is slow or file exceeds preview threshold
-      this._fallbackTimeout = setTimeout(() => {
-        if (!loaded && fallbackEl) {
-          fallbackEl.style.display = 'flex';
-        }
-      }, isMobile ? 1500 : 2500);
-
-      this._viewerTimeout = setTimeout(onReady, isMobile ? 5000 : 4000);
+      this._viewerTimeout = setTimeout(onReady, 3500);
     }
   }
 
@@ -2638,12 +2604,11 @@ class UIController {
       clearTimeout(this._viewerTimeout);
       this._viewerTimeout = null;
     }
-    if (this._fallbackTimeout) {
-      clearTimeout(this._fallbackTimeout);
-      this._fallbackTimeout = null;
+    const ld = $('viewerPanelLoading');
+    if (ld) {
+      ld.classList.add('hidden');
+      ld.style.display = 'none';
     }
-    const fallbackEl = $('vpLoadingFallback');
-    if (fallbackEl) fallbackEl.style.display = 'none';
     const panel = $('viewerPanel');
     if (!panel) return;
     const wasVisible = panel.classList.contains('visible');
@@ -3590,16 +3555,87 @@ class UIController {
         return;
       }
 
-      // Pin / Unpin Programme Star Click
+      // Pin / Unpin Programme Star Click with Smooth Animated FLIP Reordering
       const pinBtn = e.target.closest('.btn-pin-programme');
       if (pinBtn && pinBtn.dataset.prog) {
         e.preventDefault();
         e.stopPropagation();
         const progName = pinBtn.dataset.prog;
+        const card = pinBtn.closest('.programme-card');
+        const grid = $('grid') || card.parentElement;
+        if (!card || !grid) return;
+
         const isNowPinned = Storage.togglePinProgramme(progName);
         this.showToast(isNowPinned ? `★ Pinned ${formatProgName(progName)} to top` : `Unpinned ${formatProgName(progName)}`);
-        const filteredProgrammes = Catalog.filter(this.activeLevel, this.activeType);
-        this.renderProgrammes(filteredProgrammes);
+
+        // Update star state and card styling immediately
+        const svg = pinBtn.querySelector('svg');
+        if (isNowPinned) {
+          pinBtn.classList.add('active');
+          pinBtn.setAttribute('aria-label', 'Unpin programme');
+          pinBtn.setAttribute('title', 'Unpin programme');
+          if (svg) svg.setAttribute('fill', '#f59e0b');
+          card.classList.add('pinned');
+        } else {
+          pinBtn.classList.remove('active');
+          pinBtn.setAttribute('aria-label', 'Pin to top of catalog');
+          pinBtn.setAttribute('title', 'Pin to top of catalog');
+          if (svg) svg.setAttribute('fill', 'none');
+          card.classList.remove('pinned');
+        }
+
+        // FLIP Animation: Record first positions of all sibling cards
+        const allCards = Array.from(grid.querySelectorAll('.programme-card'));
+        const firstPositions = new Map();
+        allCards.forEach(c => firstPositions.set(c, c.getBoundingClientRect().top));
+
+        // Reorder DOM in place without destroying DOM nodes or closing open accordions
+        if (isNowPinned) {
+          const existingPinned = allCards.filter(c => c !== card && c.classList.contains('pinned'));
+          if (existingPinned.length > 0) {
+            existingPinned[existingPinned.length - 1].after(card);
+          } else {
+            grid.prepend(card);
+          }
+        } else {
+          // Return card to its natural alphabetical order among unpinned cards
+          const unpinned = allCards.filter(c => c !== card && !c.classList.contains('pinned'));
+          const targetNext = unpinned.find(c => (c.dataset.prog || '').localeCompare(progName) > 0);
+          if (targetNext) {
+            targetNext.before(card);
+          } else {
+            grid.append(card);
+          }
+        }
+
+        // Calculate deltas and apply inverse transform
+        allCards.forEach(c => {
+          const first = firstPositions.get(c);
+          const last = c.getBoundingClientRect().top;
+          const deltaY = first - last;
+          if (Math.abs(deltaY) > 1) {
+            c.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+            c.style.transition = 'none';
+          }
+        });
+
+        // Force reflow
+        void grid.offsetHeight;
+
+        // Play smooth GPU-accelerated transition back to 0
+        requestAnimationFrame(() => {
+          allCards.forEach(c => {
+            c.style.transition = 'transform 0.42s cubic-bezier(0.16, 1, 0.3, 1)';
+            c.style.transform = 'translate3d(0, 0, 0)';
+            const onEnd = () => {
+              c.style.transition = '';
+              c.style.transform = '';
+              c.removeEventListener('transitionend', onEnd);
+            };
+            c.addEventListener('transitionend', onEnd);
+          });
+        });
+
         return;
       }
 
