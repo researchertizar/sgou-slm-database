@@ -4447,6 +4447,27 @@ kbd {
   background: var(--accent);
 }
 
+.update-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: inline-block;
+  margin-left: 2px;
+  animation: pulse-update-dot 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse-update-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.4;
+  }
+}
+
 .btn-update-check {
   display: inline-flex;
   align-items: center;

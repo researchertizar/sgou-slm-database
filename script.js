@@ -3473,7 +3473,7 @@ class UIController {
 
       // App Update Modal (Triggerable from drawer footer or header)
       if (e.target.closest('#appUpdateBtn') || e.target.closest('#drawerUpdateBtn')) {
-        $('updateModal')?.classList.add('visible');
+        PWAService.openUpdateModal();
         return;
       }
       const guideTab = e.target.closest('.guide-tab');
@@ -3766,8 +3766,8 @@ const UI = new UIController();
 // ============================================================================
 
 const PWAService = {
-  APP_VERSION: 'v2026.10.03',
-  BUILD_ID: '20261003_10',
+  APP_VERSION: 'v2026.10.04',
+  BUILD_ID: '20261004_02',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,
@@ -3804,63 +3804,69 @@ const PWAService = {
     } catch (_) {}
   },
 
+  async registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      this.registration = reg;
+
+      // 1. Proactive update check on startup
+      this.checkForUpdate();
+
+      // 2. Check for update when app returns to foreground (vital for mobile PWA / WebAPK)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.checkForUpdate();
+        }
+      });
+
+      // 3. Check for update when device regains network
+      window.addEventListener('online', () => {
+        this.checkForUpdate();
+      });
+
+      // 4. Periodic background check every 30 minutes
+      setInterval(() => {
+        this.checkForUpdate();
+      }, 30 * 60 * 1000);
+
+      // 5. If a new worker is already waiting to take over
+      if (reg.waiting) {
+        this.notifyUpdate(reg.waiting);
+      }
+
+      // 6. Listen for incoming updates
+      reg.addEventListener('updatefound', () => {
+        const installing = reg.installing;
+        if (!installing) return;
+        installing.addEventListener('statechange', () => {
+          if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+            this.notifyUpdate(installing);
+          }
+        });
+      });
+    } catch (err) {
+      console.warn('[PWA] Service worker registration failed:', err);
+    }
+  },
+
   init() {
     this.bindUI();
 
     if (!('serviceWorker' in navigator)) return;
 
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js', { scope: './' })
-        .then(reg => {
-          this.registration = reg;
+    if (document.readyState === 'complete') {
+      this.registerServiceWorker();
+    } else {
+      window.addEventListener('load', () => this.registerServiceWorker());
+    }
 
-          // 1. Proactive update check on startup
-          this.checkForUpdate();
-
-          // 2. Check for update when app returns to foreground (vital for mobile PWA / WebAPK)
-          document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') {
-              this.checkForUpdate();
-            }
-          });
-
-          // 3. Check for update when device regains network
-          window.addEventListener('online', () => {
-            this.checkForUpdate();
-          });
-
-          // 4. Periodic background check every 30 minutes
-          setInterval(() => {
-            this.checkForUpdate();
-          }, 30 * 60 * 1000);
-
-          // 5. If a new worker is already waiting to take over
-          if (reg.waiting) {
-            this.notifyUpdate(reg.waiting);
-          }
-
-          // 6. Listen for incoming updates
-          reg.addEventListener('updatefound', () => {
-            const installing = reg.installing;
-            if (!installing) return;
-            installing.addEventListener('statechange', () => {
-              if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                this.notifyUpdate(installing);
-              }
-            });
-          });
-        })
-        .catch(err => {
-          console.warn('[PWA] Service worker registration failed:', err);
-        });
-
-      // 7. Reload exactly once when a new service worker takes control
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (!this.isRefreshing) {
-          this.isRefreshing = true;
-          window.location.reload();
-        }
-      });
+    // 7. Reload exactly once when a new service worker takes control
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!this.isRefreshing) {
+        this.isRefreshing = true;
+        window.location.reload();
+      }
     });
   },
 
@@ -3906,6 +3912,16 @@ const PWAService = {
       versionLabel.textContent = this.APP_VERSION;
     }
 
+    const statusBox = $('updateStatusBox');
+    const statusText = $('updateStatusText');
+    if (this.registration?.waiting) {
+      if (statusBox) statusBox.className = 'update-status-row has-update';
+      if (statusText) statusText.textContent = 'Update available! Tap below to install.';
+    } else if (statusBox && statusText && !statusBox.classList.contains('has-update') && !statusBox.classList.contains('checking')) {
+      statusBox.className = 'update-status-row';
+      statusText.textContent = 'Ready to check for updates';
+    }
+
     modal.classList.add('visible');
   },
 
@@ -3938,43 +3954,85 @@ const PWAService = {
     if (statusBox) statusBox.className = 'update-status-row checking';
     if (statusText) statusText.textContent = 'Checking for updates...';
 
+    if (!navigator.onLine) {
+      if (statusBox) statusBox.className = 'update-status-row';
+      if (statusText) statusText.textContent = 'Device is offline';
+      this._checkingUpdate = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('spin');
+      }
+      if (btnText) btnText.textContent = 'Check for Updates';
+      return;
+    }
+
     try {
+      // 1. Ensure active registration
+      let reg = this.registration;
+      if (!reg && 'serviceWorker' in navigator) {
+        reg = await navigator.serviceWorker.getRegistration();
+        if (reg) this.registration = reg;
+      }
+
+      // 2. Network cache-busting probes to ensure fresh responses
       const probeTime = Date.now();
       await Promise.all([
         fetch(`./sw.js?probe=${probeTime}`, { cache: 'no-store' }).catch(() => {}),
         fetch(`./manifest.json?probe=${probeTime}`, { cache: 'no-store' }).catch(() => {})
       ]);
 
-      if (this.registration && typeof this.registration.update === 'function') {
-        await this.registration.update();
-      }
-
-      if (this.registration?.waiting) {
+      // 3. If an update is ALREADY waiting to take over
+      if (reg?.waiting) {
         if (statusBox) statusBox.className = 'update-status-row has-update';
-        if (statusText) statusText.textContent = 'Updating app...';
-        this.notifyUpdate(this.registration.waiting);
+        if (statusText) statusText.textContent = 'Applying update...';
+        this.notifyUpdate(reg.waiting);
         setTimeout(() => {
-          this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        }, 600);
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }, 500);
         return;
       }
 
-      await new Promise(r => setTimeout(r, 1000));
+      // 4. Trigger SW update check
+      if (reg && typeof reg.update === 'function') {
+        await reg.update();
+      }
 
-      if (this.registration?.waiting) {
+      // 5. If a new worker was detected and is currently installing (downloading shell assets)
+      const installingWorker = reg?.installing;
+      if (installingWorker) {
+        if (statusBox) statusBox.className = 'update-status-row checking';
+        if (statusText) statusText.textContent = 'Downloading update package...';
+
+        await new Promise(resolve => {
+          const timeout = setTimeout(resolve, 8000);
+          installingWorker.addEventListener('statechange', () => {
+            if (installingWorker.state === 'installed' || installingWorker.state === 'redundant') {
+              clearTimeout(timeout);
+              resolve();
+            }
+          });
+        });
+      }
+
+      // 6. Check again if a new worker is waiting after update check/install
+      if (reg?.waiting) {
         if (statusBox) statusBox.className = 'update-status-row has-update';
-        if (statusText) statusText.textContent = 'Reloading app...';
-        this.registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        if (statusText) statusText.textContent = 'New update ready! Reloading...';
+        this.notifyUpdate(reg.waiting);
+        setTimeout(() => {
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }, 500);
         return;
       }
 
+      // 7. Genuinely up to date
       const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       if (statusBox) statusBox.className = 'update-status-row';
       if (statusText) statusText.textContent = `Up to date (${nowStr})`;
       $('updateBadgeDot')?.style.setProperty('display', 'none');
     } catch (err) {
       if (statusBox) statusBox.className = 'update-status-row';
-      if (statusText) statusText.textContent = 'Offline / check failed';
+      if (statusText) statusText.textContent = 'Check failed. Retry later.';
     } finally {
       this._checkingUpdate = false;
       if (btn) {
@@ -4015,6 +4073,9 @@ const PWAService = {
       // 3. Unregister existing service worker to force fresh registration
       if (this.registration) {
         await this.registration.unregister().catch(() => {});
+      } else if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration().catch(() => {});
+        if (reg) await reg.unregister().catch(() => {});
       }
 
       // 4. Verify LocalStorage safety snapshot
@@ -4022,20 +4083,20 @@ const PWAService = {
 
       if (statusText) statusText.textContent = 'Cache cleared! Reloading fresh application...';
 
-      // 5. Force fresh reload from server
+      // 5. Force fresh reload cleanly from origin path
       setTimeout(() => {
-        window.location.replace('/?updated=' + Date.now());
+        window.location.replace(window.location.pathname);
       }, 500);
     } catch (err) {
       this.restoreUserData(backup);
-      window.location.reload();
+      window.location.replace(window.location.pathname);
     }
   },
 
   notifyUpdate(worker) {
-    // Reveal pulsing badge on header update button
+    // Reveal pulsing badge on drawer update button
     const dot = $('updateBadgeDot');
-    if (dot) dot.style.display = 'block';
+    if (dot) dot.style.display = 'inline-block';
 
     const statusBox = $('updateStatusBox');
     const statusText = $('updateStatusText');
