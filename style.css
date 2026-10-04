@@ -4534,6 +4534,36 @@ kbd {
   color: var(--accent);
 }
 
+/* Viewer In-Panel Fallback Controls */
+.vp-fallback-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.vp-fallback-btn:hover {
+  background: var(--hover-bg);
+}
+
+.vp-fallback-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.vp-fallback-btn.primary:hover {
+  opacity: 0.9;
+}
+
 /* Mobile PDF Viewer In-App Helper Card */
 .vp-mobile-card {
   display: flex;

@@ -1645,36 +1645,18 @@
                 loadTimers = [];
 
                 var loadingEl = document.getElementById('viewerLoading');
-                var isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
-
-                if (isMobileDevice) {
-                    if (frame) {
-                        frame.style.display = 'none';
-                        try { frame.src = 'about:blank'; } catch (_) {}
-                    }
-                    if (loadingEl) {
-                        loadingEl.style.display = 'flex';
-                        var ring = loadingEl.querySelector('.loading-spinner-ring');
-                        if (ring) ring.style.display = 'none';
-                        var sub = document.getElementById('loadingSub');
-                        if (sub) sub.textContent = 'Tap below to read in your phone\'s native PDF reader';
-                        var ldOpen = document.getElementById('loadingDirectBtn');
-                        if (ldOpen) {
-                            var span = ldOpen.querySelector('span');
-                            if (span) span.textContent = 'Open in PDF Reader';
-                            ldOpen.className = 'comfort-btn primary';
-                        }
-                        var ldDl = document.getElementById('loadingDownloadBtn');
-                        if (ldDl) {
-                            ldDl.className = 'comfort-btn secondary';
-                        }
-                    }
-                    return;
-                }
+                var isAndroid = /Android/i.test(navigator.userAgent);
 
                 if (loadingEl) loadingEl.style.display = 'flex';
 
-                var fullTarget = url ? (url + '#toolbar=1&navpanes=0') : '';
+                var fullTarget = '';
+                if (url) {
+                    if (isAndroid) {
+                        fullTarget = 'https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true';
+                    } else {
+                        fullTarget = url + '#toolbar=1&navpanes=0';
+                    }
+                }
 
                 if (frame) {
                     frame.style.display = 'block';
@@ -1704,7 +1686,7 @@
                     };
                 }
 
-                var tid = setTimeout(onReady, 3500);
+                var tid = setTimeout(onReady, isAndroid ? 6500 : 3500);
                 loadTimers.push(tid);
             }
 
