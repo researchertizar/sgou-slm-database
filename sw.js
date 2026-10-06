@@ -1,10 +1,10 @@
-const CACHE = 'sgou-v134';
+const CACHE = 'sgou-v135';
 const SHELL = [
     './',
     './index.html',
-    './style.css?v=20261006_01',
-    './script.js?v=20261006_01',
-    './manifest.json?v=20261006_01',
+    './style.css?v=20261006_02',
+    './script.js?v=20261006_02',
+    './manifest.json?v=20261006_02',
     './icon.svg?v=20260904_10',
     './icon-192.png?v=20260904_10',
     './icon-512.png?v=20260904_10',
@@ -88,6 +88,7 @@ self.addEventListener('fetch', e => {
             fetch(e.request).catch(async () => {
                 const c = await caches.open(CACHE);
                 return (await c.match(e.request)) ||
+                       (await c.match(e.request, { ignoreSearch: true })) ||
                        (await c.match('./index.html')) ||
                        (await c.match('./')) ||
                        new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/html' } });
@@ -116,7 +117,7 @@ self.addEventListener('fetch', e => {
 
 async function swr(req) {
     const c = await caches.open(CACHE);
-    const cached = await c.match(req);
+    const cached = (await c.match(req)) || (await c.match(req, { ignoreSearch: true }));
     if (cached) {
         fetch(req)
             .then(r => {

@@ -2844,7 +2844,7 @@ body.viewer-panel-open {
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding: .45rem .75rem;
+  padding: calc(.45rem + env(safe-area-inset-top, 0px)) .75rem .45rem;
 }
 
 .vp-title {

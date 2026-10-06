@@ -91,10 +91,11 @@
       overflow-y: auto;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 16px 10px 104px 10px;
+      padding: 16px 10px calc(80px + env(safe-area-inset-bottom, 0px)) 10px;
       gap: 16px;
       scroll-behavior: smooth;
     }
@@ -143,7 +144,7 @@
     /* Floating Toolbar */
     #bottomBar {
       position: absolute;
-      bottom: 14px;
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -737,9 +738,14 @@
 
       function resolveFileUrl(url) {
         if (!url) return '';
-        if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/')) {
+        if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/') || url.startsWith('./')) {
           return url;
         }
+        try {
+          if (window.location.origin && url.startsWith(window.location.origin)) {
+            return url;
+          }
+        } catch (_) {}
         return '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
       }
 
@@ -946,6 +952,30 @@
         renderPage(currentPage);
         if (currentPage + 1 <= totalPages) renderPage(currentPage + 1);
         if (currentPage - 1 >= 1) renderPage(currentPage - 1);
+
+        // Virtual Memory Management: prune canvases farther than 12 pages away to prevent mobile OOM crashes
+        pruneFarCanvases(currentPage);
+      }
+
+      function pruneFarCanvases(cur) {
+        if (totalPages <= 16) return;
+        for (var p in pageRenders) {
+          if (!Object.prototype.hasOwnProperty.call(pageRenders, p)) continue;
+          var num = parseInt(p, 10);
+          if (pageRenders[num] && Math.abs(num - cur) > 12) {
+            var wrap = document.getElementById('pageWrap-' + num);
+            if (wrap) {
+              var c = wrap.querySelector('canvas');
+              if (c) {
+                c.width = 0;
+                c.height = 0;
+              }
+              wrap.classList.add('page-placeholder');
+              wrap.innerHTML = '<div class="page-skeleton-pulse"></div><span>Page ' + num + '</span>';
+              pageRenders[num] = false;
+            }
+          }
+        }
       }
 
       container.addEventListener('scroll', function () {
