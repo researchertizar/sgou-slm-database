@@ -1382,7 +1382,8 @@ class RouterService {
     const target = this._normalizeUrl(url);
     const current = (window.location.pathname || '/') + window.location.search;
     if (current === target && !window.location.hash) return;
-    history.pushState({ url: target }, '', target);
+    const isViewer = target.includes('course=') || target.includes('view=') || target.includes('code=');
+    history.pushState({ url: target, viewerOpen: isViewer }, '', target);
     this.resolve();
   }
 
@@ -2595,6 +2596,13 @@ class UIController {
     // Dismiss any active floating download progress card
     $('downloadProgressCard')?.classList.remove('visible');
 
+    // Avoid reloading if the exact same document is already displayed in the viewer
+    const isAlreadyOpen = panel.classList.contains('visible') &&
+      panel._data?.url === pdfUrl &&
+      panel._data?.code === code &&
+      panel._data?.type === type;
+    if (isAlreadyOpen) return;
+
     panel._data = { url: pdfUrl, name, code, prog, level, type, examDate };
     panel.classList.add('visible');
     document.documentElement.classList.add('viewer-panel-open');
@@ -2602,7 +2610,7 @@ class UIController {
     // Silently apply eye-comfort filter mode on document load without popping toast notifications
     this.applyReaderFilter(localStorage.getItem('sgou-pdf-filter') || 'normal', false);
 
-    // Sync clean course URL without creating duplicate history entries
+    // Sync clean course URL on current history frame without duplicate pushState
     const viewParams = new URLSearchParams();
     if (code) viewParams.set('course', code);
     else if (name) viewParams.set('course', name);
@@ -2610,7 +2618,9 @@ class UIController {
     if (examDate) viewParams.set('examdate', examDate);
     const targetUrl = `/?${viewParams.toString()}`;
     try {
-      if (!history.state?.viewerOpen) {
+      const curSearch = window.location.search;
+      const isAlreadyOnTarget = curSearch === `?${viewParams.toString()}` || curSearch.includes(code || name || '');
+      if (!isAlreadyOnTarget && !history.state?.viewerOpen) {
         history.pushState({ viewerOpen: true, code: code || name }, '', targetUrl);
       } else {
         history.replaceState({ ...(history.state || {}), viewerOpen: true, code: code || name }, '', targetUrl);
@@ -3598,10 +3608,16 @@ class UIController {
         const url = myDlViewBtn.dataset.url;
         const name = myDlViewBtn.dataset.name;
         const code = myDlViewBtn.dataset.code;
-        const type = myDlViewBtn.dataset.type;
+        const type = myDlViewBtn.dataset.type || 'SLM';
         $('myDownloadsDrawer')?.classList.remove('visible');
         this._viewerOpenedInSession = true;
-        this.showViewerPanel(url, name, code, '', '', type);
+        const vParams = new URLSearchParams();
+        if (code) vParams.set('course', code);
+        else if (name) vParams.set('course', name);
+        if (type && type !== 'SLM' && type !== 'ALL') vParams.set('type', type.toLowerCase());
+        if (url) vParams.set('url', url);
+        if (name) vParams.set('name', name);
+        Router.navigate(`/?${vParams.toString()}`);
         return;
       }
 
@@ -3682,8 +3698,17 @@ class UIController {
         this._viewerOpenedInSession = true;
         if (href) {
           Router.navigate(href);
-        } else if (url) {
-          this.showViewerPanel(url, name, code, prog, level, type, examDate);
+        } else {
+          const vParams = new URLSearchParams();
+          if (code) vParams.set('course', code);
+          else if (name) vParams.set('course', name);
+          if (type && type !== 'SLM' && type !== 'ALL') vParams.set('type', type.toLowerCase());
+          if (url) vParams.set('url', url);
+          if (name) vParams.set('name', name);
+          if (prog) vParams.set('prog', prog);
+          if (level) vParams.set('level', level);
+          if (examDate) vParams.set('examdate', examDate);
+          Router.navigate(`/?${vParams.toString()}`);
         }
         return;
       }
