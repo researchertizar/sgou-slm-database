@@ -366,6 +366,57 @@ class StorageService {
 
   clearDownloadHistory() {
     this.remove('sgou-dl-history');
+    this.clearOfflineDocs();
+  }
+
+  // --- CacheStorage Offline Documents Store ---
+  async saveOfflineDoc(url, blob) {
+    if (!('caches' in window) || !url || !blob) return false;
+    try {
+      const cache = await caches.open('sgou-offline-docs');
+      const headers = new Headers({
+        'Content-Type': 'application/pdf',
+        'Content-Length': blob.size.toString(),
+        'Accept-Ranges': 'bytes'
+      });
+      await cache.put(url, new Response(blob, { headers }));
+      return true;
+    } catch (e) {
+      console.warn('[OfflineDocs] Cache put error:', e);
+      return false;
+    }
+  }
+
+  async getOfflineDoc(url) {
+    if (!('caches' in window) || !url) return null;
+    try {
+      const cache = await caches.open('sgou-offline-docs');
+      const match = await cache.match(url);
+      if (match) {
+        return await match.blob();
+      }
+    } catch (e) {
+      console.warn('[OfflineDocs] Cache get error:', e);
+    }
+    return null;
+  }
+
+  async hasOfflineDoc(url) {
+    if (!('caches' in window) || !url) return false;
+    try {
+      const cache = await caches.open('sgou-offline-docs');
+      const match = await cache.match(url);
+      return !!match;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async clearOfflineDocs() {
+    if (!('caches' in window)) return;
+    try {
+      await caches.delete('sgou-offline-docs');
+    } catch (_) {}
   }
 
   getDownloadCount() {
@@ -1175,19 +1226,21 @@ class DownloadManager {
 
         if (writable) {
           await writable.write(value);
-        } else {
-          chunks.push(value);
         }
+        chunks.push(value);
 
         receivedBytes += value.length;
         this._updateProgressMetrics(receivedBytes, contentLength, startTime);
       }
 
+      const blob = new Blob(chunks, { type: 'application/pdf' });
+      // Persist in CacheStorage for instant offline retrieval
+      Storage.saveOfflineDoc(item.url, blob).catch(() => {});
+
       if (writable) {
         await writable.close();
         this.lastBlobUrl = null;
       } else {
-        const blob = new Blob(chunks, { type: 'application/pdf' });
         const blobUrl = URL.createObjectURL(blob);
         this.lastBlobUrl = blobUrl;
         this._triggerSave(blobUrl, fullFilename);
@@ -2553,7 +2606,7 @@ class UIController {
       history.replaceState({ ...(history.state || {}), viewerOpen: true }, '', targetUrl);
     } catch (_) {}
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) || window.innerWidth <= 768;
     const isAndroid = /Android/i.test(navigator.userAgent);
     const frame = $('viewerPanelFrame');
     const ld = $('viewerPanelLoading');
@@ -2565,6 +2618,11 @@ class UIController {
     if (this._fallbackTimeout) {
       clearTimeout(this._fallbackTimeout);
       this._fallbackTimeout = null;
+    }
+
+    if (this._activeBlobUrl) {
+      try { URL.revokeObjectURL(this._activeBlobUrl); } catch (_) {}
+      this._activeBlobUrl = null;
     }
 
     if (frame) {
@@ -2592,59 +2650,88 @@ class UIController {
       };
       frame.onload = onReady;
 
-      // On Android Chrome (which lacks an inline iframe PDF engine), render via Google Docs Viewer.
-      // On Desktop and iOS Safari, stream directly via CloudFront byte-range streaming.
-      let fullUrl = '';
-      if (pdfUrl) {
-        if (isAndroid) {
-          fullUrl = 'https://docs.google.com/viewer?url=' + encodeURIComponent(pdfUrl) + '&embedded=true';
-        } else {
-          fullUrl = pdfUrl + '#toolbar=1&navpanes=0';
+      // Check CacheStorage first: If previously downloaded, stream instantly from device storage
+      Storage.getOfflineDoc(pdfUrl).then(cachedBlob => {
+        let streamSource = '';
+        if (cachedBlob) {
+          this._activeBlobUrl = URL.createObjectURL(cachedBlob);
+          streamSource = this._activeBlobUrl;
+          if (ld) ld.innerHTML = '<div class="loading-spinner"></div><span>Reading from device storage&hellip;</span>';
         }
-      }
 
-      try {
-        if (frame.contentWindow) {
-          frame.contentWindow.location.replace(fullUrl || 'about:blank');
-        } else {
+        // On mobile, render via in-app HTML5 canvas reader (reader.html) to prevent Google Docs Viewer 25MB crashes and external app redirects.
+        // On Desktop, stream directly via CloudFront byte-range streaming (#toolbar=1&navpanes=0).
+        let fullUrl = '';
+        if (pdfUrl || streamSource) {
+          if (isMobile) {
+            const docSource = streamSource || ('/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1');
+            fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF');
+          } else {
+            fullUrl = streamSource || (pdfUrl + '#toolbar=1&navpanes=0');
+          }
+        }
+
+        try {
+          if (frame.contentWindow) {
+            frame.contentWindow.location.replace(fullUrl || 'about:blank');
+          } else {
+            frame.src = fullUrl || 'about:blank';
+          }
+        } catch (e) {
           frame.src = fullUrl || 'about:blank';
         }
-      } catch (e) {
-        frame.src = fullUrl || 'about:blank';
-      }
-
-      // If document loading takes longer than 4.5 seconds (e.g. slow network), provide an inline fallback helper
-      if (isAndroid) {
-        this._fallbackTimeout = setTimeout(() => {
-          if (!loaded && ld) {
-            ld.innerHTML = `
-              <div class="loading-spinner"></div>
-              <span>Rendering document&hellip;</span>
-              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
-                <button type="button" id="vpTryDirectBtn" class="vp-fallback-btn">Try Direct Stream</button>
-                <button type="button" id="vpTryDlBtn" class="vp-fallback-btn primary">Download PDF</button>
-              </div>
-            `;
-            $('vpTryDirectBtn')?.addEventListener('click', () => {
-              try {
-                if (frame.contentWindow) frame.contentWindow.location.replace(pdfUrl + '#toolbar=1&navpanes=0');
-                else frame.src = pdfUrl + '#toolbar=1&navpanes=0';
-              } catch (_) {
-                frame.src = pdfUrl + '#toolbar=1&navpanes=0';
-              }
-            });
-            $('vpTryDlBtn')?.addEventListener('click', () => {
-              Downloader.startDirectDownload(panel._data);
-            });
+      }).catch(() => {
+        let fullUrl = '';
+        if (pdfUrl) {
+          if (isMobile) {
+            const docSource = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1';
+            fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF');
+          } else {
+            fullUrl = pdfUrl + '#toolbar=1&navpanes=0';
           }
-        }, 4500);
-      }
+        }
+        try {
+          if (frame.contentWindow) frame.contentWindow.location.replace(fullUrl || 'about:blank');
+          else frame.src = fullUrl || 'about:blank';
+        } catch (_) {
+          frame.src = fullUrl || 'about:blank';
+        }
+      });
 
-      this._viewerTimeout = setTimeout(onReady, isAndroid ? 7000 : 3500);
+      // If document loading takes longer than 5 seconds (e.g. slow network), provide an inline fallback helper
+      this._fallbackTimeout = setTimeout(() => {
+        if (!loaded && ld) {
+          ld.innerHTML = `
+            <div class="loading-spinner"></div>
+            <span>Rendering document&hellip;</span>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+              <button type="button" id="vpTryDirectBtn" class="vp-fallback-btn">Try Direct Stream</button>
+              <button type="button" id="vpTryDlBtn" class="vp-fallback-btn primary">Download PDF</button>
+            </div>
+          `;
+          $('vpTryDirectBtn')?.addEventListener('click', () => {
+            try {
+              if (frame.contentWindow) frame.contentWindow.location.replace(pdfUrl + '#toolbar=1&navpanes=0');
+              else frame.src = pdfUrl + '#toolbar=1&navpanes=0';
+            } catch (_) {
+              frame.src = pdfUrl + '#toolbar=1&navpanes=0';
+            }
+          });
+          $('vpTryDlBtn')?.addEventListener('click', () => {
+            Downloader.startDirectDownload(panel._data);
+          });
+        }
+      }, 5000);
+
+      this._viewerTimeout = setTimeout(onReady, isMobile ? 6500 : 3500);
     }
   }
 
   hideViewerPanel(syncUrl = true) {
+    if (this._activeBlobUrl) {
+      try { URL.revokeObjectURL(this._activeBlobUrl); } catch (_) {}
+      this._activeBlobUrl = null;
+    }
     if (this._viewerTimeout) {
       clearTimeout(this._viewerTimeout);
       this._viewerTimeout = null;
@@ -2832,10 +2919,7 @@ class UIController {
 
     // Asynchronously check CacheStorage for offline cached items
     if ('caches' in window) {
-      caches.keys().then(keys => {
-        const cacheName = keys.find(k => k.startsWith('sgou-v')) || 'sgou-v121';
-        return caches.open(cacheName);
-      }).then(cache => {
+      caches.open('sgou-offline-docs').then(cache => {
         history.forEach((h, i) => {
           if (!h.url) return;
           cache.match(h.url).then(match => {
@@ -2845,8 +2929,8 @@ class UIController {
               if (topEl && !topEl.querySelector('.my-dl-cached')) {
                 const badge = document.createElement('span');
                 badge.className = 'my-dl-cached';
-                badge.textContent = 'Offline';
-                badge.title = 'Saved in local cache for offline reading';
+                badge.textContent = 'Saved Offline';
+                badge.title = 'Saved to device storage — loads instantly with 0 data';
                 topEl.appendChild(badge);
               }
             }
@@ -3519,6 +3603,7 @@ class UIController {
 
       // Storage Help Modal (Triggerable from drawer tip or header)
       if (e.target.closest('#storageHelpBtn') || e.target.closest('#drawerStorageHelpBtn')) {
+        $('myDownloadsDrawer')?.classList.remove('visible');
         $('storageHelpModal')?.classList.add('visible');
         return;
       }
@@ -3529,6 +3614,7 @@ class UIController {
 
       // App Update Modal (Triggerable from drawer footer or header)
       if (e.target.closest('#appUpdateBtn') || e.target.closest('#drawerUpdateBtn')) {
+        $('myDownloadsDrawer')?.classList.remove('visible');
         PWAService.openUpdateModal();
         return;
       }
@@ -3822,8 +3908,8 @@ const UI = new UIController();
 // ============================================================================
 
 const PWAService = {
-  APP_VERSION: 'v2026.10.05',
-  BUILD_ID: '20261005_01',
+  APP_VERSION: 'v2026.10.06',
+  BUILD_ID: '20261006_01',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,

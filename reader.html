@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net;">
+  <title>Document Reader — SGOU Academic Database</title>
+  <style>
+    :root {
+      --bg: #1a1714;
+      --surface: #24201c;
+      --surface-border: #38322c;
+      --text: #f0ede8;
+      --text-muted: #a39e95;
+      --accent: #d97706;
+      --accent-hover: #b45309;
+      --canvas-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #readerWrap {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+    }
+    #viewerContainer {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 10px 80px 10px;
+      gap: 16px;
+    }
+    .pdf-page-wrap {
+      position: relative;
+      background: #fff;
+      box-shadow: var(--canvas-shadow);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 0 auto;
+      min-height: 200px;
+    }
+    .pdf-page-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .page-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #2a2520;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    /* Bottom Floating Toolbar */
+    #bottomBar {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(36, 32, 28, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--surface-border);
+      padding: 6px 12px;
+      border-radius: 30px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      max-width: 95vw;
+    }
+    .bar-btn {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      transition: background .15s, color .15s;
+    }
+    .bar-btn:hover { background: rgba(255, 255, 255, 0.1); color: var(--accent); }
+    .bar-btn:active { transform: scale(0.94); }
+    .page-info {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      padding: 0 4px;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .bar-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--surface-border);
+    }
+    /* Loading Indicator */
+    #loadingOverlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: var(--bg);
+      z-index: 200;
+      transition: opacity .3s, visibility .3s;
+    }
+    #loadingOverlay.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    #errorBox {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 24px;
+      text-align: center;
+      max-width: 340px;
+    }
+    .error-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #ef4444;
+    }
+    .retry-btn {
+      padding: 8px 18px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    /* Filter Classes */
+    #viewerContainer.filter-sepia canvas {
+      filter: sepia(0.35) contrast(0.96) brightness(0.96);
+    }
+    #viewerContainer.filter-dark canvas {
+      filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div id="readerWrap">
+    <div id="loadingOverlay">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loadingMsg">Preparing document preview&hellip;</div>
+      <div id="errorBox">
+        <div class="error-title" id="errorMsg">Could not load document</div>
+        <button type="button" class="retry-btn" id="retryBtn">Retry</button>
+      </div>
+    </div>
+
+    <div id="viewerContainer"></div>
+
+    <div id="bottomBar">
+      <button type="button" class="bar-btn" id="prevBtn" title="Previous page (Left Arrow)" aria-label="Previous page">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="page-info" id="pageInfo"><span id="pageNum">1</span> / <span id="pageCount">&ndash;</span></span>
+      <button type="button" class="bar-btn" id="nextBtn" title="Next page (Right Arrow)" aria-label="Next page">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="bar-divider"></div>
+      <button type="button" class="bar-btn" id="zoomOutBtn" title="Zoom Out (-)" aria-label="Zoom out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <button type="button" class="bar-btn" id="zoomInBtn" title="Zoom In (+)" aria-label="Zoom in">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+      <button type="button" class="bar-btn" id="fitWidthBtn" title="Fit to width" aria-label="Fit to width">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <script src="./pdfjs/pdf.min.js"></script>
+  <script>
+    (function () {
+      if (typeof pdfjsLib === 'undefined') {
+        showError('PDF.js engine could not be initialized.');
+        return;
+      }
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
+
+      var params = new URLSearchParams(window.location.search);
+      var rawFile = params.get('file') || '';
+      var docName = params.get('name') || 'Document';
+
+      var container = document.getElementById('viewerContainer');
+      var loadingOverlay = document.getElementById('loadingOverlay');
+      var loadingMsg = document.getElementById('loadingMsg');
+      var errorBox = document.getElementById('errorBox');
+      var errorMsg = document.getElementById('errorMsg');
+      var pageNumEl = document.getElementById('pageNum');
+      var pageCountEl = document.getElementById('pageCount');
+
+      var pdfDoc = null;
+      var totalPages = 0;
+      var currentPage = 1;
+      var currentScale = 1.0;
+      var pageRenders = {};
+      var pageWrappers = [];
+      var pageObserver = null;
+
+      // Filter Mode sync
+      function applySavedFilter() {
+        var mode = 'normal';
+        try { mode = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
+        container.classList.remove('filter-sepia', 'filter-dark');
+        if (mode === 'sepia') container.classList.add('filter-sepia');
+        else if (mode === 'dark') container.classList.add('filter-dark');
+      }
+      applySavedFilter();
+      window.addEventListener('storage', applySavedFilter);
+
+      function showError(msg) {
+        document.querySelector('.spinner').style.display = 'none';
+        loadingMsg.style.display = 'none';
+        errorBox.style.display = 'flex';
+        errorMsg.textContent = msg;
+      }
+
+      function resolveFileUrl(url) {
+        if (!url) return '';
+        if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/')) {
+          return url;
+        }
+        // Route through local/edge proxy with inline header and range support
+        return '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
+      }
+
+      async function loadDocument() {
+        if (!rawFile) {
+          showError('No document URL provided.');
+          return;
+        }
+
+        document.querySelector('.spinner').style.display = 'block';
+        loadingMsg.style.display = 'block';
+        loadingMsg.textContent = 'Loading ' + docName + '\u2026';
+        errorBox.style.display = 'none';
+
+        var targetUrl = resolveFileUrl(rawFile);
+
+        // If not already a blob URL, check device CacheStorage for instant offline retrieval
+        if (!rawFile.startsWith('blob:') && 'caches' in window) {
+          try {
+            var cache = await caches.open('sgou-offline-docs');
+            var match = await cache.match(rawFile);
+            if (match) {
+              var blob = await match.blob();
+              targetUrl = URL.createObjectURL(blob);
+              loadingMsg.textContent = 'Reading from device storage\u2026';
+            }
+          } catch (_) {}
+        }
+
+        try {
+          var loadingTask = pdfjsLib.getDocument({
+            url: targetUrl,
+            rangeChunkSize: 65536,
+            disableAutoFetch: false,
+            disableStream: false
+          });
+
+          loadingTask.onProgress = function (p) {
+            if (p.total > 0) {
+              var pct = Math.round((p.loaded / p.total) * 100);
+              loadingMsg.textContent = 'Downloading preview: ' + pct + '%';
+            }
+          };
+
+          pdfDoc = await loadingTask.promise;
+          totalPages = pdfDoc.numPages;
+          pageCountEl.textContent = totalPages;
+
+          // Compute initial scale to fit screen comfortably
+          var firstPage = await pdfDoc.getPage(1);
+          var unscaledViewport = firstPage.getViewport({ scale: 1 });
+          var containerWidth = container.clientWidth - 24;
+          currentScale = Math.min(Math.max(containerWidth / unscaledViewport.width, 0.7), 2.0);
+
+          createPagePlaceholders(unscaledViewport);
+          initIntersectionObserver();
+
+          loadingOverlay.classList.add('hidden');
+
+          // Render first page immediately
+          renderPage(1);
+        } catch (err) {
+          console.error('[PDF Reader Error]', err);
+          showError('Could not load document preview (' + (err.message || 'Error') + ')');
+        }
+      }
+
+      function createPagePlaceholders(unscaledViewport) {
+        container.innerHTML = '';
+        pageWrappers = [];
+
+        var scaledWidth = unscaledViewport.width * currentScale;
+        var scaledHeight = unscaledViewport.height * currentScale;
+
+        for (var i = 1; i <= totalPages; i++) {
+          var wrap = document.createElement('div');
+          wrap.className = 'pdf-page-wrap page-placeholder';
+          wrap.id = 'pageWrap-' + i;
+          wrap.dataset.page = i;
+          wrap.style.width = scaledWidth + 'px';
+          wrap.style.height = scaledHeight + 'px';
+          wrap.innerHTML = '<span>Page ' + i + '</span>';
+
+          container.appendChild(wrap);
+          pageWrappers.push(wrap);
+        }
+      }
+
+      function initIntersectionObserver() {
+        if (pageObserver) pageObserver.disconnect();
+
+        pageObserver = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            var pageNum = parseInt(entry.target.dataset.page, 10);
+            if (entry.isIntersecting) {
+              renderPage(pageNum);
+              currentPage = pageNum;
+              pageNumEl.textContent = currentPage;
+            }
+          });
+        }, {
+          root: container,
+          rootMargin: '200px 0px 200px 0px',
+          threshold: 0.1
+        });
+
+        pageWrappers.forEach(function (w) { pageObserver.observe(w); });
+      }
+
+      async function renderPage(num) {
+        if (pageRenders[num]) return; // Already rendered
+        pageRenders[num] = true;
+
+        var wrap = document.getElementById('pageWrap-' + num);
+        if (!wrap) return;
+
+        try {
+          var page = await pdfDoc.getPage(num);
+          var viewport = page.getViewport({ scale: currentScale });
+
+          var dpr = window.devicePixelRatio || 1;
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+
+          canvas.width = Math.floor(viewport.width * dpr);
+          canvas.height = Math.floor(viewport.height * dpr);
+          canvas.style.width = Math.floor(viewport.width) + 'px';
+          canvas.style.height = Math.floor(viewport.height) + 'px';
+
+          wrap.style.width = Math.floor(viewport.width) + 'px';
+          wrap.style.height = Math.floor(viewport.height) + 'px';
+          wrap.classList.remove('page-placeholder');
+          wrap.innerHTML = '';
+          wrap.appendChild(canvas);
+
+          var renderContext = {
+            canvasContext: ctx,
+            viewport: viewport,
+            transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null
+          };
+
+          await page.render(renderContext).promise;
+        } catch (e) {
+          console.warn('Page render error:', num, e);
+        }
+      }
+
+      function scrollToPage(num) {
+        if (num < 1 || num > totalPages) return;
+        var wrap = document.getElementById('pageWrap-' + num);
+        if (wrap) {
+          wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          currentPage = num;
+          pageNumEl.textContent = num;
+        }
+      }
+
+      function reScale(newScale) {
+        currentScale = Math.min(Math.max(newScale, 0.5), 3.0);
+        pageRenders = {};
+        for (var i = 1; i <= totalPages; i++) {
+          var wrap = document.getElementById('pageWrap-' + i);
+          if (wrap) {
+            wrap.classList.add('page-placeholder');
+            wrap.innerHTML = '<span>Page ' + i + '</span>';
+          }
+        }
+        renderPage(currentPage);
+      }
+
+      // Toolbar Events
+      document.getElementById('prevBtn').addEventListener('click', function () { scrollToPage(currentPage - 1); });
+      document.getElementById('nextBtn').addEventListener('click', function () { scrollToPage(currentPage + 1); });
+      document.getElementById('zoomInBtn').addEventListener('click', function () { reScale(currentScale + 0.25); });
+      document.getElementById('zoomOutBtn').addEventListener('click', function () { reScale(currentScale - 0.25); });
+      document.getElementById('fitWidthBtn').addEventListener('click', async function () {
+        if (!pdfDoc) return;
+        var p = await pdfDoc.getPage(1);
+        var vp = p.getViewport({ scale: 1 });
+        var targetWidth = container.clientWidth - 24;
+        reScale(targetWidth / vp.width);
+      });
+      document.getElementById('retryBtn').addEventListener('click', loadDocument);
+
+      // Keyboard navigation
+      window.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') { scrollToPage(currentPage - 1); }
+        else if (e.key === 'ArrowRight' || e.key === 'PageDown') { scrollToPage(currentPage + 1); }
+        else if (e.key === '+' || e.key === '=') { reScale(currentScale + 0.25); }
+        else if (e.key === '-' || e.key === '_') { reScale(currentScale - 0.25); }
+      });
+
+      loadDocument();
+    })();
+  </script>
+</body>
+</html>

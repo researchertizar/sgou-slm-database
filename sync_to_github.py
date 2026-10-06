@@ -59,6 +59,7 @@ ROOT_FILES = [
     "view.html",
     "sync_to_github.py",
     "sync_to_github.cmd",
+    "reader.html",
 ]
 
 # Explicit Whitelist of Subdirectories and Allowed Extensions
@@ -66,6 +67,7 @@ SUBDIRS = {
     "api": [".js"],
     "data": [".json"],
     "scripts": [".py"],
+    "pdfjs": [".js"],
 }
 
 # Directories and files explicitly forbidden in destination

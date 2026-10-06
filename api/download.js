@@ -87,18 +87,24 @@ export default async function handler(req) {
     }
     if (!filename.toLowerCase().endsWith('.pdf')) filename += '.pdf';
 
-    // --- Fetch upstream with streaming ---
+    // --- Fetch upstream with streaming & Range support ---
     try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 15000);
 
+        const fetchHeaders = { 'User-Agent': 'SGOU-PDF-Proxy/2.0' };
+        const clientRange = req.headers.get('range');
+        if (clientRange) {
+            fetchHeaders['Range'] = clientRange;
+        }
+
         const upstream = await fetch(raw, {
             signal: controller.signal,
-            headers: { 'User-Agent': 'SGOU-PDF-Proxy/2.0' }
+            headers: fetchHeaders
         });
         clearTimeout(timer);
 
-        if (!upstream.ok) {
+        if (!upstream.ok && upstream.status !== 206) {
             // Direct redirect fallback to ensure user still gets the file
             return Response.redirect(parsed.href, 302);
         }
@@ -111,17 +117,21 @@ export default async function handler(req) {
         headers.set('Content-Type', 'application/pdf');
         headers.set('Content-Disposition', `${disposition}; filename="${encodeURIComponent(filename)}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
         headers.set('Access-Control-Allow-Origin', '*');
-        headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Disposition');
+        headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Disposition, Content-Range, Accept-Ranges');
         headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800');
         headers.set('X-Content-Type-Options', 'nosniff');
         headers.set('Content-Security-Policy', "default-src 'none'");
 
         const cl = upstream.headers.get('content-length');
         if (cl) headers.set('Content-Length', cl);
+        const cr = upstream.headers.get('content-range');
+        if (cr) headers.set('Content-Range', cr);
+        const ar = upstream.headers.get('accept-ranges');
+        if (ar) headers.set('Accept-Ranges', ar);
 
         // Stream body directly without buffering in RAM
         return new Response(upstream.body, {
-            status: 200,
+            status: upstream.status,
             headers
         });
 

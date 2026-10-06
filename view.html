@@ -106,7 +106,7 @@
     </script>
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20261005_01">
+    <link rel="manifest" href="/manifest.json?v=20261006_01">
     <link rel="icon" type="image/svg+xml" href="/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20260904_10">
@@ -1639,22 +1639,46 @@
 
             // High-resilient PDF loader with automatic UX comfort fallback (No blank screens)
             var loadTimers = [];
+            var activeBlobUrl = null;
 
-            function loadPDF(url) {
+            async function loadPDF(url) {
                 loadTimers.forEach(function (t) { clearTimeout(t); });
                 loadTimers = [];
 
-                var loadingEl = document.getElementById('viewerLoading');
-                var isAndroid = /Android/i.test(navigator.userAgent);
+                if (activeBlobUrl) {
+                    try { URL.revokeObjectURL(activeBlobUrl); } catch (_) {}
+                    activeBlobUrl = null;
+                }
 
-                if (loadingEl) loadingEl.style.display = 'flex';
+                var loadingEl = document.getElementById('viewerLoading');
+                var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) || window.innerWidth <= 768;
+
+                if (loadingEl) {
+                    loadingEl.style.display = 'flex';
+                    loadingEl.innerHTML = '<div class="spinner"></div><span style="font-size:13px;font-weight:500;color:var(--ink-muted)">Loading document preview&hellip;</span>';
+                }
+
+                var streamSource = '';
+                if ('caches' in window && url) {
+                    try {
+                        var cache = await caches.open('sgou-offline-docs');
+                        var match = await cache.match(url);
+                        if (match) {
+                            var cachedBlob = await match.blob();
+                            activeBlobUrl = URL.createObjectURL(cachedBlob);
+                            streamSource = activeBlobUrl;
+                            if (loadingEl) loadingEl.innerHTML = '<div class="spinner"></div><span style="font-size:13px;font-weight:500;color:var(--ink-muted)">Reading from device storage&hellip;</span>';
+                        }
+                    } catch (_) {}
+                }
 
                 var fullTarget = '';
-                if (url) {
-                    if (isAndroid) {
-                        fullTarget = 'https://docs.google.com/viewer?url=' + encodeURIComponent(url) + '&embedded=true';
+                if (url || streamSource) {
+                    if (isMobile) {
+                        var docSource = streamSource || ('/api/download?url=' + encodeURIComponent(url) + '&inline=1');
+                        fullTarget = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Document');
                     } else {
-                        fullTarget = url + '#toolbar=1&navpanes=0';
+                        fullTarget = streamSource || (url + '#toolbar=1&navpanes=0');
                     }
                 }
 
@@ -1686,7 +1710,7 @@
                     };
                 }
 
-                var tid = setTimeout(onReady, isAndroid ? 6500 : 3500);
+                var tid = setTimeout(onReady, isMobile ? 6500 : 3500);
                 loadTimers.push(tid);
             }
 

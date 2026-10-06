@@ -1,16 +1,19 @@
-const CACHE = 'sgou-v133';
+const CACHE = 'sgou-v134';
 const SHELL = [
     './',
     './index.html',
-    './style.css?v=20261005_01',
-    './script.js?v=20261005_01',
-    './manifest.json?v=20261005_01',
+    './style.css?v=20261006_01',
+    './script.js?v=20261006_01',
+    './manifest.json?v=20261006_01',
     './icon.svg?v=20260904_10',
     './icon-192.png?v=20260904_10',
     './icon-512.png?v=20260904_10',
     './apple-touch-icon.png?v=20260904_10',
     './favicon-32x32.png?v=20260904_10',
     './view.html',
+    './reader.html',
+    './pdfjs/pdf.min.js',
+    './pdfjs/pdf.worker.min.js',
     './opensearch.xml'
 ];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
@@ -26,7 +29,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
     e.waitUntil(
         caches.keys()
-            .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
+            .then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== 'sgou-offline-docs').map(k => caches.delete(k))))
             .then(() => self.clients.claim())
     );
 });

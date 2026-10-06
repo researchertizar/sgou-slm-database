@@ -59,7 +59,14 @@ const server = http.createServer((req, res) => {
       }
       if (!filename.toLowerCase().endsWith('.pdf')) filename += '.pdf';
 
-      const upstreamReq = https.get(upstream, upstreamRes => {
+      const getOptions = {
+        headers: { 'User-Agent': 'SGOU-DevServer/2.0' }
+      };
+      if (req.headers.range) {
+        getOptions.headers['Range'] = req.headers.range;
+      }
+
+      const upstreamReq = https.get(upstream, getOptions, upstreamRes => {
         if (upstreamRes.statusCode >= 300 && upstreamRes.statusCode < 400 && upstreamRes.headers.location) {
           if (!res.headersSent) {
             res.writeHead(302, { Location: upstreamRes.headers.location });
@@ -68,17 +75,24 @@ const server = http.createServer((req, res) => {
           return;
         }
 
+        const isInline = reqUrl.searchParams.get('inline') === '1';
+        const disposition = isInline ? 'inline' : 'attachment';
+
         const headers = {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+          'Content-Disposition': `${disposition}; filename="${encodeURIComponent(filename)}"`,
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Expose-Headers': 'Content-Length, Content-Disposition',
+          'Access-Control-Expose-Headers': 'Content-Length, Content-Disposition, Content-Range, Accept-Ranges',
           'Cache-Control': 'public, max-age=86400',
           'X-Content-Type-Options': 'nosniff'
         };
 
         const cl = upstreamRes.headers['content-length'];
         if (cl) headers['Content-Length'] = cl;
+        const cr = upstreamRes.headers['content-range'];
+        if (cr) headers['Content-Range'] = cr;
+        const ar = upstreamRes.headers['accept-ranges'];
+        if (ar) headers['Accept-Ranges'] = ar;
 
         res.writeHead(upstreamRes.statusCode || 200, headers);
         upstreamRes.pipe(res);
