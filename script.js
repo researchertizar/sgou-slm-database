@@ -2610,7 +2610,11 @@ class UIController {
     if (examDate) viewParams.set('examdate', examDate);
     const targetUrl = `/?${viewParams.toString()}`;
     try {
-      history.replaceState({ ...(history.state || {}), viewerOpen: true }, '', targetUrl);
+      if (!history.state?.viewerOpen) {
+        history.pushState({ viewerOpen: true, code: code || name }, '', targetUrl);
+      } else {
+        history.replaceState({ ...(history.state || {}), viewerOpen: true, code: code || name }, '', targetUrl);
+      }
     } catch (_) {}
 
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) || window.innerWidth <= 768;
@@ -3898,6 +3902,21 @@ class UIController {
       // Global Expand / Collapse All (Single Minimal Button)
       if (e.target.closest('#toggleAll')) { this.toggleAll(); return; }
     });
+
+    // Prevent Ctrl + wheel or multi-touch pinch on viewer panel from zooming the parent platform window
+    const viewerPanel = $('viewerPanel');
+    if (viewerPanel) {
+      viewerPanel.addEventListener('wheel', e => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+      viewerPanel.addEventListener('touchmove', e => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
   }
 }
 
@@ -3909,7 +3928,7 @@ const UI = new UIController();
 
 const PWAService = {
   APP_VERSION: 'v2026.10.06',
-  BUILD_ID: '20261006_01',
+  BUILD_ID: '20261006_03',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,

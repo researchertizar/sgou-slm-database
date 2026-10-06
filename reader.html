@@ -95,9 +95,11 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      align-items: safe center;
       padding: 16px 10px calc(80px + env(safe-area-inset-bottom, 0px)) 10px;
       gap: 16px;
-      scroll-behavior: smooth;
+      scroll-behavior: auto;
+      touch-action: pan-x pan-y pinch-zoom;
     }
 
     /* Page Canvas Wrappers */
@@ -109,7 +111,14 @@
       overflow: hidden;
       margin: 0 auto;
       flex-shrink: 0;
-      transition: box-shadow 0.2s ease;
+      transition: box-shadow 0.2s ease, width 0.15s cubic-bezier(0.16, 1, 0.3, 1), height 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: center top;
+      will-change: width, height;
+    }
+
+    /* Instant 60fps tracking during live touch pinch or wheel zoom gestures (no transition lag) */
+    #viewerContainer.is-zooming-interactive .pdf-page-wrap {
+      transition: none !important;
     }
 
     .pdf-page-wrap canvas {
@@ -189,6 +198,11 @@
     .bar-btn:active {
       transform: scale(0.92);
     }
+    .bar-btn:disabled, .bar-btn[aria-disabled="true"] {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
 
     .page-info-btn {
       background: transparent;
@@ -209,6 +223,11 @@
     }
     .page-info-btn:hover {
       background: var(--toolbar-btn-hover);
+    }
+    #zoomPresetBtn {
+      min-width: 44px;
+      justify-content: center;
+      font-size: 12px;
     }
 
     .bar-divider {
@@ -492,6 +511,10 @@
 
       <button type="button" class="bar-btn" id="zoomOutBtn" title="Zoom Out (-)" aria-label="Zoom out">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      </button>
+
+      <button type="button" class="page-info-btn" id="zoomPresetBtn" title="Zoom Level (Click to toggle Fit Page / Fit Width)" aria-label="Zoom level">
+        <span id="zoomPresetText">100%</span>
       </button>
 
       <button type="button" class="bar-btn" id="zoomInBtn" title="Zoom In (+)" aria-label="Zoom in">
@@ -801,13 +824,13 @@
           unscaledPageWidth = unscaledViewport.width;
           unscaledPageHeight = unscaledViewport.height;
 
-          calculateFitWidthScale();
+          calculateInitialScale();
           createPagePlaceholders();
           initIntersectionObserver();
 
           loadingOverlay.classList.add('hidden');
 
-          // Render first batch of pages
+          // Render active page and adjacent page on initial load
           renderPage(1);
           if (totalPages >= 2) renderPage(2);
         } catch (err) {
@@ -816,14 +839,147 @@
         }
       }
 
-      function calculateFitWidthScale() {
-        var cWidth = container.clientWidth;
-        if (cWidth < 120) {
-          cWidth = window.innerWidth;
+      var zoomPresetBtn = document.getElementById('zoomPresetBtn');
+      var zoomPresetText = document.getElementById('zoomPresetText');
+      var zoomInBtn = document.getElementById('zoomInBtn');
+      var zoomOutBtn = document.getElementById('zoomOutBtn');
+      var activeRenderTasks = {};
+      var renderDebounceTimer = null;
+      var isTeleporting = false;
+      var MIN_SCALE = 0.35;
+      var MAX_SCALE = 3.5;
+
+      function getFitHeightScale() {
+        var cHeight = container.clientHeight || window.innerHeight;
+        var availHeight = Math.max(cHeight - 48, 380);
+        return Math.min(Math.max(availHeight / unscaledPageHeight, MIN_SCALE), 2.2);
+      }
+
+      function getFitWidthScale() {
+        var cWidth = container.clientWidth || window.innerWidth;
+        var isDesktop = cWidth >= 840;
+        // On desktop widescreen, constrain width to comfortable ergonomic reading width (840px max)
+        var targetWidth = isDesktop ? Math.min(cWidth - 48, 840) : Math.max(cWidth - 20, 280);
+        return Math.min(Math.max(targetWidth / unscaledPageWidth, MIN_SCALE), 2.5);
+      }
+
+      function calculateInitialScale() {
+        var cWidth = container.clientWidth || window.innerWidth;
+        if (cWidth >= 840) {
+          // On desktop, default to Fit Page (Height) so the full A4 page fits cleanly without being blown up!
+          currentScale = getFitHeightScale();
+        } else {
+          // On mobile, default to Fit Width to fill narrow smartphone screens
+          currentScale = getFitWidthScale();
         }
-        var targetWidth = Math.max(cWidth - 24, 280);
-        currentScale = targetWidth / unscaledPageWidth;
-        currentScale = Math.min(Math.max(currentScale, 0.4), 2.5);
+        updateZoomUI();
+      }
+
+      function updateZoomUI() {
+        if (zoomPresetText) {
+          zoomPresetText.textContent = Math.round(currentScale * 100) + '%';
+        }
+        if (zoomPresetBtn) {
+          var fitH = getFitHeightScale();
+          var isFitH = Math.abs(currentScale - fitH) < 0.08;
+          zoomPresetBtn.title = isFitH ? 'Zoom: ' + Math.round(currentScale * 100) + '% (Click for Fit Width)' : 'Zoom: ' + Math.round(currentScale * 100) + '% (Click for Fit Page)';
+        }
+        if (zoomInBtn) {
+          var atMax = currentScale >= MAX_SCALE - 0.02;
+          zoomInBtn.disabled = atMax;
+          zoomInBtn.setAttribute('aria-disabled', atMax ? 'true' : 'false');
+        }
+        if (zoomOutBtn) {
+          var atMin = currentScale <= MIN_SCALE + 0.02;
+          zoomOutBtn.disabled = atMin;
+          zoomOutBtn.setAttribute('aria-disabled', atMin ? 'true' : 'false');
+        }
+      }
+
+      function toggleFitZoom() {
+        var fitH = getFitHeightScale();
+        var fitW = getFitWidthScale();
+        if (Math.abs(currentScale - fitH) < 0.08) {
+          applySmoothScale(fitW, null, null, false);
+          showToast('Fit to Width (' + Math.round(fitW * 100) + '%)');
+        } else {
+          applySmoothScale(fitH, null, null, false);
+          showToast('Fit to Page (' + Math.round(fitH * 100) + '%)');
+        }
+      }
+
+      function applySmoothScale(newScale, focalX, focalY, isInteractive) {
+        newScale = Math.min(Math.max(newScale, MIN_SCALE), MAX_SCALE);
+        var oldScale = currentScale;
+        if (Math.abs(newScale - oldScale) < 0.002) return;
+
+        if (isInteractive) {
+          container.classList.add('is-zooming-interactive');
+        } else {
+          container.classList.remove('is-zooming-interactive');
+        }
+
+        // Focal point in container viewport coordinates
+        var cRect = container.getBoundingClientRect();
+        var fx = (typeof focalX === 'number') ? (focalX - cRect.left) : (container.clientWidth / 2);
+        var fy = (typeof focalY === 'number') ? (focalY - cRect.top) : (container.clientHeight / 2);
+
+        // Content point under focal center before scaling
+        var contentX = container.scrollLeft + fx;
+        var contentY = container.scrollTop + fy;
+
+        currentScale = newScale;
+        updateZoomUI();
+
+        var scaledWidth = Math.floor(unscaledPageWidth * currentScale);
+        var scaledHeight = Math.floor(unscaledPageHeight * currentScale);
+
+        // Resize all page wrappers (existing canvases scale smoothly in GPU memory without white flash)
+        for (var i = 0; i < pageWrappers.length; i++) {
+          var wrap = pageWrappers[i];
+          wrap.style.width = scaledWidth + 'px';
+          wrap.style.height = scaledHeight + 'px';
+        }
+
+        // Keep focal point stationary under cursor or fingers
+        var scaleRatio = newScale / oldScale;
+        var targetScrollLeft = (contentX * scaleRatio) - fx;
+        var targetScrollTop = (contentY * scaleRatio) - fy;
+
+        container.scrollLeft = Math.max(0, targetScrollLeft);
+        container.scrollTop = Math.max(0, targetScrollTop);
+
+        updateReadingProgress();
+
+        // Debounce high-DPI re-rendering once zoom gesture settles
+        clearTimeout(renderDebounceTimer);
+        renderDebounceTimer = setTimeout(function () {
+          container.classList.remove('is-zooming-interactive');
+          reRenderVisiblePages();
+        }, isInteractive ? 190 : 120);
+      }
+
+      function reRenderVisiblePages() {
+        pageRenders = {};
+        var cTop = container.scrollTop;
+        var cBottom = cTop + container.clientHeight;
+        var renderedAny = false;
+
+        // Redraw all pages currently in or adjacent to the viewport at new high-DPI resolution
+        for (var i = 0; i < pageWrappers.length; i++) {
+          var wrap = pageWrappers[i];
+          var wTop = wrap.offsetTop;
+          var wBottom = wTop + wrap.offsetHeight;
+          if (wBottom >= cTop - 250 && wTop <= cBottom + 250) {
+            var pageNum = i + 1;
+            renderPage(pageNum);
+            renderedAny = true;
+          }
+        }
+
+        if (!renderedAny) {
+          renderPage(currentPage);
+        }
       }
 
       function createPagePlaceholders() {
@@ -852,6 +1008,7 @@
         if (pageObserver) pageObserver.disconnect();
 
         pageObserver = new IntersectionObserver(function (entries) {
+          if (isTeleporting) return;
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
               var pageNum = parseInt(entry.target.dataset.page, 10);
@@ -860,7 +1017,7 @@
           });
         }, {
           root: container,
-          rootMargin: '450px 0px 450px 0px',
+          rootMargin: '380px 0px 380px 0px',
           threshold: 0.01
         });
 
@@ -880,32 +1037,77 @@
           var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
           var viewport = page.getViewport({ scale: currentScale * dpr });
 
-          var canvas = document.createElement('canvas');
-          var ctx = canvas.getContext('2d');
+          var existingCanvas = wrap.querySelector('canvas');
+          if (!existingCanvas) {
+            // First time rendering: create canvas directly
+            var canvas = document.createElement('canvas');
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            wrap.innerHTML = '';
+            wrap.appendChild(canvas);
+            wrap.classList.remove('page-placeholder');
 
-          canvas.width = Math.floor(viewport.width);
-          canvas.height = Math.floor(viewport.height);
-          canvas.style.width = Math.floor(viewport.width / dpr) + 'px';
-          canvas.style.height = Math.floor(viewport.height / dpr) + 'px';
+            if (activeRenderTasks[num]) {
+              try { activeRenderTasks[num].cancel(); } catch (_) {}
+            }
 
-          wrap.style.width = Math.floor(viewport.width / dpr) + 'px';
-          wrap.style.height = Math.floor(viewport.height / dpr) + 'px';
-          wrap.classList.remove('page-placeholder');
-          wrap.innerHTML = '';
-          wrap.appendChild(canvas);
+            var renderTask = page.render({
+              canvasContext: canvas.getContext('2d'),
+              viewport: viewport
+            });
+            activeRenderTasks[num] = renderTask;
+            await renderTask.promise;
+            delete activeRenderTasks[num];
+          } else {
+            // Re-rendering existing page (e.g. after zoom change):
+            // Double-buffered rendering into off-screen canvas, then seamless atomic swap.
+            // Old canvas stays visible while new one renders — ZERO flicker, ZERO white flash!
+            var newCanvas = document.createElement('canvas');
+            newCanvas.width = Math.floor(viewport.width);
+            newCanvas.height = Math.floor(viewport.height);
+            newCanvas.style.width = '100%';
+            newCanvas.style.height = '100%';
 
-          await page.render({
-            canvasContext: ctx,
-            viewport: viewport
-          }).promise;
+            if (activeRenderTasks[num]) {
+              try { activeRenderTasks[num].cancel(); } catch (_) {}
+            }
+
+            var renderTask = page.render({
+              canvasContext: newCanvas.getContext('2d'),
+              viewport: viewport
+            });
+            activeRenderTasks[num] = renderTask;
+            await renderTask.promise;
+            delete activeRenderTasks[num];
+
+            // Atomic swap: replace old canvas with the freshly rendered high-DPI canvas
+            if (existingCanvas.parentNode === wrap) {
+              wrap.replaceChild(newCanvas, existingCanvas);
+            }
+          }
         } catch (e) {
+          if (e && e.name === 'RenderingCancelledException') {
+            pageRenders[num] = false;
+            return;
+          }
           console.warn('Page render error for page', num, e);
           pageRenders[num] = false;
         }
       }
 
-      // --- Accurate Scroll & Active Page Tracking ---
+      function updateReadingProgress() {
+        var scrollable = container.scrollHeight - container.clientHeight;
+        if (scrollable > 0 && readingProgressBar) {
+          var pct = Math.min(100, Math.max(0, (container.scrollTop / scrollable) * 100));
+          readingProgressBar.style.width = pct.toFixed(1) + '%';
+        }
+      }
+
+      // --- Intelligent Bi-Directional Scroll & Active Page Tracking ---
       function handleScroll() {
+        if (isTeleporting) return;
         var st = container.scrollTop;
         var diff = st - lastScrollTop;
 
@@ -917,14 +1119,10 @@
           bottomBar.classList.remove('bar-hidden');
           toolbarHidden = false;
         }
+        var isScrollingDown = diff >= 0;
         lastScrollTop = Math.max(0, st);
 
-        // Update Top Reading Progress Bar
-        var scrollable = container.scrollHeight - container.clientHeight;
-        if (scrollable > 0 && readingProgressBar) {
-          var pct = Math.min(100, Math.max(0, (st / scrollable) * 100));
-          readingProgressBar.style.width = pct.toFixed(1) + '%';
-        }
+        updateReadingProgress();
 
         // Calculate active page based on viewport center
         var containerMid = st + (container.clientHeight / 2);
@@ -948,12 +1146,18 @@
           pageNumEl.textContent = currentPage;
         }
 
-        // Proactively render nearby pages
+        // Bi-directional on-demand rendering based on scroll direction
         renderPage(currentPage);
-        if (currentPage + 1 <= totalPages) renderPage(currentPage + 1);
-        if (currentPage - 1 >= 1) renderPage(currentPage - 1);
+        if (isScrollingDown) {
+          if (currentPage + 1 <= totalPages) renderPage(currentPage + 1);
+          if (currentPage + 2 <= totalPages) renderPage(currentPage + 2);
+        } else {
+          // Scrolling upward: render preceding pages on demand
+          if (currentPage - 1 >= 1) renderPage(currentPage - 1);
+          if (currentPage - 2 >= 1) renderPage(currentPage - 2);
+        }
 
-        // Virtual Memory Management: prune canvases farther than 12 pages away to prevent mobile OOM crashes
+        // Sliding memory window: prune canvases farther than 12 pages away
         pruneFarCanvases(currentPage);
       }
 
@@ -965,6 +1169,10 @@
           if (pageRenders[num] && Math.abs(num - cur) > 12) {
             var wrap = document.getElementById('pageWrap-' + num);
             if (wrap) {
+              if (activeRenderTasks[num]) {
+                try { activeRenderTasks[num].cancel(); } catch (_) {}
+                delete activeRenderTasks[num];
+              }
               var c = wrap.querySelector('canvas');
               if (c) {
                 c.width = 0;
@@ -1000,6 +1208,8 @@
 
       // Tap / Double-tap handling
       var lastTapTime = 0;
+      var lastTapX = 0;
+      var lastTapY = 0;
       container.addEventListener('click', function (e) {
         if (e.target.closest('#bottomBar') || e.target.closest('#jumpModal')) return;
 
@@ -1009,70 +1219,153 @@
           toolbarHidden = false;
         }
 
-        // Double-tap zoom toggle (Fit-Width <-> 1.35x Zoom)
+        // Native-like double-tap zoom
         var now = Date.now();
-        if (now - lastTapTime < 320) {
+        var distX = Math.abs(e.clientX - lastTapX);
+        var distY = Math.abs(e.clientY - lastTapY);
+        if (now - lastTapTime < 320 && distX < 40 && distY < 40) {
           e.preventDefault();
-          toggleFitZoom();
+          var isDesktop = (container.clientWidth || window.innerWidth) >= 840;
+          var baseFit = isDesktop ? getFitHeightScale() : getFitWidthScale();
+          if (currentScale > baseFit * 1.25) {
+            // Already zoomed in: double-tap smoothly zooms back to fit
+            applySmoothScale(baseFit, e.clientX, e.clientY, false);
+            showToast('Fit (' + Math.round(baseFit * 100) + '%)');
+          } else {
+            // In fit mode: double-tap smoothly zooms in (1.6x) centered at the tap coordinate
+            var targetZoom = Math.min(baseFit * 1.6, MAX_SCALE);
+            applySmoothScale(targetZoom, e.clientX, e.clientY, false);
+            showToast('Zoom ' + Math.round(targetZoom * 100) + '%');
+          }
+          lastTapTime = 0;
+          return;
         }
         lastTapTime = now;
+        lastTapX = e.clientX;
+        lastTapY = e.clientY;
       });
 
-      function toggleFitZoom() {
-        var cWidth = container.clientWidth || window.innerWidth;
-        var fitScale = Math.min(Math.max((cWidth - 24) / unscaledPageWidth, 0.4), 2.5);
-        if (Math.abs(currentScale - fitScale) < 0.12) {
-          reScale(fitScale * 1.35);
-          showToast('Zoomed: 135%');
-        } else {
-          reScale(fitScale);
-          showToast('Fit to Width');
-        }
-      }
-
-      function scrollToPage(num) {
+      // Instant teleportation & lazy jump
+      function scrollToPage(num, isInstant) {
         if (num < 1 || num > totalPages) return;
         var wrap = document.getElementById('pageWrap-' + num);
-        if (wrap) {
+        if (!wrap) return;
+
+        var pageDiff = Math.abs(num - currentPage);
+        if (pageDiff > 2 || isInstant) {
+          isTeleporting = true;
+          container.scrollTop = wrap.offsetTop - 8;
+          currentPage = num;
+          pageNumEl.textContent = num;
+          updateReadingProgress();
+
+          // Render target page and adjacent pages immediately
+          renderPage(num);
+          if (num > 1) renderPage(num - 1);
+          if (num < totalPages) renderPage(num + 1);
+
+          pruneFarCanvases(num);
+
+          setTimeout(function () {
+            isTeleporting = false;
+          }, 120);
+        } else {
           wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
           currentPage = num;
           pageNumEl.textContent = num;
           renderPage(num);
           if (num + 1 <= totalPages) renderPage(num + 1);
+          if (num - 1 >= 1) renderPage(num - 1);
         }
       }
 
-      function reScale(newScale) {
-        currentScale = Math.min(Math.max(newScale, 0.4), 3.0);
-        var scaledWidth = Math.floor(unscaledPageWidth * currentScale);
-        var scaledHeight = Math.floor(unscaledPageHeight * currentScale);
-
-        pageRenders = {};
-        for (var i = 1; i <= totalPages; i++) {
-          var wrap = document.getElementById('pageWrap-' + i);
-          if (wrap) {
-            wrap.style.width = scaledWidth + 'px';
-            wrap.style.height = scaledHeight + 'px';
-            wrap.classList.add('page-placeholder');
-            wrap.innerHTML = '<div class="page-skeleton-pulse"></div><span>Page ' + i + '</span>';
+      // Mouse Wheel / Trackpad Zoom (Ctrl + Wheel or Meta + Wheel) — zoom ONLY the document without zooming the outer platform
+      window.addEventListener('wheel', function (e) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          var delta = -e.deltaY;
+          var factor;
+          if (Math.abs(delta) < 20) {
+            // Trackpad fine pinch: continuous exponential zoom
+            factor = Math.exp(delta * 0.012);
+          } else {
+            // Standard stepped mouse wheel notch
+            factor = delta > 0 ? 1.14 : 0.88;
           }
+          applySmoothScale(currentScale * factor, e.clientX, e.clientY, true);
         }
-        initIntersectionObserver();
-        renderPage(currentPage);
-        if (currentPage + 1 <= totalPages) renderPage(currentPage + 1);
+      }, { passive: false });
+
+      // Touch Pinch Gesture — zoom ONLY the document on mobile/tablets with real-time 60fps tracking
+      var initialPinchDist = 0;
+      var initialPinchScale = 1.0;
+      var pinchFocalX = 0;
+      var pinchFocalY = 0;
+      var isPinching = false;
+
+      container.addEventListener('touchstart', function (e) {
+        if (e.touches.length === 2) {
+          isPinching = true;
+          initialPinchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          initialPinchScale = currentScale;
+          pinchFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          pinchFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        }
+      }, { passive: true });
+
+      container.addEventListener('touchmove', function (e) {
+        if (e.touches.length === 2 && initialPinchDist > 0) {
+          e.preventDefault(); // Trap pinch inside reader, never zoom outer browser
+          var curDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          var curFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+          var curFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+          var scaleRatio = curDist / initialPinchDist;
+          applySmoothScale(initialPinchScale * scaleRatio, curFocalX, curFocalY, true);
+        }
+      }, { passive: false });
+
+      function endPinch() {
+        if (isPinching) {
+          isPinching = false;
+          initialPinchDist = 0;
+          container.classList.remove('is-zooming-interactive');
+          clearTimeout(renderDebounceTimer);
+          renderDebounceTimer = setTimeout(function () {
+            reRenderVisiblePages();
+          }, 120);
+        }
       }
+
+      container.addEventListener('touchend', function (e) {
+        if (e.touches.length < 2) endPinch();
+      }, { passive: true });
+      container.addEventListener('touchcancel', endPinch, { passive: true });
+
+      // Prevent Safari iOS default gesture zooming on the page
+      document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
+      document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
+      document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
       // Toolbar Controls
       document.getElementById('prevBtn').addEventListener('click', function () { scrollToPage(currentPage - 1); });
       document.getElementById('nextBtn').addEventListener('click', function () { scrollToPage(currentPage + 1); });
       document.getElementById('zoomInBtn').addEventListener('click', function () {
-        reScale(currentScale + 0.2);
+        applySmoothScale(currentScale * 1.2, null, null, false);
         showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
       });
       document.getElementById('zoomOutBtn').addEventListener('click', function () {
-        reScale(currentScale - 0.2);
+        applySmoothScale(currentScale * 0.833, null, null, false);
         showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
       });
+      if (zoomPresetBtn) {
+        zoomPresetBtn.addEventListener('click', toggleFitZoom);
+      }
 
       // Quick Jump & Visual Scrubber Dialog
       pageJumpBtn.addEventListener('click', function () {
@@ -1128,7 +1421,7 @@
         var val = parseInt(jumpPageInput.value, 10);
         if (!isNaN(val) && val >= 1 && val <= totalPages) {
           jumpModal.classList.remove('active');
-          scrollToPage(val);
+          scrollToPage(val, true); // Instant jump!
         }
       }
       jumpGoBtn.addEventListener('click', submitJump);
@@ -1152,11 +1445,11 @@
           scrollToPage(currentPage + 1);
         } else if (e.key === '+' || e.key === '=') {
           e.preventDefault();
-          reScale(currentScale + 0.2);
+          applySmoothScale(currentScale * 1.2, null, null, false);
           showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
         } else if (e.key === '-' || e.key === '_') {
           e.preventDefault();
-          reScale(currentScale - 0.2);
+          applySmoothScale(currentScale * 0.833, null, null, false);
           showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
         } else if (e.key === '0') {
           e.preventDefault();
@@ -1169,10 +1462,10 @@
           cycleFilterMode();
         } else if (e.key === 'Home') {
           e.preventDefault();
-          scrollToPage(1);
+          scrollToPage(1, true);
         } else if (e.key === 'End') {
           e.preventDefault();
-          scrollToPage(totalPages);
+          scrollToPage(totalPages, true);
         }
       });
 
@@ -1181,10 +1474,10 @@
       window.addEventListener('resize', function () {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
-          var prevScale = currentScale;
-          calculateFitWidthScale();
-          if (Math.abs(prevScale - currentScale) > 0.08) {
-            reScale(currentScale);
+          var isDesktop = (container.clientWidth || window.innerWidth) >= 840;
+          var defScale = isDesktop ? getFitHeightScale() : getFitWidthScale();
+          if (Math.abs(currentScale - defScale) < 0.15) {
+            applySmoothScale(defScale);
           }
         }, 200);
       });
