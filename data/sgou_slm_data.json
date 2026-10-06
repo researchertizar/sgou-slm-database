@@ -528,6 +528,16 @@
             "name": "Banking",
             "code": "B21CM01GE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/t5F4XGp3f9b275oERvSzmdIWrunuoVu0Lz4D8m1s.pdf"
+          },
+          {
+            "name": "Rhetoric and Prosody",
+            "code": "B23AU06DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/WKEAvZgKol6QKSldPiZtpVpJ01fzaLoBHEH7lOOr.pdf"
+          },
+          {
+            "name": "Indian Writings in Arabic",
+            "code": "B23AU07DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/X28FiWc8wgqKmo1FVaJf4SPxZyk2NL21HsmdBOay.pdf"
           }
         ]
       }
@@ -1206,6 +1216,16 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/dV4Vh10T5P96EBSUi8YogzPVLeVjptQrnctGV6ti.pdf"
           }
         ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "Managerial Economics",
+            "code": "B23NE05DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/POxrGACpKcciR4yxQJVYqh03N0nQjxvd7uahuerD.pdf"
+          }
+        ]
       }
     ]
   },
@@ -1663,6 +1683,11 @@
             "name": "Appreciating Literature",
             "code": "B21EG01GE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/n4i1ZkPml3VrRUQ2DnwAkdVF6v9yvraig0dqCAQp.pdf"
+          },
+          {
+            "name": "Introduction to Political Thought",
+            "code": "B23PS05DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/en3XSzepsQYtmKzJITHODL59b1QBZZBbPol0BTfV.pdf"
           }
         ]
       }
@@ -1837,9 +1862,49 @@
         "semester": "S5",
         "courses": [
           {
+            "name": "ആധുനിക മലയാള സാഹിത്യ ചരിത്രം",
+            "code": "B21ML01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/wOakgso4laZdiZjrr6Lc0C3zdIhfKTCA2rCIcZhx.pdf"
+          },
+          {
+            "name": "Modern Standard Arabic",
+            "code": "B21AR01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/A6hu02VOFdWp3g9i2kIR1o5ArdJgwzNDUKNbXl6d.pdf"
+          },
+          {
             "name": "Appreciating Literature",
             "code": "B21EG01GE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/n4i1ZkPml3VrRUQ2DnwAkdVF6v9yvraig0dqCAQp.pdf"
+          },
+          {
+            "name": "Understanding Psychological Disorders I",
+            "code": "B23PY05DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/R73Gy5QAdLuNI76GvbqeMzaubS5ZgIES4tL6HGaT.pdf"
+          },
+          {
+            "name": "Introduction to Counselling",
+            "code": "B23PY03DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/K5Eq4SztsAgc63v6PdvVI0fWHLmapSsjGbh8TINM.pdf"
+          },
+          {
+            "name": "Psychology of Gender",
+            "code": "B23PY04DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/mtho8XqgRzXa3RYDwnQlLnwX9GhxhUi8ZVY7hL2k.pdf"
+          },
+          {
+            "name": "Neuropsychology",
+            "code": "B23PY05DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/gVg4BMh3u9mPS7vOGW3gTefExenQdjKuIXqFvJDe.pdf"
+          },
+          {
+            "name": "Rehabilitation Psychology",
+            "code": "B23PY06DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/T10NqHU8RvrojaR80UMlEHv3aweZQxMLDxQj0kPo.pdf"
+          },
+          {
+            "name": "Psychological Testing",
+            "code": "B23PY02SE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/RgBsTPONDJBQ7Yi2jc8ZQ92TdtworwOBOgOuA1CD.pdf"
           }
         ]
       }
@@ -3444,6 +3509,41 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/8nmDibaMJqPAQZIzhHM6KMj9vzIXcdtZcg82F9VO.pdf"
           }
         ]
+      },
+      {
+        "semester": "S6",
+        "courses": [
+          {
+            "name": "Customer Relationship Management",
+            "code": "B21BB13DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/3ro1NfDAJ4Idc5hgBCJmc4Jyk4AST3W1z4nHoDp1.pdf"
+          },
+          {
+            "name": "Labour Laws and Industrial Relations",
+            "code": "B21BB23DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/gcKABild9UPh9iHdrkj8igGSWWxhgpy4OQtSnIIQ.pdf"
+          },
+          {
+            "name": "Digital Marketing",
+            "code": "B21BB14DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/JsanVffBBtfSzDyXZokCYrEgy57QFeeL9ptlMAlq.pdf"
+          },
+          {
+            "name": "Talent and Knowledge Management",
+            "code": "B21BB24DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/AiWB4qODSXp639HN3D1QbbRbmXuEag7JDR1LBw12.pdf"
+          },
+          {
+            "name": "Service Marketing",
+            "code": "B21BB15DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/VjwUMiKpu1xILEb5OwdR1K1nDzeS7141lTmjS4l6.pdf"
+          },
+          {
+            "name": "Strategic HRM",
+            "code": "B21BB25DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/UwSSm3tk5kfQtb3ljiJ2HNNL9RTMzuC1DXU2U9RD.pdf"
+          }
+        ]
       }
     ]
   },
@@ -3691,6 +3791,41 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/pR2h1OJWD2iO5EjQ1GlWWjO6rHAOHFdt7DbOMZNJ.pdf"
           }
         ]
+      },
+      {
+        "semester": "S6",
+        "courses": [
+          {
+            "name": "Security Analysis and Portfolio Management",
+            "code": "B21CM03DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/H7YAlCL0IgBgGg6pFzc6zAL7OJB7gWZYvH9NCcUr.pdf"
+          },
+          {
+            "name": "Co-operative Banking Systems",
+            "code": "B21CM13DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/n3qiqLbg6Ck98FXZSUyblBfU7asJ8j6PJAZE6tHB.pdf"
+          },
+          {
+            "name": "Financial Services and Market",
+            "code": "B21CM04DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/lhUzXmv1It0cug72ffpF2WIL4wf4Zk9H2GDMhWsp.pdf"
+          },
+          {
+            "name": "Cooperative Accounting",
+            "code": "B21CM14DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/VkuQ8XdyTJgXeMndF24D9aHpv6V1RubSDjI7K5Xn.pdf"
+          },
+          {
+            "name": "Income Tax- II: Law and Practice",
+            "code": "B21CM05DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/OSHy3eOpsdrRTtEFrgvWctI0WC6RzobE29Lf4l7A.pdf"
+          },
+          {
+            "name": "Co-operative Legal Systems",
+            "code": "B21CM15DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/xJaEJg6kXwY2XTcGlOXJzLrc8e3C0z5yHfBRRzBd.pdf"
+          }
+        ]
       }
     ]
   },
@@ -3925,7 +4060,7 @@
           {
             "name": "Introduction to Cloud Computing",
             "code": "B21CA21DE",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/7wS5QYzD2kABoGdtSAfDiAzNNVzMpbPYcqXplTC9.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Xez3loccZN72gpvqHA2N3P2e47ob1KzcFA3j8eeS.pdf"
           },
           {
             "name": "Data Mining and Data Warehousing",
@@ -4145,6 +4280,16 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/QkLlbhrBTxpUQvassLtXmfz8jfWxmhksOMpBoMkp.pdf"
           }
         ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "AML LAB WITH PYTHON",
+            "code": "B24DS05PC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/oYwUrq7ainf5Ge5fkCQlgkrCKGlGANtUzZAK3iWr.pdf"
+          }
+        ]
       }
     ]
   },
@@ -4244,7 +4389,7 @@
           {
             "name": "Technology and Society",
             "code": "SGB24SO101VC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/FGpfGqKJBXGseWJWt0e2USCBoapxPaRnVdCwY2S7.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Dvt4BzIoSmgWB6pHzvVwKzEZJWG4i6V2kFD8lKKk.pdf"
           },
           {
             "name": "Mahatma Gandhi",
@@ -4357,6 +4502,36 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/rCYZRzwOMEPJpt6X9IdK4MOmd9wNpM6HsFbZac1o.pdf"
           }
         ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "English Language and Linguistics",
+            "code": "SGB24EG305MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/qhPzv07QYxs1YDGt77WzNPpwV5aM31qPzjtU9xMM.pdf"
+          },
+          {
+            "name": "English Literature from 1900 to 1945",
+            "code": "SGB24EG306MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/JU3PrFmLz1mxd3iJci7dmyScPi156wGocidDhY3V.pdf"
+          },
+          {
+            "name": "European Fiction",
+            "code": "SGB24EG503ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/IdvA3cn4NtFJKLGCCNqCjp0vojZCKMmDo7WsJ5cU.pdf"
+          },
+          {
+            "name": "American Literature",
+            "code": "SGB24EG504ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/1I1MbuO9aU1faICzqJdoh1XlUvnTH0LblNh9apqV.pdf"
+          },
+          {
+            "name": "History of Britain II",
+            "code": "SGB24HS202MI",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/GWfvs6VBzPwQOKK61gLI894VLdhwTW5JbdcJUiQc.pdf"
+          }
+        ]
       }
     ]
   },
@@ -4456,7 +4631,7 @@
           {
             "name": "Technology and Society",
             "code": "SGB24SO101VC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/FGpfGqKJBXGseWJWt0e2USCBoapxPaRnVdCwY2S7.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Dvt4BzIoSmgWB6pHzvVwKzEZJWG4i6V2kFD8lKKk.pdf"
           },
           {
             "name": "Mahatma Gandhi",
@@ -4564,6 +4739,31 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/u3DbBY1ePtIhkCx5c6OinPhZVP7PmR4CyRpReZRc.pdf"
           }
         ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "History of India- II (From 10th to 18th Century CE)",
+            "code": "SGB24HS305MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Vndr8ZOqK3bABFr0yz6w6oiZlfzu9GqNLkHKgqBz.pdf"
+          },
+          {
+            "name": "Making of Modern Kerala",
+            "code": "SGB24HS306MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/nC3HY2KQZu3mAjgXthvTF8soqXcgVxyetiMTwfgg.pdf"
+          },
+          {
+            "name": "Gender in Indian History",
+            "code": "SGB24HS503ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/VXde0Yu5f807eQiG4MMn4C95oP88OqCumuXixBys.pdf"
+          },
+          {
+            "name": "Understanding Political System",
+            "code": "SGB24PS202MI",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/SgEIe3oVyvOeMgOyYs8ECI9cuQz8zWGgi3wkS0CE.pdf"
+          }
+        ]
       }
     ]
   },
@@ -4663,7 +4863,7 @@
           {
             "name": "Technology and Society",
             "code": "SGB24SO101VC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/FGpfGqKJBXGseWJWt0e2USCBoapxPaRnVdCwY2S7.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Dvt4BzIoSmgWB6pHzvVwKzEZJWG4i6V2kFD8lKKk.pdf"
           },
           {
             "name": "Mahatma Gandhi",
@@ -4776,6 +4976,31 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Hfb7JLwRbMXL30tfWqw5nPFxz3fHPd1jHHCeKFLc.pdf"
           }
         ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "മലയാളകവിത: പ്രാചീനം- മധ്യകാലീനം",
+            "code": "SGB24ML305MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/c7s6LEbKNrYdjR9gd6J22Zjj4DX38Q8R04rIS6YL.pdf"
+          },
+          {
+            "name": "ഭാഷാശാസ്ത്രപഠനം",
+            "code": "SGB24ML306MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/HNIJ8bcCR6S5Am1qYJrg2MHoPqxivenbuiUTBuoA.pdf"
+          },
+          {
+            "name": "മലയാള സാഹിത്യമാതൃകകൾ: ആത്മകഥ, ജീവചരിത്രം, യാത്രാവിവരണം, അനുഭവ സാഹിത്യം",
+            "code": "SGB24ML504ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/n4dwiWDkxclRoHnLfNBqw8VGyN28W2AB40tS4wbc.pdf"
+          },
+          {
+            "name": "കേരള ചരിത്രം - ആധുനികം",
+            "code": "SGB24HS212MI",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/9mgZHQ6wVNrfL83D15gUwuJ41LZT8yFNLI3WEUvq.pdf"
+          }
+        ]
       }
     ]
   },
@@ -4875,7 +5100,7 @@
           {
             "name": "Technology and Society",
             "code": "SGB24SO101VC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/FGpfGqKJBXGseWJWt0e2USCBoapxPaRnVdCwY2S7.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Dvt4BzIoSmgWB6pHzvVwKzEZJWG4i6V2kFD8lKKk.pdf"
           },
           {
             "name": "Mahatma Gandhi",
@@ -4988,6 +5213,31 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/M2emnCCsqaidYkNeu9nDZ32fLaxIUOENZxZmFVNh.pdf"
           }
         ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "Modern Sociological Theories",
+            "code": "SGB24SO305MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/ZKYl2G1YFlLZyPLWp2t82ecuQrKrPWlI9Xj5r4PO.pdf"
+          },
+          {
+            "name": "Sociology of Religion in India",
+            "code": "SGB24SO306MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/OpcpaiggiBC7zPQG5mbSjM9K3W03g8DVTW6HwaYa.pdf"
+          },
+          {
+            "name": "Population Studies",
+            "code": "SGB24SO503ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/cfD0DMhTcwhqUmXbbYy9jyzYBUpwnGb9v21LrC9C.pdf"
+          },
+          {
+            "name": "Mass Media and Social Dynamics",
+            "code": "SGB24SO504ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/zUMsY1BEyLQh10sFfqy57kqY1wv6sfpWhfTk4BbJ.pdf"
+          }
+        ]
       }
     ]
   },
@@ -5087,7 +5337,7 @@
           {
             "name": "Technology and Society",
             "code": "SGB24SO101VC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/FGpfGqKJBXGseWJWt0e2USCBoapxPaRnVdCwY2S7.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Dvt4BzIoSmgWB6pHzvVwKzEZJWG4i6V2kFD8lKKk.pdf"
           },
           {
             "name": "Mahatma Gandhi",
@@ -5205,6 +5455,21 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/7KwRz87H9KrhcnFLdXhcgkxe3gnd1vcf4LkvaIg5.pdf"
           }
         ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "Human Resource Management",
+            "code": "SGB24BB305MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/3jRLjp33Ak8T7ed7Lw7MOmf75GwDWJzl6Gxrtn7g.pdf"
+          },
+          {
+            "name": "Business Environment",
+            "code": "SGB24BB306MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/hSoiAdJYLDRR6nJITOthWVjFJOB37c2lru9NPymz.pdf"
+          }
+        ]
       }
     ]
   },
@@ -5304,7 +5569,7 @@
           {
             "name": "Technology and Society",
             "code": "SGB24SO101VC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/FGpfGqKJBXGseWJWt0e2USCBoapxPaRnVdCwY2S7.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Dvt4BzIoSmgWB6pHzvVwKzEZJWG4i6V2kFD8lKKk.pdf"
           },
           {
             "name": "Mahatma Gandhi",
@@ -5409,7 +5674,7 @@
           {
             "name": "Principles of Co-operation",
             "code": "SGB24CM202ME",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/tmJZhJge8v8AuBd7KALIhVQj6ZYCzndpz6Wpekmj.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/HXkCE1xLKQptvz5EyHUNqDQzzxgbdDlu74H9sELW.pdf"
           },
           {
             "name": "Fundamentals of Logistics and Supply Chain Management",
@@ -5420,6 +5685,26 @@
             "name": "Practical Taxation",
             "code": "SGB24CM201SE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/3g7JoNPghYEFA9LB3yVxfOZJsoVLijfqYdgD8Wnp.pdf"
+          }
+        ]
+      },
+      {
+        "semester": "S5",
+        "courses": [
+          {
+            "name": "Cost Accounting",
+            "code": "SGB24CM305MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/7Ka5j81tzeEOY4zyBxepJrAKjYkzaS3qNggD9M4P.pdf"
+          },
+          {
+            "name": "Income Tax - I",
+            "code": "SGB24CM306MC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/QwUDBFZ19FdqXOCzTRSAnAmUnevzUuckuRHOkqHq.pdf"
+          },
+          {
+            "name": "Human Resource Management",
+            "code": "SGB24BB202MI",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/rkcsBMn7p7Aa5bcxHFdaZ7m5Gpqr7hlLRHQcdYSa.pdf"
           }
         ]
       }
@@ -6248,7 +6533,7 @@
           {
             "name": "Indian Philosophy I",
             "code": "M23PH02DC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/D2tiH68YomzqhVCtjrH2AZISvHec2bIXjseXWzTM.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/jApEoxUUDwU11Won7eCFcy5FmuArTMagoAYh4mOr.pdf"
           },
           {
             "name": "Traditional Logic",
@@ -6348,12 +6633,17 @@
           {
             "name": "Analytic Philosophy",
             "code": "M23PH12DC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/KH9lxeXBqWLHSOqtRRYAr3yFyUkVKYEYs4Z4kccN.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/ungGfxupwC4ORMeoK2epJGG5gxHuzYFoEV7b9ZYO.pdf"
           },
           {
             "name": "Feminist Philosophy",
             "code": "M23PH05DE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/yPVnHfdU87S3o2kzLlFEyFVqShwk4TPoNBKw3G3Q.pdf"
+          },
+          {
+            "name": "Philosophy of Religion",
+            "code": "M23PH06DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/V0RR1315nwoN6nKUzjofqMyk9TxDFoqleTZWO8XI.pdf"
           },
           {
             "name": "Reasoning and Problem-Solving Techniques",
