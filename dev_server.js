@@ -154,10 +154,14 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`\n========================================`);
-  console.log(`  SGOU SLM Browser Local Server`);
-  console.log(`  Running at: http://localhost:${PORT}`);
-  console.log(`  Edge download proxy active on /api/download`);
-  console.log(`========================================\n`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`\n========================================`);
+    console.log(`  SGOU SLM Browser Local Server`);
+    console.log(`  Running at: http://localhost:${PORT}`);
+    console.log(`  Edge download proxy active on /api/download`);
+    console.log(`========================================\n`);
+  });
+}
+
+module.exports = server;

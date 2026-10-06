@@ -1,21 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net;">
-  <title>Document Reader — SGOU Academic Database</title>
+  <title>Academic Reader — SGOU</title>
   <style>
-    :root {
-      --bg: #1a1714;
-      --surface: #24201c;
+    /* ============================================================
+       THEME SYSTEM — Synchronized with SGOU Academic Design Tokens
+       ============================================================ */
+    :root, html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #ebe4d6;
+      --surface: #ffffff;
+      --surface-subtle: #f5f0e8;
+      --surface-border: #d4cdc0;
+      --text: #181512;
+      --text-muted: #6b6357;
+      --accent: #b43d28;
+      --accent-hover: #96311e;
+      --toolbar-bg: rgba(245, 240, 232, 0.94);
+      --toolbar-border: rgba(212, 205, 192, 0.9);
+      --toolbar-text: #181512;
+      --toolbar-btn-hover: rgba(180, 61, 40, 0.1);
+      --canvas-shadow: 0 4px 20px rgba(26, 23, 20, 0.12);
+      --placeholder-bg: #e2dbce;
+      --placeholder-text: #82796e;
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #141210;
+      --surface: #1e1b18;
+      --surface-subtle: #24221f;
       --surface-border: #38322c;
       --text: #f0ede8;
       --text-muted: #a39e95;
-      --accent: #d97706;
-      --accent-hover: #b45309;
-      --canvas-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+      --accent: #e5725a;
+      --accent-hover: #f28b75;
+      --toolbar-bg: rgba(30, 27, 24, 0.94);
+      --toolbar-border: rgba(56, 50, 44, 0.9);
+      --toolbar-text: #f0ede8;
+      --toolbar-btn-hover: rgba(255, 255, 255, 0.12);
+      --canvas-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+      --placeholder-bg: #24201c;
+      --placeholder-text: #787168;
     }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%;
@@ -23,14 +54,19 @@
       overflow: hidden;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      transition: background 0.2s ease, color 0.2s ease;
+      -webkit-font-smoothing: antialiased;
     }
+
     #readerWrap {
       display: flex;
       flex-direction: column;
       height: 100%;
       position: relative;
     }
+
+    /* Scrollable Container with generous bottom clearance so toolbar never covers text */
     #viewerContainer {
       flex: 1;
       overflow-y: auto;
@@ -39,32 +75,53 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 16px 10px 80px 10px;
+      padding: 16px 10px 104px 10px;
       gap: 16px;
+      scroll-behavior: smooth;
     }
+
+    /* Page Canvas Wrappers */
     .pdf-page-wrap {
       position: relative;
-      background: #fff;
+      background: #ffffff;
       box-shadow: var(--canvas-shadow);
       border-radius: 4px;
       overflow: hidden;
       margin: 0 auto;
-      min-height: 200px;
+      flex-shrink: 0;
+      transition: box-shadow 0.2s ease;
     }
+
     .pdf-page-wrap canvas {
       display: block;
       width: 100%;
       height: 100%;
     }
+
     .page-placeholder {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #2a2520;
-      color: var(--text-muted);
+      gap: 8px;
+      background: var(--placeholder-bg);
+      color: var(--placeholder-text);
       font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
     }
-    /* Bottom Floating Toolbar */
+
+    .page-skeleton-pulse {
+      width: 28px;
+      height: 28px;
+      border: 2.5px solid var(--placeholder-text);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      opacity: 0.7;
+    }
+
+    /* Floating Toolbar */
     #bottomBar {
       position: absolute;
       bottom: 14px;
@@ -72,46 +129,151 @@
       transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: rgba(36, 32, 28, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--surface-border);
-      padding: 6px 12px;
-      border-radius: 30px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      gap: 6px;
+      background: var(--toolbar-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--toolbar-border);
+      padding: 5px 10px;
+      border-radius: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
       z-index: 100;
       max-width: 95vw;
+      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease;
     }
+
+    #bottomBar.bar-hidden {
+      transform: translate(-50%, calc(100% + 24px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
     .bar-btn {
       background: transparent;
       border: none;
-      color: var(--text);
+      color: var(--toolbar-text);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
-      transition: background .15s, color .15s;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+      touch-action: manipulation;
     }
-    .bar-btn:hover { background: rgba(255, 255, 255, 0.1); color: var(--accent); }
-    .bar-btn:active { transform: scale(0.94); }
-    .page-info {
+    .bar-btn:hover {
+      background: var(--toolbar-btn-hover);
+      color: var(--accent);
+    }
+    .bar-btn:active {
+      transform: scale(0.92);
+    }
+
+    .page-info-btn {
+      background: transparent;
+      border: none;
+      font-family: inherit;
       font-size: 13px;
-      font-weight: 500;
-      color: var(--text);
-      padding: 0 4px;
+      font-weight: 600;
+      color: var(--toolbar-text);
+      padding: 4px 8px;
+      border-radius: 12px;
       white-space: nowrap;
+      cursor: pointer;
       user-select: none;
+      transition: background 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
     }
+    .page-info-btn:hover {
+      background: var(--toolbar-btn-hover);
+    }
+
     .bar-divider {
       width: 1px;
       height: 18px;
-      background: var(--surface-border);
+      background: var(--toolbar-border);
+      margin: 0 2px;
     }
-    /* Loading Indicator */
+
+    /* Jump to Page Modal */
+    #jumpModal {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 150;
+      padding: 16px;
+    }
+    #jumpModal.active {
+      display: flex;
+    }
+    .jump-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 20px 22px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      max-width: 300px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: jumpPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes jumpPop {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .jump-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .jump-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-size: 16px;
+      font-family: inherit;
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      background: var(--surface-subtle);
+      color: var(--text);
+      outline: none;
+    }
+    .jump-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(180, 61, 40, 0.2);
+    }
+    .jump-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .jump-btn {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      border: none;
+    }
+    .jump-btn-cancel {
+      background: transparent;
+      color: var(--text-muted);
+    }
+    .jump-btn-go {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    /* Loading Overlay */
     #loadingOverlay {
       position: absolute;
       inset: 0;
@@ -122,7 +284,7 @@
       gap: 14px;
       background: var(--bg);
       z-index: 200;
-      transition: opacity .3s, visibility .3s;
+      transition: opacity 0.25s ease, visibility 0.25s ease;
     }
     #loadingOverlay.hidden {
       opacity: 0;
@@ -130,18 +292,23 @@
       pointer-events: none;
     }
     .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid rgba(255, 255, 255, 0.15);
+      width: 38px;
+      height: 38px;
+      border: 3px solid rgba(180, 61, 40, 0.2);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
     .loading-text {
       font-size: 14px;
+      font-weight: 500;
       color: var(--text-muted);
+      text-align: center;
+      max-width: 280px;
     }
+
     #errorBox {
       display: none;
       flex-direction: column;
@@ -154,19 +321,20 @@
     .error-title {
       font-size: 15px;
       font-weight: 600;
-      color: #ef4444;
+      color: #dc2626;
     }
     .retry-btn {
       padding: 8px 18px;
       background: var(--accent);
       color: #fff;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       font-weight: 600;
       font-size: 13px;
       cursor: pointer;
     }
-    /* Filter Classes */
+
+    /* Eye-Comfort Filter Classes */
     #viewerContainer.filter-sepia canvas {
       filter: sepia(0.35) contrast(0.96) brightness(0.96);
     }
@@ -177,6 +345,7 @@
 </head>
 <body>
   <div id="readerWrap">
+    <!-- Initial Loader -->
     <div id="loadingOverlay">
       <div class="spinner"></div>
       <div class="loading-text" id="loadingMsg">Preparing document preview&hellip;</div>
@@ -186,60 +355,87 @@
       </div>
     </div>
 
+    <!-- Scrollable Pages Viewport -->
     <div id="viewerContainer"></div>
 
+    <!-- Floating Navigation Bar -->
     <div id="bottomBar">
-      <button type="button" class="bar-btn" id="prevBtn" title="Previous page (Left Arrow)" aria-label="Previous page">
+      <button type="button" class="bar-btn" id="prevBtn" title="Previous page" aria-label="Previous page">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
-      <span class="page-info" id="pageInfo"><span id="pageNum">1</span> / <span id="pageCount">&ndash;</span></span>
-      <button type="button" class="bar-btn" id="nextBtn" title="Next page (Right Arrow)" aria-label="Next page">
+
+      <button type="button" class="page-info-btn" id="pageJumpBtn" title="Click to jump to page" aria-label="Jump to page">
+        <span id="pageNum">1</span> / <span id="pageCount">&ndash;</span>
+      </button>
+
+      <button type="button" class="bar-btn" id="nextBtn" title="Next page" aria-label="Next page">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
+
       <div class="bar-divider"></div>
+
       <button type="button" class="bar-btn" id="zoomOutBtn" title="Zoom Out (-)" aria-label="Zoom out">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
       </button>
+
       <button type="button" class="bar-btn" id="zoomInBtn" title="Zoom In (+)" aria-label="Zoom in">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
       </button>
-      <button type="button" class="bar-btn" id="fitWidthBtn" title="Fit to width" aria-label="Fit to width">
+
+      <button type="button" class="bar-btn" id="fitWidthBtn" title="Fit to screen width" aria-label="Fit to width">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
       </button>
+
+      <button type="button" class="bar-btn" id="fullscreenBtn" title="Toggle fullscreen" aria-label="Toggle fullscreen">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      </button>
+    </div>
+
+    <!-- Quick Jump Modal Dialog -->
+    <div id="jumpModal">
+      <div class="jump-card">
+        <div class="jump-title">Jump to Page</div>
+        <input type="number" id="jumpPageInput" class="jump-input" min="1" step="1" placeholder="Page number">
+        <div class="jump-actions">
+          <button type="button" class="jump-btn jump-btn-cancel" id="jumpCancelBtn">Cancel</button>
+          <button type="button" class="jump-btn jump-btn-go" id="jumpGoBtn">Go</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script src="./pdfjs/pdf.min.js"></script>
   <script>
     (function () {
-      if (typeof pdfjsLib === 'undefined') {
-        showError('PDF.js engine could not be initialized.');
-        return;
+      'use strict';
+
+      // --- Theme Synchronization ---
+      function applyTheme() {
+        var params = new URLSearchParams(window.location.search);
+        var requestedTheme = params.get('theme');
+        var theme = 'light';
+
+        if (requestedTheme === 'dark' || requestedTheme === 'light') {
+          theme = requestedTheme;
+        } else {
+          try {
+            theme = localStorage.getItem('sgou-theme-v2') || 'light';
+          } catch (_) {
+            theme = 'light';
+          }
+        }
+        document.documentElement.setAttribute('data-theme', theme);
       }
+      applyTheme();
+      window.addEventListener('storage', applyTheme);
+      window.addEventListener('message', function (e) {
+        if (e.data && e.data.type === 'sgou-theme-change') {
+          document.documentElement.setAttribute('data-theme', e.data.theme);
+        }
+      });
 
-      pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
-
-      var params = new URLSearchParams(window.location.search);
-      var rawFile = params.get('file') || '';
-      var docName = params.get('name') || 'Document';
-
+      // --- Filter Mode Synchronization ---
       var container = document.getElementById('viewerContainer');
-      var loadingOverlay = document.getElementById('loadingOverlay');
-      var loadingMsg = document.getElementById('loadingMsg');
-      var errorBox = document.getElementById('errorBox');
-      var errorMsg = document.getElementById('errorMsg');
-      var pageNumEl = document.getElementById('pageNum');
-      var pageCountEl = document.getElementById('pageCount');
-
-      var pdfDoc = null;
-      var totalPages = 0;
-      var currentPage = 1;
-      var currentScale = 1.0;
-      var pageRenders = {};
-      var pageWrappers = [];
-      var pageObserver = null;
-
-      // Filter Mode sync
       function applySavedFilter() {
         var mode = 'normal';
         try { mode = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
@@ -250,8 +446,48 @@
       applySavedFilter();
       window.addEventListener('storage', applySavedFilter);
 
+      if (typeof pdfjsLib === 'undefined') {
+        showError('PDF.js rendering engine could not be initialized.');
+        return;
+      }
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
+
+      var params = new URLSearchParams(window.location.search);
+      var rawFile = params.get('file') || '';
+      var docName = params.get('name') || 'Document';
+
+      var loadingOverlay = document.getElementById('loadingOverlay');
+      var loadingMsg = document.getElementById('loadingMsg');
+      var errorBox = document.getElementById('errorBox');
+      var errorMsg = document.getElementById('errorMsg');
+      var bottomBar = document.getElementById('bottomBar');
+      var pageNumEl = document.getElementById('pageNum');
+      var pageCountEl = document.getElementById('pageCount');
+      var pageJumpBtn = document.getElementById('pageJumpBtn');
+      var jumpModal = document.getElementById('jumpModal');
+      var jumpPageInput = document.getElementById('jumpPageInput');
+      var jumpCancelBtn = document.getElementById('jumpCancelBtn');
+      var jumpGoBtn = document.getElementById('jumpGoBtn');
+
+      var pdfDoc = null;
+      var totalPages = 0;
+      var currentPage = 1;
+      var currentScale = 1.0;
+      var unscaledPageWidth = 595.28;
+      var unscaledPageHeight = 841.89;
+      var pageRenders = {};
+      var pageWrappers = [];
+      var pageObserver = null;
+
+      // Toolbar auto-hide and tap-to-reveal
+      var lastScrollTop = 0;
+      var toolbarHidden = false;
+      var scrollTicking = false;
+
       function showError(msg) {
-        document.querySelector('.spinner').style.display = 'none';
+        var spinner = document.querySelector('.spinner');
+        if (spinner) spinner.style.display = 'none';
         loadingMsg.style.display = 'none';
         errorBox.style.display = 'flex';
         errorMsg.textContent = msg;
@@ -262,7 +498,6 @@
         if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/')) {
           return url;
         }
-        // Route through local/edge proxy with inline header and range support
         return '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
       }
 
@@ -272,14 +507,15 @@
           return;
         }
 
-        document.querySelector('.spinner').style.display = 'block';
+        var spinner = document.querySelector('.spinner');
+        if (spinner) spinner.style.display = 'block';
         loadingMsg.style.display = 'block';
         loadingMsg.textContent = 'Loading ' + docName + '\u2026';
         errorBox.style.display = 'none';
 
         var targetUrl = resolveFileUrl(rawFile);
 
-        // If not already a blob URL, check device CacheStorage for instant offline retrieval
+        // Check device CacheStorage for instant offline retrieval
         if (!rawFile.startsWith('blob:') && 'caches' in window) {
           try {
             var cache = await caches.open('sgou-offline-docs');
@@ -311,31 +547,45 @@
           totalPages = pdfDoc.numPages;
           pageCountEl.textContent = totalPages;
 
-          // Compute initial scale to fit screen comfortably
+          // Compute initial scale to fit container width cleanly
           var firstPage = await pdfDoc.getPage(1);
           var unscaledViewport = firstPage.getViewport({ scale: 1 });
-          var containerWidth = container.clientWidth - 24;
-          currentScale = Math.min(Math.max(containerWidth / unscaledViewport.width, 0.7), 2.0);
+          unscaledPageWidth = unscaledViewport.width;
+          unscaledPageHeight = unscaledViewport.height;
 
-          createPagePlaceholders(unscaledViewport);
+          calculateFitWidthScale();
+          createPagePlaceholders();
           initIntersectionObserver();
 
           loadingOverlay.classList.add('hidden');
 
-          // Render first page immediately
+          // Render first batch of pages
           renderPage(1);
+          if (totalPages >= 2) renderPage(2);
         } catch (err) {
           console.error('[PDF Reader Error]', err);
           showError('Could not load document preview (' + (err.message || 'Error') + ')');
         }
       }
 
-      function createPagePlaceholders(unscaledViewport) {
+      function calculateFitWidthScale() {
+        var cWidth = container.clientWidth;
+        if (cWidth < 120) {
+          cWidth = window.innerWidth;
+        }
+        var targetWidth = Math.max(cWidth - 24, 280);
+        // Default fit-to-width scale
+        currentScale = targetWidth / unscaledPageWidth;
+        currentScale = Math.min(Math.max(currentScale, 0.4), 2.5);
+      }
+
+      function createPagePlaceholders() {
         container.innerHTML = '';
         pageWrappers = [];
+        pageRenders = {};
 
-        var scaledWidth = unscaledViewport.width * currentScale;
-        var scaledHeight = unscaledViewport.height * currentScale;
+        var scaledWidth = Math.floor(unscaledPageWidth * currentScale);
+        var scaledHeight = Math.floor(unscaledPageHeight * currentScale);
 
         for (var i = 1; i <= totalPages; i++) {
           var wrap = document.createElement('div');
@@ -344,7 +594,7 @@
           wrap.dataset.page = i;
           wrap.style.width = scaledWidth + 'px';
           wrap.style.height = scaledHeight + 'px';
-          wrap.innerHTML = '<span>Page ' + i + '</span>';
+          wrap.innerHTML = '<div class="page-skeleton-pulse"></div><span>Page ' + i + '</span>';
 
           container.appendChild(wrap);
           pageWrappers.push(wrap);
@@ -356,24 +606,23 @@
 
         pageObserver = new IntersectionObserver(function (entries) {
           entries.forEach(function (entry) {
-            var pageNum = parseInt(entry.target.dataset.page, 10);
             if (entry.isIntersecting) {
+              var pageNum = parseInt(entry.target.dataset.page, 10);
               renderPage(pageNum);
-              currentPage = pageNum;
-              pageNumEl.textContent = currentPage;
             }
           });
         }, {
           root: container,
-          rootMargin: '200px 0px 200px 0px',
-          threshold: 0.1
+          rootMargin: '450px 0px 450px 0px',
+          threshold: 0.01
         });
 
         pageWrappers.forEach(function (w) { pageObserver.observe(w); });
       }
 
       async function renderPage(num) {
-        if (pageRenders[num]) return; // Already rendered
+        if (!pdfDoc || num < 1 || num > totalPages) return;
+        if (pageRenders[num]) return;
         pageRenders[num] = true;
 
         var wrap = document.getElementById('pageWrap-' + num);
@@ -381,34 +630,94 @@
 
         try {
           var page = await pdfDoc.getPage(num);
-          var viewport = page.getViewport({ scale: currentScale });
+          var dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+          var viewport = page.getViewport({ scale: currentScale * dpr });
 
-          var dpr = window.devicePixelRatio || 1;
           var canvas = document.createElement('canvas');
           var ctx = canvas.getContext('2d');
 
-          canvas.width = Math.floor(viewport.width * dpr);
-          canvas.height = Math.floor(viewport.height * dpr);
-          canvas.style.width = Math.floor(viewport.width) + 'px';
-          canvas.style.height = Math.floor(viewport.height) + 'px';
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+          canvas.style.width = Math.floor(viewport.width / dpr) + 'px';
+          canvas.style.height = Math.floor(viewport.height / dpr) + 'px';
 
-          wrap.style.width = Math.floor(viewport.width) + 'px';
-          wrap.style.height = Math.floor(viewport.height) + 'px';
+          wrap.style.width = Math.floor(viewport.width / dpr) + 'px';
+          wrap.style.height = Math.floor(viewport.height / dpr) + 'px';
           wrap.classList.remove('page-placeholder');
           wrap.innerHTML = '';
           wrap.appendChild(canvas);
 
-          var renderContext = {
+          // Standard high-DPI PDF.js render without custom transform override
+          await page.render({
             canvasContext: ctx,
-            viewport: viewport,
-            transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null
-          };
-
-          await page.render(renderContext).promise;
+            viewport: viewport
+          }).promise;
         } catch (e) {
-          console.warn('Page render error:', num, e);
+          console.warn('Page render error for page', num, e);
+          pageRenders[num] = false;
         }
       }
+
+      // --- Accurate Scroll & Active Page Tracking ---
+      function handleScroll() {
+        var st = container.scrollTop;
+        var diff = st - lastScrollTop;
+
+        // Auto-hide toolbar when scrolling down, show when scrolling up
+        if (diff > 25 && st > 80 && !toolbarHidden) {
+          bottomBar.classList.add('bar-hidden');
+          toolbarHidden = true;
+        } else if (diff < -15 && toolbarHidden) {
+          bottomBar.classList.remove('bar-hidden');
+          toolbarHidden = false;
+        }
+        lastScrollTop = Math.max(0, st);
+
+        // Calculate active page based on viewport center
+        var containerMid = st + (container.clientHeight / 2);
+        var activeNum = 1;
+
+        for (var i = 0; i < pageWrappers.length; i++) {
+          var el = pageWrappers[i];
+          var top = el.offsetTop;
+          var bottom = top + el.offsetHeight;
+          if (top <= containerMid && bottom >= containerMid) {
+            activeNum = i + 1;
+            break;
+          } else if (top > containerMid) {
+            activeNum = Math.max(1, i);
+            break;
+          }
+        }
+
+        if (activeNum !== currentPage) {
+          currentPage = activeNum;
+          pageNumEl.textContent = currentPage;
+        }
+
+        // Proactively render nearby pages
+        renderPage(currentPage);
+        if (currentPage + 1 <= totalPages) renderPage(currentPage + 1);
+        if (currentPage - 1 >= 1) renderPage(currentPage - 1);
+      }
+
+      container.addEventListener('scroll', function () {
+        if (!scrollTicking) {
+          window.requestAnimationFrame(function () {
+            handleScroll();
+            scrollTicking = false;
+          });
+          scrollTicking = true;
+        }
+      }, { passive: true });
+
+      // Tap anywhere in container to toggle toolbar visibility if hidden
+      container.addEventListener('click', function (e) {
+        if (toolbarHidden) {
+          bottomBar.classList.remove('bar-hidden');
+          toolbarHidden = false;
+        }
+      });
 
       function scrollToPage(num) {
         if (num < 1 || num > totalPages) return;
@@ -417,42 +726,116 @@
           wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
           currentPage = num;
           pageNumEl.textContent = num;
+          renderPage(num);
+          if (num + 1 <= totalPages) renderPage(num + 1);
         }
       }
 
       function reScale(newScale) {
-        currentScale = Math.min(Math.max(newScale, 0.5), 3.0);
+        currentScale = Math.min(Math.max(newScale, 0.4), 3.0);
+        var scaledWidth = Math.floor(unscaledPageWidth * currentScale);
+        var scaledHeight = Math.floor(unscaledPageHeight * currentScale);
+
         pageRenders = {};
         for (var i = 1; i <= totalPages; i++) {
           var wrap = document.getElementById('pageWrap-' + i);
           if (wrap) {
+            wrap.style.width = scaledWidth + 'px';
+            wrap.style.height = scaledHeight + 'px';
             wrap.classList.add('page-placeholder');
-            wrap.innerHTML = '<span>Page ' + i + '</span>';
+            wrap.innerHTML = '<div class="page-skeleton-pulse"></div><span>Page ' + i + '</span>';
           }
         }
+        initIntersectionObserver();
         renderPage(currentPage);
+        if (currentPage + 1 <= totalPages) renderPage(currentPage + 1);
       }
 
-      // Toolbar Events
+      // Toolbar Controls
       document.getElementById('prevBtn').addEventListener('click', function () { scrollToPage(currentPage - 1); });
       document.getElementById('nextBtn').addEventListener('click', function () { scrollToPage(currentPage + 1); });
-      document.getElementById('zoomInBtn').addEventListener('click', function () { reScale(currentScale + 0.25); });
-      document.getElementById('zoomOutBtn').addEventListener('click', function () { reScale(currentScale - 0.25); });
-      document.getElementById('fitWidthBtn').addEventListener('click', async function () {
-        if (!pdfDoc) return;
-        var p = await pdfDoc.getPage(1);
-        var vp = p.getViewport({ scale: 1 });
-        var targetWidth = container.clientWidth - 24;
-        reScale(targetWidth / vp.width);
+      document.getElementById('zoomInBtn').addEventListener('click', function () { reScale(currentScale + 0.2); });
+      document.getElementById('zoomOutBtn').addEventListener('click', function () { reScale(currentScale - 0.2); });
+
+      document.getElementById('fitWidthBtn').addEventListener('click', function () {
+        calculateFitWidthScale();
+        reScale(currentScale);
       });
+
+      // Jump to Page Dialog
+      pageJumpBtn.addEventListener('click', function () {
+        jumpPageInput.value = currentPage;
+        jumpPageInput.max = totalPages;
+        jumpModal.classList.add('active');
+        setTimeout(function () { jumpPageInput.focus(); jumpPageInput.select(); }, 50);
+      });
+
+      jumpCancelBtn.addEventListener('click', function () {
+        jumpModal.classList.remove('active');
+      });
+
+      jumpModal.addEventListener('click', function (e) {
+        if (e.target === jumpModal) jumpModal.classList.remove('active');
+      });
+
+      function submitJump() {
+        var val = parseInt(jumpPageInput.value, 10);
+        if (!isNaN(val) && val >= 1 && val <= totalPages) {
+          jumpModal.classList.remove('active');
+          scrollToPage(val);
+        }
+      }
+      jumpGoBtn.addEventListener('click', submitJump);
+      jumpPageInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') submitJump();
+        else if (e.key === 'Escape') jumpModal.classList.remove('active');
+      });
+
+      // Fullscreen toggle
+      document.getElementById('fullscreenBtn').addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function () {});
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
+        }
+      });
+
       document.getElementById('retryBtn').addEventListener('click', loadDocument);
 
       // Keyboard navigation
       window.addEventListener('keydown', function (e) {
-        if (e.key === 'ArrowLeft' || e.key === 'PageUp') { scrollToPage(currentPage - 1); }
-        else if (e.key === 'ArrowRight' || e.key === 'PageDown') { scrollToPage(currentPage + 1); }
-        else if (e.key === '+' || e.key === '=') { reScale(currentScale + 0.25); }
-        else if (e.key === '-' || e.key === '_') { reScale(currentScale - 0.25); }
+        if (jumpModal.classList.contains('active')) return;
+        if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          e.preventDefault();
+          scrollToPage(currentPage - 1);
+        } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+          e.preventDefault();
+          scrollToPage(currentPage + 1);
+        } else if (e.key === '+' || e.key === '=') {
+          e.preventDefault();
+          reScale(currentScale + 0.2);
+        } else if (e.key === '-' || e.key === '_') {
+          e.preventDefault();
+          reScale(currentScale - 0.2);
+        } else if (e.key === '0') {
+          e.preventDefault();
+          calculateFitWidthScale();
+          reScale(currentScale);
+        }
+      });
+
+      // Window resize adaptation
+      var resizeTimer = null;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+          var prevScale = currentScale;
+          calculateFitWidthScale();
+          // If container width changed significantly, reScale to fit
+          if (Math.abs(prevScale - currentScale) > 0.08) {
+            reScale(currentScale);
+          }
+        }, 200);
       });
 
       loadDocument();

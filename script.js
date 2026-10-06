@@ -1619,6 +1619,13 @@ class UIController {
     this.syncMeta();
     Analytics.trackTheme(next);
 
+    const frame = $('viewerPanelFrame');
+    if (frame && frame.contentWindow) {
+      try {
+        frame.contentWindow.postMessage({ type: 'sgou-theme-change', theme: next }, '*');
+      } catch (_) {}
+    }
+
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         doc.classList.remove('theme-switching');
@@ -2659,16 +2666,12 @@ class UIController {
           if (ld) ld.innerHTML = '<div class="loading-spinner"></div><span>Reading from device storage&hellip;</span>';
         }
 
-        // On mobile, render via in-app HTML5 canvas reader (reader.html) to prevent Google Docs Viewer 25MB crashes and external app redirects.
-        // On Desktop, stream directly via CloudFront byte-range streaming (#toolbar=1&navpanes=0).
+        // Universal in-app HTML5 canvas reader (reader.html) across all devices for consistent themes, high-DPI, and offline caching.
+        const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
         let fullUrl = '';
         if (pdfUrl || streamSource) {
-          if (isMobile) {
-            const docSource = streamSource || ('/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1');
-            fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF');
-          } else {
-            fullUrl = streamSource || (pdfUrl + '#toolbar=1&navpanes=0');
-          }
+          const docSource = streamSource || ('/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1');
+          fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme);
         }
 
         try {
@@ -2681,14 +2684,11 @@ class UIController {
           frame.src = fullUrl || 'about:blank';
         }
       }).catch(() => {
+        const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
         let fullUrl = '';
         if (pdfUrl) {
-          if (isMobile) {
-            const docSource = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1';
-            fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF');
-          } else {
-            fullUrl = pdfUrl + '#toolbar=1&navpanes=0';
-          }
+          const docSource = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1';
+          fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme);
         }
         try {
           if (frame.contentWindow) frame.contentWindow.location.replace(fullUrl || 'about:blank');
