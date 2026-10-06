@@ -66,7 +66,26 @@
       position: relative;
     }
 
-    /* Scrollable Container with generous bottom clearance so toolbar never covers text */
+    /* Top Reading Progress Bar */
+    #readingProgressWrap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: rgba(0, 0, 0, 0.08);
+      z-index: 120;
+      cursor: pointer;
+    }
+    #readingProgressBar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.08s ease;
+      box-shadow: 0 0 6px var(--accent);
+    }
+
+    /* Scrollable Container with generous bottom clearance */
     #viewerContainer {
       flex: 1;
       overflow-y: auto;
@@ -129,16 +148,16 @@
       transform: translateX(-50%);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       background: var(--toolbar-bg);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--toolbar-border);
-      padding: 5px 10px;
+      padding: 5px 9px;
       border-radius: 32px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
       z-index: 100;
-      max-width: 95vw;
+      max-width: 96vw;
       transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.26s ease;
     }
 
@@ -198,13 +217,13 @@
       margin: 0 2px;
     }
 
-    /* Jump to Page Modal */
+    /* Jump to Page Modal Dialog */
     #jumpModal {
       position: absolute;
       inset: 0;
       background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
       display: none;
       align-items: center;
       justify-content: center;
@@ -217,44 +236,105 @@
     .jump-card {
       background: var(--surface);
       border: 1px solid var(--surface-border);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 20px 22px;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-      max-width: 300px;
+      max-width: 320px;
       width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 13px;
       animation: jumpPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes jumpPop {
       from { transform: scale(0.92); opacity: 0; }
       to { transform: scale(1); opacity: 1; }
     }
+    .jump-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
     .jump-title {
       font-size: 15px;
       font-weight: 700;
       color: var(--text);
     }
+    .jump-current-badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--surface-subtle);
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--surface-border);
+    }
+    .jump-input-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .jump-input {
-      width: 100%;
-      padding: 10px 12px;
+      flex: 1;
+      padding: 9px 12px;
       font-size: 16px;
+      font-weight: 600;
       font-family: inherit;
       border: 1px solid var(--surface-border);
       border-radius: 8px;
       background: var(--surface-subtle);
       color: var(--text);
       outline: none;
+      text-align: center;
     }
     .jump-input:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(180, 61, 40, 0.2);
     }
+    .jump-total-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .jump-scrubber-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .jump-scrubber {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+      height: 6px;
+    }
+    .jump-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .jump-chip {
+      background: var(--surface-subtle);
+      border: 1px solid var(--surface-border);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .jump-chip:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
     .jump-actions {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
+      margin-top: 2px;
     }
     .jump-btn {
       padding: 8px 14px;
@@ -271,6 +351,33 @@
     .jump-btn-go {
       background: var(--accent);
       color: #ffffff;
+    }
+
+    /* Minimal Toast Notifications */
+    #readerToast {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--toolbar-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--toolbar-border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.22s ease, opacity 0.22s ease;
+      z-index: 180;
+      white-space: nowrap;
+    }
+    #readerToast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
     }
 
     /* Loading Overlay */
@@ -336,7 +443,7 @@
 
     /* Eye-Comfort Filter Classes */
     #viewerContainer.filter-sepia canvas {
-      filter: sepia(0.35) contrast(0.96) brightness(0.96);
+      filter: sepia(0.38) contrast(0.96) brightness(0.96);
     }
     #viewerContainer.filter-dark canvas {
       filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
@@ -345,6 +452,14 @@
 </head>
 <body>
   <div id="readerWrap">
+    <!-- Top Reading Progress Indicator -->
+    <div id="readingProgressWrap" title="Reading progress — click anywhere to seek">
+      <div id="readingProgressBar"></div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="readerToast"></div>
+
     <!-- Initial Loader -->
     <div id="loadingOverlay">
       <div class="spinner"></div>
@@ -360,15 +475,15 @@
 
     <!-- Floating Navigation Bar -->
     <div id="bottomBar">
-      <button type="button" class="bar-btn" id="prevBtn" title="Previous page" aria-label="Previous page">
+      <button type="button" class="bar-btn" id="prevBtn" title="Previous page (Left Arrow)" aria-label="Previous page">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
 
-      <button type="button" class="page-info-btn" id="pageJumpBtn" title="Click to jump to page" aria-label="Jump to page">
+      <button type="button" class="page-info-btn" id="pageJumpBtn" title="Click to jump or scrub through pages" aria-label="Jump to page">
         <span id="pageNum">1</span> / <span id="pageCount">&ndash;</span>
       </button>
 
-      <button type="button" class="bar-btn" id="nextBtn" title="Next page" aria-label="Next page">
+      <button type="button" class="bar-btn" id="nextBtn" title="Next page (Right Arrow)" aria-label="Next page">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
 
@@ -382,23 +497,51 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
       </button>
 
-      <button type="button" class="bar-btn" id="fitWidthBtn" title="Fit to screen width" aria-label="Fit to width">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      <div class="bar-divider"></div>
+
+      <!-- Eye-Comfort Reading Mode Toggle (Normal -> Sepia -> Dark) -->
+      <button type="button" class="bar-btn" id="filterBtn" title="Eye-Comfort Reading Mode (T)" aria-label="Eye-comfort mode">
+        <svg id="filterIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
       </button>
 
-      <button type="button" class="bar-btn" id="fullscreenBtn" title="Toggle fullscreen" aria-label="Toggle fullscreen">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+      <!-- Dynamic Fullscreen Button (Toggles between Enter and Exit based on event) -->
+      <button type="button" class="bar-btn" id="fullscreenBtn" title="Enter fullscreen (F)" aria-label="Enter fullscreen">
+        <svg id="fullscreenIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
       </button>
     </div>
 
-    <!-- Quick Jump Modal Dialog -->
+    <!-- Quick Jump & Visual Scrubber Modal Dialog -->
     <div id="jumpModal">
       <div class="jump-card">
-        <div class="jump-title">Jump to Page</div>
-        <input type="number" id="jumpPageInput" class="jump-input" min="1" step="1" placeholder="Page number">
+        <div class="jump-header">
+          <div class="jump-title">Jump to Page</div>
+          <span class="jump-current-badge">Page <span id="jumpCurBadge">1</span> of <span id="jumpMaxBadge">&ndash;</span></span>
+        </div>
+
+        <div class="jump-input-row">
+          <input type="number" id="jumpPageInput" class="jump-input" min="1" step="1" placeholder="Page #">
+          <span class="jump-total-text" id="jumpTotalText">/ &ndash;</span>
+        </div>
+
+        <div class="jump-scrubber-wrap">
+          <input type="range" id="jumpScrubber" class="jump-scrubber" min="1" max="1" value="1">
+        </div>
+
+        <div class="jump-chips">
+          <button type="button" class="jump-chip" data-target="first">Cover (1)</button>
+          <button type="button" class="jump-chip" data-target="25">25%</button>
+          <button type="button" class="jump-chip" data-target="50">50%</button>
+          <button type="button" class="jump-chip" data-target="75">75%</button>
+          <button type="button" class="jump-chip" data-target="last">End</button>
+        </div>
+
         <div class="jump-actions">
           <button type="button" class="jump-btn jump-btn-cancel" id="jumpCancelBtn">Cancel</button>
-          <button type="button" class="jump-btn jump-btn-go" id="jumpGoBtn">Go</button>
+          <button type="button" class="jump-btn jump-btn-go" id="jumpGoBtn">Jump Now</button>
         </div>
       </div>
     </div>
@@ -434,17 +577,112 @@
         }
       });
 
-      // --- Filter Mode Synchronization ---
+      // --- Eye-Comfort Filter Synchronization & Cycling ---
       var container = document.getElementById('viewerContainer');
+      var filterBtn = document.getElementById('filterBtn');
+      var filterIcon = document.getElementById('filterIcon');
+      var toastEl = document.getElementById('readerToast');
+      var toastTimer = null;
+
+      var FILTER_MODES = ['normal', 'sepia', 'dark'];
+      var FILTER_LABELS = {
+        normal: 'Natural Document',
+        sepia: 'Warm Sepia (Eye Comfort)',
+        dark: 'Night Invert (Dark Mode)'
+      };
+
+      function showToast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toastEl.classList.remove('show');
+        }, 1800);
+      }
+
+      function updateFilterUI(mode) {
+        container.classList.remove('filter-sepia', 'filter-dark');
+        if (mode === 'sepia') {
+          container.classList.add('filter-sepia');
+          filterIcon.innerHTML = '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10M6 14h6"/>';
+          filterBtn.title = 'Warm Sepia Mode (T)';
+        } else if (mode === 'dark') {
+          container.classList.add('filter-dark');
+          filterIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+          filterBtn.title = 'Night Invert Mode (T)';
+        } else {
+          filterIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+          filterBtn.title = 'Natural Document Mode (T)';
+        }
+      }
+
       function applySavedFilter() {
         var mode = 'normal';
         try { mode = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-        container.classList.remove('filter-sepia', 'filter-dark');
-        if (mode === 'sepia') container.classList.add('filter-sepia');
-        else if (mode === 'dark') container.classList.add('filter-dark');
+        updateFilterUI(mode);
       }
       applySavedFilter();
       window.addEventListener('storage', applySavedFilter);
+
+      function cycleFilterMode() {
+        var cur = 'normal';
+        try { cur = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
+        var nextIdx = (FILTER_MODES.indexOf(cur) + 1) % FILTER_MODES.length;
+        var next = FILTER_MODES[nextIdx];
+        try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
+        updateFilterUI(next);
+        showToast(FILTER_LABELS[next]);
+      }
+      filterBtn.addEventListener('click', cycleFilterMode);
+
+      // --- Fullscreen Dynamic Management ---
+      var fullscreenBtn = document.getElementById('fullscreenBtn');
+      var fullscreenIcon = document.getElementById('fullscreenIcon');
+
+      function isFullscreen() {
+        return !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        );
+      }
+
+      function updateFullscreenUI() {
+        var full = isFullscreen();
+        if (full) {
+          // Collapse / Exit fullscreen icon
+          fullscreenIcon.innerHTML = '<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>';
+          fullscreenBtn.title = 'Exit fullscreen (F / Esc)';
+          fullscreenBtn.setAttribute('aria-label', 'Exit fullscreen');
+        } else {
+          // Expand / Enter fullscreen icon
+          fullscreenIcon.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
+          fullscreenBtn.title = 'Enter fullscreen (F)';
+          fullscreenBtn.setAttribute('aria-label', 'Enter fullscreen');
+        }
+      }
+
+      function toggleFullscreen() {
+        if (!isFullscreen()) {
+          var el = document.documentElement;
+          var req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen;
+          if (req) {
+            req.call(el).then(updateFullscreenUI).catch(function () {});
+          }
+        } else {
+          var ex = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+          if (ex) {
+            ex.call(document).then(updateFullscreenUI).catch(function () {});
+          }
+        }
+      }
+
+      fullscreenBtn.addEventListener('click', toggleFullscreen);
+      ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(function (evt) {
+        document.addEventListener(evt, updateFullscreenUI);
+      });
 
       if (typeof pdfjsLib === 'undefined') {
         showError('PDF.js rendering engine could not be initialized.');
@@ -465,8 +703,12 @@
       var pageNumEl = document.getElementById('pageNum');
       var pageCountEl = document.getElementById('pageCount');
       var pageJumpBtn = document.getElementById('pageJumpBtn');
+      var readingProgressBar = document.getElementById('readingProgressBar');
+      var readingProgressWrap = document.getElementById('readingProgressWrap');
+
       var jumpModal = document.getElementById('jumpModal');
       var jumpPageInput = document.getElementById('jumpPageInput');
+      var jumpScrubber = document.getElementById('jumpScrubber');
       var jumpCancelBtn = document.getElementById('jumpCancelBtn');
       var jumpGoBtn = document.getElementById('jumpGoBtn');
 
@@ -480,7 +722,7 @@
       var pageWrappers = [];
       var pageObserver = null;
 
-      // Toolbar auto-hide and tap-to-reveal
+      // Toolbar auto-hide and scroll tracking
       var lastScrollTop = 0;
       var toolbarHidden = false;
       var scrollTicking = false;
@@ -574,7 +816,6 @@
           cWidth = window.innerWidth;
         }
         var targetWidth = Math.max(cWidth - 24, 280);
-        // Default fit-to-width scale
         currentScale = targetWidth / unscaledPageWidth;
         currentScale = Math.min(Math.max(currentScale, 0.4), 2.5);
       }
@@ -647,7 +888,6 @@
           wrap.innerHTML = '';
           wrap.appendChild(canvas);
 
-          // Standard high-DPI PDF.js render without custom transform override
           await page.render({
             canvasContext: ctx,
             viewport: viewport
@@ -663,7 +903,7 @@
         var st = container.scrollTop;
         var diff = st - lastScrollTop;
 
-        // Auto-hide toolbar when scrolling down, show when scrolling up
+        // Auto-hide toolbar when scrolling down, reveal when scrolling up
         if (diff > 25 && st > 80 && !toolbarHidden) {
           bottomBar.classList.add('bar-hidden');
           toolbarHidden = true;
@@ -672,6 +912,13 @@
           toolbarHidden = false;
         }
         lastScrollTop = Math.max(0, st);
+
+        // Update Top Reading Progress Bar
+        var scrollable = container.scrollHeight - container.clientHeight;
+        if (scrollable > 0 && readingProgressBar) {
+          var pct = Math.min(100, Math.max(0, (st / scrollable) * 100));
+          readingProgressBar.style.width = pct.toFixed(1) + '%';
+        }
 
         // Calculate active page based on viewport center
         var containerMid = st + (container.clientHeight / 2);
@@ -711,13 +958,47 @@
         }
       }, { passive: true });
 
-      // Tap anywhere in container to toggle toolbar visibility if hidden
+      // Click on Progress Bar seeks directly
+      if (readingProgressWrap) {
+        readingProgressWrap.addEventListener('click', function (e) {
+          var rect = readingProgressWrap.getBoundingClientRect();
+          var ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+          var targetScroll = (container.scrollHeight - container.clientHeight) * ratio;
+          container.scrollTo({ top: targetScroll, behavior: 'smooth' });
+        });
+      }
+
+      // Tap / Double-tap handling
+      var lastTapTime = 0;
       container.addEventListener('click', function (e) {
+        if (e.target.closest('#bottomBar') || e.target.closest('#jumpModal')) return;
+
+        // Reveal toolbar if hidden
         if (toolbarHidden) {
           bottomBar.classList.remove('bar-hidden');
           toolbarHidden = false;
         }
+
+        // Double-tap zoom toggle (Fit-Width <-> 1.35x Zoom)
+        var now = Date.now();
+        if (now - lastTapTime < 320) {
+          e.preventDefault();
+          toggleFitZoom();
+        }
+        lastTapTime = now;
       });
+
+      function toggleFitZoom() {
+        var cWidth = container.clientWidth || window.innerWidth;
+        var fitScale = Math.min(Math.max((cWidth - 24) / unscaledPageWidth, 0.4), 2.5);
+        if (Math.abs(currentScale - fitScale) < 0.12) {
+          reScale(fitScale * 1.35);
+          showToast('Zoomed: 135%');
+        } else {
+          reScale(fitScale);
+          showToast('Fit to Width');
+        }
+      }
 
       function scrollToPage(num) {
         if (num < 1 || num > totalPages) return;
@@ -754,20 +1035,55 @@
       // Toolbar Controls
       document.getElementById('prevBtn').addEventListener('click', function () { scrollToPage(currentPage - 1); });
       document.getElementById('nextBtn').addEventListener('click', function () { scrollToPage(currentPage + 1); });
-      document.getElementById('zoomInBtn').addEventListener('click', function () { reScale(currentScale + 0.2); });
-      document.getElementById('zoomOutBtn').addEventListener('click', function () { reScale(currentScale - 0.2); });
-
-      document.getElementById('fitWidthBtn').addEventListener('click', function () {
-        calculateFitWidthScale();
-        reScale(currentScale);
+      document.getElementById('zoomInBtn').addEventListener('click', function () {
+        reScale(currentScale + 0.2);
+        showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
+      });
+      document.getElementById('zoomOutBtn').addEventListener('click', function () {
+        reScale(currentScale - 0.2);
+        showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
       });
 
-      // Jump to Page Dialog
+      // Quick Jump & Visual Scrubber Dialog
       pageJumpBtn.addEventListener('click', function () {
         jumpPageInput.value = currentPage;
         jumpPageInput.max = totalPages;
+        jumpScrubber.max = totalPages;
+        jumpScrubber.value = currentPage;
+        document.getElementById('jumpCurBadge').textContent = currentPage;
+        document.getElementById('jumpMaxBadge').textContent = totalPages;
+        document.getElementById('jumpTotalText').textContent = '/ ' + totalPages;
         jumpModal.classList.add('active');
         setTimeout(function () { jumpPageInput.focus(); jumpPageInput.select(); }, 50);
+      });
+
+      jumpScrubber.addEventListener('input', function () {
+        jumpPageInput.value = jumpScrubber.value;
+        document.getElementById('jumpCurBadge').textContent = jumpScrubber.value;
+      });
+
+      jumpPageInput.addEventListener('input', function () {
+        var v = parseInt(jumpPageInput.value, 10);
+        if (!isNaN(v) && v >= 1 && v <= totalPages) {
+          jumpScrubber.value = v;
+          document.getElementById('jumpCurBadge').textContent = v;
+        }
+      });
+
+      document.querySelectorAll('.jump-chip').forEach(function (chip) {
+        chip.addEventListener('click', function () {
+          var target = chip.dataset.target;
+          var pageVal = 1;
+          if (target === 'first') pageVal = 1;
+          else if (target === 'last') pageVal = totalPages;
+          else if (target === '25') pageVal = Math.max(1, Math.round(totalPages * 0.25));
+          else if (target === '50') pageVal = Math.max(1, Math.round(totalPages * 0.50));
+          else if (target === '75') pageVal = Math.max(1, Math.round(totalPages * 0.75));
+
+          jumpPageInput.value = pageVal;
+          jumpScrubber.value = pageVal;
+          document.getElementById('jumpCurBadge').textContent = pageVal;
+        });
       });
 
       jumpCancelBtn.addEventListener('click', function () {
@@ -791,20 +1107,13 @@
         else if (e.key === 'Escape') jumpModal.classList.remove('active');
       });
 
-      // Fullscreen toggle
-      document.getElementById('fullscreenBtn').addEventListener('click', function () {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(function () {});
-        } else {
-          if (document.exitFullscreen) document.exitFullscreen().catch(function () {});
-        }
-      });
-
       document.getElementById('retryBtn').addEventListener('click', loadDocument);
 
       // Keyboard navigation
       window.addEventListener('keydown', function (e) {
         if (jumpModal.classList.contains('active')) return;
+        var key = e.key.toLowerCase();
+
         if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
           e.preventDefault();
           scrollToPage(currentPage - 1);
@@ -814,13 +1123,26 @@
         } else if (e.key === '+' || e.key === '=') {
           e.preventDefault();
           reScale(currentScale + 0.2);
+          showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
         } else if (e.key === '-' || e.key === '_') {
           e.preventDefault();
           reScale(currentScale - 0.2);
+          showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
         } else if (e.key === '0') {
           e.preventDefault();
-          calculateFitWidthScale();
-          reScale(currentScale);
+          toggleFitZoom();
+        } else if (key === 'f') {
+          e.preventDefault();
+          toggleFullscreen();
+        } else if (key === 't' || key === 'e') {
+          e.preventDefault();
+          cycleFilterMode();
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          scrollToPage(1);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          scrollToPage(totalPages);
         }
       });
 
@@ -831,7 +1153,6 @@
         resizeTimer = setTimeout(function () {
           var prevScale = currentScale;
           calculateFitWidthScale();
-          // If container width changed significantly, reScale to fit
           if (Math.abs(prevScale - currentScale) > 0.08) {
             reScale(currentScale);
           }
