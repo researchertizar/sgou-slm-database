@@ -123,16 +123,26 @@ Vercel's Free Hobby plan includes **100 GB of Fast Data Transfer / month**. The 
 
 ---
 
-## Native PDF Viewer Architecture
+## Native & Universal PDF Viewer Architecture
 
-To ensure high reliability across all platforms without external service dependencies, 25MB file size limits, or unauthorized "gview" download prompts on mobile devices:
+To ensure flawless reading across all devices without external service dependencies, 25MB file size limits, or unauthorized third-party download prompts:
 
-1. **Direct CloudFront Native Streaming**:
+1. **Universal Canvas Reader (`reader.html`)**:
+   - High-performance HTML5 canvas rendering engine powered by PDF.js with complete touch pinch-zoom isolation (preventing unwanted parent window scaling).
+   - **Uncompromising Vector Typography**: `getOptimalRasterScale` maintains 100% razor-sharp, print-grade vector resolution across all zoom levels (scaling up to 3.2x on mobile, 4.0x on desktop) without text blurriness or downsampling.
+   - **Precision Focal Centering**: `applySmoothScale` calculates fractional page offsets, keeping tapped or pinched coordinates stationary directly under the user's finger with zero leftward drift.
+   - **3-State Natural Double-Tap Zoom**:
+     - *Zoomed Out (below Fit Width)*: Double-tap restores directly to exact **Fit Width** (e.g. 68% on mobile).
+     - *At Fit Width*: Double-tap smoothly zooms in (1.65x) centered directly where the user double-tapped.
+     - *Zoomed In*: Double-tap smoothly restores back to **Fit Width**.
+   - **Pre-Emptive 600px Pre-Rendering & Sequential Queue**: `queuePageRender` processes pages sequentially with single-worker priority, cancelling obsolete tasks instantly on navigation/zoom. IntersectionObserver pre-renders pages 600px ahead, while a sliding window (`keepDistance = 6`) caches adjacent pages for 60fps butter-smooth scrolling with zero placeholder flashes.
+   - **Eye-Comfort Modes**: Instant toggling between Normal, Parchment Sepia, and Obsidian Dark reading modes with persistent local preferences.
+
+2. **Direct CloudFront Native Streaming**:
    - Embeds the document directly inside `<iframe id="viewerPanelFrame">` using the canonical CloudFront URL (`pdfUrl + '#toolbar=1&navpanes=0'`).
    - Utilizes CloudFront HTTP Range requests for instant page-to-page seeking without waiting for full multi-megabyte downloads.
    - Eliminates external Google Docs / GView third-party intermediaries, guaranteeing 100% privacy, stability, and zero quota or billing risks.
-2. **Zero-Ghosting Loading State**:
-   - Clean CSS-contained loader (`#viewerPanelLoading`) that transitions to `display: none !important;` the instant the iframe triggers `onload` or after a 3.5s timeout.
+
 3. **Direct Browser Open & Download Controls**:
    - The viewer top bar provides an always-accessible "Open in Browser" button (`#viewerPanelExternal`) to launch direct native reading in a separate tab, alongside instant direct download (`#viewerPanelDownload`).
 
@@ -179,8 +189,8 @@ Students can "star" or "pin" their degree programmes to keep them anchored at th
 The platform operates as a standalone Progressive Web App with zero external runtime dependencies.
 
 ### Cache Strategy
-- **Service Worker Version**: `sgou-v136` with asset versioning query parameters (`v=20261006_03`).
-- **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `view.html`, `reader.html`, `pdfjs/pdf.min.js`, `manifest.json`, `opensearch.xml`, and touch icons are served instantaneously from CacheStorage.
+- **Service Worker Version**: `sgou-v139` with asset versioning query parameters (`v=20261007_03`).
+- **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `view.html`, `reader.html`, `pdfjs/pdf.min.js`, `pdfjs/pdf.worker.min.js`, `manifest.json`, `opensearch.xml`, and touch icons are served instantaneously from CacheStorage.
 - **Academic Datasets (Network-First with Cache Fallback)**: `data/sgou_slm_data.json` and `data/sgou_questions_cleaned.json` fetch latest updates from the network with instant fallback to local cached versions if offline.
 - **Google Fonts (Stale-While-Revalidate)**: Font stylesheets and `.woff2` files are cached with strict Content Security Policy (`connect-src https://fonts.googleapis.com https://fonts.gstatic.com`).
 - **Safe Response Fallback**: Service Worker fetch listeners guarantee a valid `Response` object is returned under all network interruption scenarios, completely preventing unhandled browser fetch errors.
@@ -323,7 +333,7 @@ To run the platform locally with full proxy support:
 
 ## Automated Verification Suite
 
-The repository includes a comprehensive 53-point automated verification suite:
+The repository includes a comprehensive 61-point automated verification suite:
 
 ```bash
 node scratch/verify_all.js
@@ -334,8 +344,9 @@ node scratch/verify_all.js
 2. **CSS Balance & Rules**: Checks matching braces across 95KB+ of CSS, verifies mobile viewer decongestion rules, and ensures drawer z-index elevations (`z-index: 950`).
 3. **HTML & Schema Validation**: Verifies Schema.org JSON-LD nodes, critical DOM IDs, and zero-CLS pre-rendered filter pills.
 4. **Service Worker Version Parity**: Enforces synchronized version hashes between `index.html`, `style.css`, `script.js`, and `sw.js`.
-5. **Runtime Logic & Security**: Confirms history state management, reader flow, fallback stores, and Content-Security-Policy headers.
-6. **Live HTTP Responses**: Boots an in-memory HTTP server and verifies status 200, MIME types, and Content-Length across all endpoints.
+5. **Runtime Logic & History Management**: Confirms single-state secondary tab hierarchy, root SLM back-exit navigation, viewer panel dismissals, fallback stores, and Content-Security-Policy headers.
+6. **PDF Reader Vector Engine**: Verifies serial queue execution (`queuePageRender`), opaque 2D canvas context, and high-DPI rasterization scaling in `reader.html`.
+7. **Live HTTP Responses**: Boots an in-memory HTTP server and verifies status 200, MIME types, and Content-Length across all endpoints.
 
 ---
 
