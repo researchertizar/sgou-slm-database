@@ -2621,6 +2621,7 @@ class UIController {
       const curSearch = window.location.search;
       const isAlreadyOnTarget = curSearch === `?${viewParams.toString()}` || curSearch.includes(code || name || '');
       if (!isAlreadyOnTarget && !history.state?.viewerOpen) {
+        this._viewerOpenedInSession = true;
         history.pushState({ viewerOpen: true, code: code || name }, '', targetUrl);
       } else {
         history.replaceState({ ...(history.state || {}), viewerOpen: true, code: code || name }, '', targetUrl);
@@ -2844,7 +2845,7 @@ class UIController {
     }
   }
 
-  setMaterialType(type, push = true) {
+  setMaterialType(type, push = false) {
     const targetType = (type || 'SLM').toUpperCase();
     if (this.activeType === targetType) return;
     this.activeType = targetType;
@@ -3941,7 +3942,7 @@ const UI = new UIController();
 
 const PWAService = {
   APP_VERSION: 'v2026.10.07',
-  BUILD_ID: '20261007_01',
+  BUILD_ID: '20261007_02',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,
