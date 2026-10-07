@@ -574,12 +574,11 @@
     .report-card {
       background: var(--surface);
       border: 1px solid var(--surface-border);
-      border-radius: 12px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
       width: 100%;
-      max-width: 460px;
-      max-height: 90vh;
-      overflow-y: auto;
+      max-width: 410px;
+      overflow: hidden;
       transform: scale(0.96);
       transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -589,162 +588,177 @@
     .report-card-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 14px 18px 12px;
+      justify-content: space-between;
+      padding: 13px 16px 10px;
       border-bottom: 1px solid var(--surface-border);
     }
-    .report-card-icon {
-      width: 34px;
-      height: 34px;
-      border-radius: 50%;
+    .report-header-title {
       display: flex;
       align-items: center;
-      justify-content: center;
-      background: rgba(239, 68, 68, 0.12);
-      color: #ef4444;
-      flex-shrink: 0;
-    }
-    .report-card-title h3 {
+      gap: 8px;
       font-size: 14.5px;
       font-weight: 600;
       color: var(--text);
-      margin: 0;
+      letter-spacing: -0.01em;
     }
-    .report-card-title p {
-      font-size: 11.5px;
-      color: var(--text-muted);
-      margin: 2px 0 0;
+    .report-header-title svg {
+      color: #ef4444;
     }
     .report-close-btn {
-      margin-left: auto;
       background: transparent;
       border: none;
       color: var(--text-muted);
       cursor: pointer;
-      padding: 6px;
+      padding: 4px;
       border-radius: 6px;
-      font-size: 18px;
-      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s ease;
     }
     .report-close-btn:hover {
+      background: var(--surface-subtle);
       color: var(--text);
     }
     .report-card-body {
-      padding: 16px 18px;
+      padding: 13px 16px 15px;
     }
     .reader-report-preview {
       background: var(--surface-subtle);
       border: 1px solid var(--surface-border);
       border-radius: 8px;
-      padding: 10px 12px;
-      margin-bottom: 14px;
+      padding: 7px 11px;
+      margin-bottom: 11px;
     }
     .reader-report-doc-title {
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       color: var(--text);
-      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .reader-report-doc-meta {
       font-size: 11px;
       color: var(--text-muted);
+      margin-top: 1px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .report-reasons-group {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-    .report-reason-label {
-      display: flex;
-      align-items: flex-start;
-      gap: 9px;
-      padding: 7px 11px;
-      background: var(--surface-subtle);
-      border: 1px solid var(--surface-border);
-      border-radius: 6px;
-      font-size: 12px;
-      color: var(--text);
-      cursor: pointer;
-      transition: border-color .15s, background .15s;
-    }
-    .report-reason-label:hover {
-      border-color: var(--accent);
-    }
-    .report-reason-label input[type="radio"] {
-      margin-top: 2px;
-      accent-color: var(--accent);
-    }
-    .reader-report-textarea {
-      width: 100%;
-      font-family: inherit;
-      font-size: 12px;
-      line-height: 1.4;
-      padding: 8px 10px;
-      margin-top: 6px;
-      resize: vertical;
-      min-height: 48px;
-      border-radius: 6px;
-      border: 1px solid var(--surface-border);
-      background: var(--surface-subtle);
-      color: var(--text);
-      box-sizing: border-box;
-    }
-    .reader-report-actions {
+    .report-reasons-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 14px;
+      gap: 6px;
+      margin-bottom: 10px;
     }
-    .reader-report-btn {
-      display: inline-flex;
+    .report-chip {
+      position: relative;
+      display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      height: 36px;
-      padding: 0 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
+      padding: 7px 8px;
+      min-height: 33px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 7px;
+      font-size: 11.5px;
+      font-weight: 500;
+      color: var(--text-muted);
       cursor: pointer;
-      border: 1px solid transparent;
-      transition: all .16s ease;
+      user-select: none;
+      transition: all .14s ease;
+      text-align: center;
     }
-    .reader-report-btn.whatsapp {
-      background: #25d366;
-      color: #fff;
+    .report-chip input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      margin: 0;
+      pointer-events: none;
     }
-    .reader-report-btn.whatsapp:hover {
-      background: #20bd5a;
-    }
-    .reader-report-btn.email {
+    .report-chip:hover {
       background: var(--surface-subtle);
-      border-color: var(--surface-border);
       color: var(--text);
     }
-    .reader-report-btn.email:hover {
+    .report-chip:has(input:checked) {
+      background: rgba(180, 61, 40, 0.08);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    [data-theme="dark"] .report-chip:has(input:checked) {
+      background: rgba(229, 114, 90, 0.12);
       border-color: var(--accent);
       color: var(--accent);
     }
-    .reader-report-btn.copy {
-      background: var(--surface-subtle);
-      border-color: var(--surface-border);
-      color: var(--text-muted);
-    }
-    .reader-report-btn.copy:hover {
+    .report-quick-input {
+      width: 100%;
+      height: 35px;
+      padding: 0 11px;
+      font-family: inherit;
+      font-size: 12px;
+      border-radius: 7px;
+      border: 1px solid var(--surface-border);
+      background: var(--surface);
       color: var(--text);
+      box-sizing: border-box;
+      margin-bottom: 11px;
+      transition: border-color .14s ease, box-shadow .14s ease;
     }
-    .reader-report-btn.github {
-      background: var(--surface-subtle);
-      border-color: var(--surface-border);
+    .report-quick-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.12);
+    }
+    .report-primary-btn {
+      width: 100%;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: #25d366;
+      color: #ffffff;
+      border: none;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s ease;
+    }
+    .report-primary-btn:hover {
+      background: #20bd5a;
+      transform: translateY(-1px);
+    }
+    .report-primary-btn:active {
+      transform: translateY(0);
+    }
+    .report-secondary-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .report-sub-btn {
+      flex: 1;
+      height: 29px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
       color: var(--text-muted);
+      cursor: pointer;
+      transition: all .14s ease;
     }
-    .reader-report-btn.github:hover {
+    .report-sub-btn:hover {
+      background: var(--surface-subtle);
       color: var(--text);
-    }
-    @media (max-width: 480px) {
-      .reader-report-actions {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
@@ -877,70 +891,71 @@
     <div id="reportModal" role="dialog" aria-modal="true" aria-labelledby="readerReportTitle">
       <div class="report-card">
         <div class="report-card-header">
-          <div class="report-card-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="report-header-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
               <line x1="4" y1="22" x2="4" y2="15"></line>
             </svg>
+            <span id="readerReportTitle">Report Document Issue</span>
           </div>
-          <div class="report-card-title">
-            <h3 id="readerReportTitle">Report Document Issue</h3>
-            <p>Found an upstream error or mismatch in this paper?</p>
-          </div>
-          <button type="button" class="report-close-btn" id="readerReportCloseBtn" aria-label="Close">&times;</button>
+          <button type="button" class="report-close-btn" id="readerReportCloseBtn" aria-label="Close dialog" title="Close (Esc)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
         <div class="report-card-body">
           <div class="reader-report-preview">
             <div class="reader-report-doc-title" id="readerReportDocTitle">Course Document</div>
             <div class="reader-report-doc-meta" id="readerReportDocMeta">SGOU Academic Material</div>
           </div>
-          <div class="report-reasons-group">
-            <label class="report-reason-label">
+
+          <div class="report-reasons-grid">
+            <label class="report-chip">
               <input type="radio" name="readerReportReason" value="mismatch" checked>
-              <span><strong>Subject Mismatch / Wrong Paper</strong> (e.g. Economics paper shown in English)</span>
+              <span>Wrong Paper</span>
             </label>
-            <label class="report-reason-label">
+            <label class="report-chip">
               <input type="radio" name="readerReportReason" value="corrupted">
-              <span><strong>Blank or Unreadable Scans</strong> (pages missing, corrupted file)</span>
+              <span>Blank / Corrupt</span>
             </label>
-            <label class="report-reason-label">
+            <label class="report-chip">
               <input type="radio" name="readerReportReason" value="metadata">
-              <span><strong>Wrong Exam Date / Year / Course Code</strong></span>
+              <span>Wrong Date / Code</span>
             </label>
-            <label class="report-reason-label">
+            <label class="report-chip">
               <input type="radio" name="readerReportReason" value="other">
-              <span><strong>Other Issue</strong></span>
+              <span>Other Issue</span>
             </label>
           </div>
-          <div style="margin-top:12px">
-            <label for="readerReportNote" style="display:block;font-size:11.5px;font-weight:600;margin-bottom:2px;color:var(--text)">
-              Additional Notes (Optional)
-            </label>
-            <textarea id="readerReportNote" class="reader-report-textarea" rows="2" placeholder="e.g. Page 1 displays QP Code T5020..."></textarea>
-          </div>
-          <div class="reader-report-actions">
-            <button type="button" class="reader-report-btn whatsapp" id="readerReportWhatsApp">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
-              </svg>
-              <span>WhatsApp</span>
-            </button>
-            <button type="button" class="reader-report-btn email" id="readerReportEmail">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
-              </svg>
-              <span>Email</span>
-            </button>
-            <button type="button" class="reader-report-btn copy" id="readerReportCopy">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+
+          <input type="text" id="readerReportNote" class="report-quick-input" placeholder="Add details or notes (optional)..." maxlength="250">
+
+          <button type="button" class="report-primary-btn" id="readerReportWhatsApp">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+            </svg>
+            <span>Send via WhatsApp</span>
+          </button>
+
+          <div class="report-secondary-row">
+            <button type="button" class="report-sub-btn" id="readerReportCopy">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
               <span>Copy</span>
             </button>
-            <button type="button" class="reader-report-btn github" id="readerReportGithub">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+            <button type="button" class="report-sub-btn" id="readerReportEmail">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span>Email</span>
+            </button>
+            <button type="button" class="report-sub-btn" id="readerReportGithub">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
               </svg>
               <span>GitHub</span>
@@ -2047,7 +2062,13 @@
       function submitReaderReport(channel) {
         var note = (document.getElementById('readerReportNote')?.value || '').trim();
         var reasonRadio = document.querySelector('input[name="readerReportReason"]:checked');
-        var reasonText = reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch';
+        var reasonMap = {
+          mismatch: 'Subject Mismatch / Wrong Paper',
+          corrupted: 'Blank / Unreadable Scan',
+          metadata: 'Wrong Date / Course Code',
+          other: 'Other Issue'
+        };
+        var reasonText = (reasonRadio && reasonMap[reasonRadio.value]) || (reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch');
 
         var reportText =
           '*SGOU Academic Database \u2014 Document Issue Report*\n\n' +

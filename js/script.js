@@ -2986,7 +2986,13 @@ class UIController {
     const item = this._reportData || {};
     const note = ($('reportNoteInput')?.value || '').trim();
     const reasonRadio = document.querySelector('input[name="reportReason"]:checked');
-    const reasonText = reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch';
+    const reasonMap = {
+      mismatch: 'Subject Mismatch / Wrong Paper',
+      corrupted: 'Blank / Unreadable Scan',
+      metadata: 'Wrong Date / Course Code',
+      other: 'Other Issue'
+    };
+    const reasonText = (reasonRadio && reasonMap[reasonRadio.value]) || (reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch');
 
     const text =
       `*SGOU Academic Database — Document Issue Report*\n\n` +

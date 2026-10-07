@@ -4870,157 +4870,225 @@ kbd {
   color: #fcd34d;
 }
 
-/* Issue Reporting Modal */
+/* Issue Reporting Modal — Minimal, Zero-Scroll Dialog */
 .report-modal-card {
-  max-width: 480px;
+  max-width: 410px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
 }
 
-.modal-header-icon.report-icon {
-  background: rgba(239, 68, 68, 0.1);
+.report-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.report-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.report-header-title svg {
   color: #ef4444;
 }
 
+.modal-close-icon {
+  background: transparent;
+  border: none;
+  color: var(--ink-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s ease;
+}
+
+.modal-close-icon:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
+.report-modal-body {
+  padding: 13px 16px 15px;
+}
+
+/* Compact Document Summary */
 .report-doc-preview {
   background: var(--bg-deep);
   border: 1px solid var(--border-light);
   border-radius: 8px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
+  padding: 7px 11px;
+  margin-bottom: 11px;
 }
 
 .report-doc-title {
-  font-size: 13.5px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--ink);
-  margin-bottom: 2px;
-}
-
-.report-doc-meta {
-  font-size: 11.5px;
-  color: var(--ink-muted);
-  margin-bottom: 4px;
-}
-
-.report-doc-url {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
 }
 
-.report-reasons-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.report-reason-label {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 8px 12px;
-  background: var(--surface);
-  border: 1px solid var(--border-light);
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: border-color .15s, background .15s;
-}
-
-.report-reason-label:hover {
-  background: var(--surface-hover);
-  border-color: var(--accent);
-}
-
-.report-reason-label input[type="radio"] {
-  margin-top: 2px;
-  accent-color: var(--accent);
-}
-
-.report-textarea {
-  width: 100%;
+.report-doc-meta {
   font-family: var(--font-sans);
-  font-size: 12px;
-  line-height: 1.4;
-  padding: 8px 10px;
-  resize: vertical;
-  min-height: 52px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--ink);
-  box-sizing: border-box;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.report-actions-grid {
+/* Minimal 2x2 Reason Chips */
+.report-reasons-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 16px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
-.report-action-btn {
-  display: inline-flex;
+.report-chip {
+  position: relative;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  height: 38px;
-  padding: 0 12px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all .16s var(--ease);
-}
-
-.report-action-btn.whatsapp-btn {
-  background: #25d366;
-  color: #ffffff;
-  border-color: #20bd5a;
-}
-.report-action-btn.whatsapp-btn:hover {
-  background: #20bd5a;
-  transform: translateY(-1px);
-}
-
-.report-action-btn.email-btn {
+  padding: 7px 8px;
+  min-height: 33px;
   background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 7px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  user-select: none;
+  transition: all .14s ease;
+  text-align: center;
+}
+
+.report-chip input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+.report-chip:hover {
+  background: var(--surface-hover);
   border-color: var(--border);
   color: var(--ink);
 }
-.report-action-btn.email-btn:hover {
-  background: var(--surface-hover);
+
+.report-chip:has(input:checked) {
+  background: rgba(180, 61, 40, 0.08);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .report-chip:has(input:checked) {
+  background: rgba(229, 114, 90, 0.12);
   border-color: var(--accent);
   color: var(--accent);
 }
 
-.report-action-btn.copy-btn {
-  background: var(--bg-deep);
-  border-color: var(--border-light);
-  color: var(--ink-soft);
-}
-.report-action-btn.copy-btn:hover {
+/* Single-Line Quick Note Input */
+.report-quick-input {
+  width: 100%;
+  height: 35px;
+  padding: 0 11px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  border-radius: 7px;
+  border: 1px solid var(--border-light);
   background: var(--surface);
+  color: var(--ink);
+  box-sizing: border-box;
+  margin-bottom: 11px;
+  transition: border-color .14s ease, box-shadow .14s ease;
+}
+
+.report-quick-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.12);
+}
+
+/* Primary WhatsApp Action */
+.report-primary-btn {
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #25d366;
+  color: #ffffff;
+  border: none;
+  border-radius: 7px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+
+.report-primary-btn:hover {
+  background: #20bd5a;
+  transform: translateY(-1px);
+}
+
+.report-primary-btn:active {
+  transform: translateY(0);
+}
+
+/* Secondary Actions Row */
+.report-secondary-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.report-sub-btn {
+  flex: 1;
+  height: 29px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all .14s ease;
+}
+
+.report-sub-btn:hover {
+  background: var(--surface);
+  border-color: var(--border);
   color: var(--ink);
 }
 
-.report-action-btn.github-btn {
-  background: var(--bg-deep);
-  border-color: var(--border-light);
-  color: var(--ink-soft);
-}
-.report-action-btn.github-btn:hover {
-  background: var(--surface);
-  color: var(--ink);
-}
-
-@media (max-width: 480px) {
-  .report-actions-grid {
-    grid-template-columns: 1fr;
-  }
+.report-sub-btn:active {
+  transform: translateY(0.5px);
 }
