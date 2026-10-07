@@ -1667,11 +1667,11 @@ class UIController {
     }
     const ogImg = document.querySelector('meta[property="og:image"]');
     if (ogImg) {
-      ogImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_04');
+      ogImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05');
     }
     const twitterImg = document.querySelector('meta[name="twitter:image"]');
     if (twitterImg) {
-      twitterImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_04');
+      twitterImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05');
     }
   }
 
