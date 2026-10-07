@@ -31,8 +31,8 @@
         content="Preview, read, and download official SGOU SLM course textbooks, question papers, and assignments offline.">
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/view.html">
     <meta property="og:type" content="article">
-    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Document Viewer — SGOU Academic Database">
@@ -42,7 +42,7 @@
     <meta name="twitter:title" content="Document Viewer — SGOU Academic Database">
     <meta name="twitter:description"
         content="Preview and download SGOU distance education textbooks, question papers, and assignment booklets.">
-    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
     <meta name="twitter:creator" content="@researchertizar">
 
     <!-- Geographic & Local Knowledge Meta Tags (GEO SEO) -->
@@ -107,7 +107,7 @@
     </script>
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20261007_05">
+    <link rel="manifest" href="/manifest.json?v=20261007_06">
     <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png?v=20260904_10">
@@ -1039,6 +1039,254 @@
                 animation: none !important;
             }
         }
+
+        /* Upstream Mismatch Banner */
+        .mismatch-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: rgba(245, 158, 11, 0.12);
+            border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+            color: var(--ink);
+            font-size: 12px;
+            line-height: 1.4;
+            animation: slideDown .2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .mismatch-banner svg {
+            color: #d97706;
+            flex-shrink: 0;
+        }
+        html[data-theme="dark"] .mismatch-banner svg {
+            color: #fbbf24;
+        }
+        .mismatch-banner-content {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .mismatch-banner-content strong {
+            color: #b45309;
+        }
+        html[data-theme="dark"] .mismatch-banner-content strong {
+            color: #fcd34d;
+        }
+
+        /* Modal Backdrop & Report Dialog */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s ease;
+        }
+        .modal-backdrop.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.96);
+            transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-backdrop.visible .modal-card {
+            transform: scale(1);
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        .modal-header-icon.report-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            flex-shrink: 0;
+        }
+        .modal-header-text h3 {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 0;
+        }
+        .modal-header-text p {
+            font-size: 11.5px;
+            color: var(--ink-muted);
+            margin: 2px 0 0;
+        }
+        .modal-close {
+            margin-left: auto;
+            background: transparent;
+            border: none;
+            color: var(--ink-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover {
+            background: var(--surface-hover);
+            color: var(--ink);
+        }
+        .modal-body {
+            padding: 16px 18px;
+        }
+        .report-doc-preview {
+            background: var(--bg-deep);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+        }
+        .report-doc-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+        .report-doc-meta {
+            font-size: 11.5px;
+            color: var(--ink-muted);
+            margin-bottom: 4px;
+        }
+        .report-doc-url {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-faint);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        .report-reasons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .report-reason-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            padding: 8px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--ink-soft);
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+        .report-reason-label:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent);
+        }
+        .report-reason-label input[type="radio"] {
+            margin-top: 2px;
+            accent-color: var(--accent);
+        }
+        .report-textarea {
+            width: 100%;
+            font-family: inherit;
+            font-size: 12px;
+            line-height: 1.4;
+            padding: 8px 10px;
+            resize: vertical;
+            min-height: 52px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--ink);
+            box-sizing: border-box;
+        }
+        .report-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .report-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            height: 38px;
+            padding: 0 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all .16s ease;
+        }
+        .report-action-btn.whatsapp-btn {
+            background: #25d366;
+            color: #ffffff;
+            border-color: #20bd5a;
+        }
+        .report-action-btn.whatsapp-btn:hover {
+            background: #20bd5a;
+            transform: translateY(-1px);
+        }
+        .report-action-btn.email-btn {
+            background: var(--surface);
+            border-color: var(--border);
+            color: var(--ink);
+        }
+        .report-action-btn.email-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .report-action-btn.copy-btn {
+            background: var(--bg-deep);
+            border-color: var(--border-light);
+            color: var(--ink-soft);
+        }
+        .report-action-btn.copy-btn:hover {
+            background: var(--surface);
+            color: var(--ink);
+        }
+        .report-action-btn.github-btn {
+            background: var(--bg-deep);
+            border-color: var(--border-light);
+            color: var(--ink-soft);
+        }
+        .report-action-btn.github-btn:hover {
+            background: var(--surface);
+            color: var(--ink);
+        }
+        @media (max-width: 480px) {
+            .report-actions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 
     <!-- Google Analytics 4 (GA4) -->
@@ -1100,6 +1348,15 @@
                         <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                         <circle cx="12" cy="12" r="3" />
                     </svg>
+                </button>
+                <button class="topbar-btn icon-only" id="topbarReport" aria-label="Report issue with document"
+                    title="Report document issue (R)" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                        <line x1="4" y1="22" x2="4" y2="15" />
+                    </svg>
+                </button>
                 <button class="topbar-btn accent-btn icon-only" id="topbarDownload" aria-label="Download PDF"
                     title="Download PDF to device (D)" type="button">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -1148,6 +1405,19 @@
                         Copy Link
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Upstream University Mismatch Alert Banner -->
+        <div class="mismatch-banner" id="mismatchBanner" style="display:none;" role="alert">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div class="mismatch-banner-content">
+                <strong id="mismatchBadge">University Portal Error:</strong>
+                <span id="mismatchText">SGOU portal uploaded the wrong question paper under this course link.</span>
             </div>
         </div>
     </header>
@@ -1228,6 +1498,93 @@
             </svg>
             Share
         </button>
+    </div>
+
+    <!-- ============ DOCUMENT ISSUE REPORT MODAL ============ -->
+    <div class="modal-backdrop" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+        <div class="modal-card report-modal-card">
+            <div class="modal-header">
+                <div class="modal-header-icon report-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="modal-header-text">
+                    <h3 id="reportModalTitle">Report Document Issue</h3>
+                    <p id="reportModalSubtitle">Found an upstream university error, wrong paper, or unreadable scan?</p>
+                </div>
+                <button class="modal-close" id="reportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="report-doc-preview">
+                    <div class="report-doc-title" id="reportModalDocTitle">Course Material</div>
+                    <div class="report-doc-meta" id="reportModalDocMeta">SGOU Academic Material</div>
+                    <div class="report-doc-url" id="reportModalDocUrl"></div>
+                </div>
+
+                <div class="report-reasons-group">
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="mismatch" checked>
+                        <span><strong>Subject Mismatch / Wrong Paper</strong> (e.g. Economics paper shown in English)</span>
+                    </label>
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="corrupted">
+                        <span><strong>Blank or Unreadable Scans</strong> (pages missing, broken text, corrupt file)</span>
+                    </label>
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="metadata">
+                        <span><strong>Wrong Exam Date / Year / Course Code</strong></span>
+                    </label>
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="other">
+                        <span><strong>Other Problem</strong></span>
+                    </label>
+                </div>
+
+                <div class="form-group" style="margin-top:14px">
+                    <label for="reportNoteInput" class="form-label" style="display:block;font-size:12px;font-weight:600;margin-bottom:4px;color:var(--ink-soft)">
+                        Additional Notes (Optional)
+                        <span class="form-sublabel" style="display:block;font-size:11px;font-weight:400;color:var(--ink-faint)">Details like page numbers, QP codes, or corrections</span>
+                    </label>
+                    <textarea id="reportNoteInput" class="report-textarea" rows="2" placeholder="e.g. Page 1 displays QP Code T5020 Microeconomics..."></textarea>
+                </div>
+
+                <div class="report-actions-grid">
+                    <button type="button" class="report-action-btn whatsapp-btn" id="reportSendWhatsApp">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+                        </svg>
+                        <span>Send via WhatsApp</span>
+                    </button>
+                    <button type="button" class="report-action-btn email-btn" id="reportSendEmail">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span>Send via Email</span>
+                    </button>
+                    <button type="button" class="report-action-btn copy-btn" id="reportCopyDetails">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span>Copy Report</span>
+                    </button>
+                    <button type="button" class="report-action-btn github-btn" id="reportOpenGithub">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                        </svg>
+                        <span>GitHub Issue</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast -->
@@ -1451,6 +1808,30 @@
                     });
             }
 
+            var activeOverride = null;
+            function checkOverrides(url) {
+                if (!url) return Promise.resolve(null);
+                var sources = ['./data/pyq_overrides.json', '/data/pyq_overrides.json', '/pyq_overrides.json'];
+                function tryLoadOv(idx) {
+                    if (idx >= sources.length) return Promise.resolve(null);
+                    return fetch(sources[idx])
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (data) {
+                            if (!data || typeof data !== 'object') return tryLoadOv(idx + 1);
+                            var normUrl = url.trim();
+                            var ov = data[normUrl] || null;
+                            if (!ov) {
+                                for (var k in data) {
+                                    if (k.toLowerCase() === normUrl.toLowerCase()) { ov = data[k]; break; }
+                                }
+                            }
+                            return ov;
+                        })
+                        .catch(function () { return tryLoadOv(idx + 1); });
+                }
+                return tryLoadOv(0);
+            }
+
             function showCourse() {
                 if (!pdfUrl) {
                     showError('PDF URL not available for this course.');
@@ -1620,7 +2001,22 @@
                 if (bShare) bShare.onclick = doShare;
                 if (bCopy) bCopy.onclick = doShare;
 
-                loadPDF(pdfUrl);
+                checkOverrides(pdfUrl).then(function (ov) {
+                    activeOverride = ov;
+                    var banner = document.getElementById('mismatchBanner');
+                    if (banner) {
+                        if (ov) {
+                            banner.style.display = 'flex';
+                            var bBadge = document.getElementById('mismatchBadge');
+                            var bText = document.getElementById('mismatchText');
+                            if (bBadge) bBadge.textContent = (ov.badge || 'University Portal Error') + ':';
+                            if (bText) bText.textContent = ov.reason || 'Upstream university error on portal.';
+                        } else {
+                            banner.style.display = 'none';
+                        }
+                    }
+                    loadPDF(pdfUrl);
+                });
             }
 
             // High-resilient PDF loader with automatic UX comfort fallback (No blank screens)
@@ -1662,7 +2058,8 @@
                 var fullTarget = '';
                 if (url || streamSource) {
                     var docSource = streamSource || ('/api/download?url=' + encodeURIComponent(url) + '&inline=1');
-                    fullTarget = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Document') + '&theme=' + encodeURIComponent(curTheme);
+                    var ovParam = activeOverride ? '&override=1' : '';
+                    fullTarget = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Document') + '&theme=' + encodeURIComponent(curTheme) + (code ? '&code=' + encodeURIComponent(code) : '') + ovParam;
                 }
 
                 if (frame) {
@@ -1800,18 +2197,126 @@
                     });
                 }
 
+                // Document Issue Reporting Modal Wiring
+                var reportModal = document.getElementById('reportModal');
+                var reportBtn = document.getElementById('topbarReport');
+                var reportCloseBtn = document.getElementById('reportModalCloseBtn');
+                var mismatchBanner = document.getElementById('mismatchBanner');
+
+                function openReportDialog() {
+                    if (!reportModal) return;
+                    var titleEl = document.getElementById('reportModalDocTitle');
+                    var metaEl = document.getElementById('reportModalDocMeta');
+                    var urlEl = document.getElementById('reportModalDocUrl');
+                    var noteEl = document.getElementById('reportNoteInput');
+
+                    if (titleEl) titleEl.textContent = name ? (name + (code ? ' (' + code + ')' : '')) : (code || 'Course Material');
+                    if (metaEl) metaEl.textContent = (prog || 'SGOU') + ' \u2022 ' + (examDate || matType || 'Academic Material') + (batch ? ' \u2022 ' + batch : '');
+                    if (urlEl) {
+                        urlEl.textContent = pdfUrl || '';
+                        urlEl.title = pdfUrl || '';
+                    }
+                    if (noteEl) noteEl.value = '';
+
+                    reportModal.classList.add('visible');
+                    setTimeout(function () { reportCloseBtn?.focus(); }, 60);
+                }
+
+                function closeReportDialog() {
+                    if (reportModal) reportModal.classList.remove('visible');
+                }
+
+                function submitReportChannel(channel) {
+                    var note = (document.getElementById('reportNoteInput')?.value || '').trim();
+                    var reasonRadio = document.querySelector('input[name="reportReason"]:checked');
+                    var reasonText = reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch';
+
+                    var reportText =
+                        '*SGOU Academic Database \u2014 Document Issue Report*\n\n' +
+                        '\u2022 *Course:* ' + (name || 'N/A') + ' (' + (code || 'N/A') + ')\n' +
+                        '\u2022 *Programme:* ' + (prog || 'N/A') + '\n' +
+                        '\u2022 *Material Type:* ' + (matType || 'PYQ') + '\n' +
+                        (examDate ? '\u2022 *Exam Date:* ' + examDate + '\n' : '') +
+                        (batch ? '\u2022 *Batch:* ' + batch + '\n' : '') +
+                        '\u2022 *Report Category:* ' + reasonText + '\n' +
+                        (note ? '\u2022 *User Notes:* ' + note + '\n' : '') +
+                        '\u2022 *Document URL:* ' + (pdfUrl || 'N/A') + '\n\n' +
+                        '_Reported via SGOU Academic Database v3.0.0_';
+
+                    var t = document.getElementById('toast');
+                    function showT(msg) {
+                        if (t) {
+                            t.textContent = msg;
+                            t.classList.add('visible');
+                            setTimeout(function () { t.classList.remove('visible'); }, 3000);
+                        }
+                    }
+
+                    if (channel === 'whatsapp') {
+                        window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(reportText), '_blank');
+                        showT('Opening WhatsApp to send report...');
+                    } else if (channel === 'email') {
+                        var subject = 'SGOU Document Issue: ' + (code || '') + ' ' + (name || '');
+                        window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(reportText);
+                        showT('Opening email client...');
+                    } else if (channel === 'github') {
+                        var ghTitle = '[Issue] Document Mismatch: ' + (code || '') + ' - ' + (name || '');
+                        var ghUrl = 'https://github.com/researchertizar/sgou-slm-database/issues/new?title=' + encodeURIComponent(ghTitle) + '&body=' + encodeURIComponent(reportText);
+                        window.open(ghUrl, '_blank');
+                        showT('Opening GitHub Issues...');
+                    } else if (channel === 'copy') {
+                        navigator.clipboard.writeText(reportText).then(function () {
+                            showT('Report details copied to clipboard!');
+                        }).catch(function () {
+                            showT('Please copy report manually');
+                        });
+                    }
+                    closeReportDialog();
+                }
+
+                if (reportBtn) reportBtn.onclick = openReportDialog;
+                if (mismatchBanner) {
+                    mismatchBanner.style.cursor = 'pointer';
+                    mismatchBanner.title = 'Click to report or inspect document';
+                    mismatchBanner.onclick = openReportDialog;
+                }
+                if (reportCloseBtn) reportCloseBtn.onclick = closeReportDialog;
+                if (reportModal) {
+                    reportModal.addEventListener('click', function (e) {
+                        if (e.target === reportModal) closeReportDialog();
+                    });
+                }
+                document.getElementById('reportSendWhatsApp')?.addEventListener('click', function () { submitReportChannel('whatsapp'); });
+                document.getElementById('reportSendEmail')?.addEventListener('click', function () { submitReportChannel('email'); });
+                document.getElementById('reportCopyDetails')?.addEventListener('click', function () { submitReportChannel('copy'); });
+                document.getElementById('reportOpenGithub')?.addEventListener('click', function () { submitReportChannel('github'); });
+
                 // Keyboard Shortcuts for Standalone Viewer
                 document.addEventListener('keydown', function (e) {
                     var activeEl = document.activeElement;
                     var isInput = activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName);
                     if (isInput) return;
 
+                    var isReportOpen = reportModal && reportModal.classList.contains('visible');
                     var k = e.key.toLowerCase();
-                    if (e.key === 'Escape' || e.key === 'Backspace') {
+
+                    if (e.key === 'Escape') {
+                        if (isReportOpen) {
+                            e.preventDefault();
+                            closeReportDialog();
+                            return;
+                        }
                         e.preventDefault();
                         window.location.href = './';
                         return;
                     }
+                    if (e.key === 'Backspace' && !isReportOpen) {
+                        e.preventDefault();
+                        window.location.href = './';
+                        return;
+                    }
+                    if (isReportOpen) return;
+
                     if (k === 't') {
                         e.preventDefault();
                         document.getElementById('topbarThemeToggle')?.click();
@@ -1825,6 +2330,11 @@
                     if (k === 'd') {
                         e.preventDefault();
                         document.getElementById('topbarDownload')?.click();
+                        return;
+                    }
+                    if (k === 'r') {
+                        e.preventDefault();
+                        openReportDialog();
                         return;
                     }
                     if (k === 's') {
@@ -1846,7 +2356,7 @@
                         e.preventDefault();
                         var t = document.getElementById('toast');
                         if (t) {
-                            t.textContent = 'Shortcuts: [Esc] Back \u00B7 [T] Theme \u00B7 [F] Comfort \u00B7 [D] Download \u00B7 [S] Share \u00B7 [O] Open \u00B7 [I] Details';
+                            t.textContent = 'Shortcuts: [Esc] Back \u00B7 [T] Theme \u00B7 [F] Comfort \u00B7 [D] Download \u00B7 [R] Report \u00B7 [S] Share \u00B7 [O] Open \u00B7 [I] Details';
                             t.classList.add('visible');
                             setTimeout(function () { t.classList.remove('visible'); }, 4000);
                         }

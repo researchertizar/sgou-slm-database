@@ -1,0 +1,9 @@
+{
+  "https://d198y4z1gpgoxg.cloudfront.net/uploads/expreviousquestion/E4vT5zofoMWZH6Ek3gStWpTKVr2WedesHiOA3kSS.pdf": {
+    "type": "UPSTREAM_MISMATCH",
+    "badge": "University Mismatch",
+    "reason": "SGOU portal mistakenly uploaded M.A. Economics (M23EC01DC – QP Code T5020) paper under this link on their official website.",
+    "actual_subject": "M.A. Economics – Microeconomics I (May 2024)",
+    "recommendation": "Check the genuine May 2024 (Supp) or Nov 2023 papers for this course in the list below."
+  }
+}

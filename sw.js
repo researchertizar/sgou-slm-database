@@ -1,10 +1,10 @@
-const CACHE = 'sgou-v141';
+const CACHE = 'sgou-v142';
 const SHELL = [
     './',
     './index.html',
-    './css/style.css?v=20261007_05',
-    './js/script.js?v=20261007_05',
-    './manifest.json?v=20261007_05',
+    './css/style.css?v=20261007_06',
+    './js/script.js?v=20261007_06',
+    './manifest.json?v=20261007_06',
     './assets/icons/icon.svg?v=20260904_10',
     './assets/icons/icon-192.png?v=20260904_10',
     './assets/icons/icon-512.png?v=20260904_10',
@@ -14,7 +14,8 @@ const SHELL = [
     './reader.html',
     './pdfjs/pdf.min.js',
     './pdfjs/pdf.worker.min.js',
-    './opensearch.xml'
+    './opensearch.xml',
+    './data/pyq_overrides.json'
 ];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 

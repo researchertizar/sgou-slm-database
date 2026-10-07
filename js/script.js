@@ -571,6 +571,7 @@ class CatalogService {
   async load() {
     const slmSources = ['./data/sgou_slm_data.json', './sgou_slm_data.json'];
     const qSources = ['./data/sgou_questions_cleaned.json', './sgou_questions_cleaned.json'];
+    const overrideSources = ['./data/pyq_overrides.json', './pyq_overrides.json'];
 
     const fetchFirstValid = async (urls) => {
       for (const url of urls) {
@@ -584,9 +585,22 @@ class CatalogService {
       return null;
     };
 
-    const [slmRaw, qRaw] = await Promise.all([
+    const fetchOverrides = async (urls) => {
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const json = await res.json();
+          if (json && typeof json === 'object') return json;
+        } catch (_) {}
+      }
+      return {};
+    };
+
+    const [slmRaw, qRaw, overridesRaw] = await Promise.all([
       fetchFirstValid(slmSources),
-      fetchFirstValid(qSources)
+      fetchFirstValid(qSources),
+      fetchOverrides(overrideSources)
     ]);
 
     if (!slmRaw && !qRaw) {
@@ -600,15 +614,16 @@ class CatalogService {
       console.warn('[CatalogService] SLM dataset was unavailable; running in Questions-only mode.');
     }
 
-    this._process(slmRaw || [], qRaw || []);
+    this._process(slmRaw || [], qRaw || [], overridesRaw || {});
     this.isLoaded = true;
     return this.programmes;
   }
 
-  _process(slmRaw, qRaw) {
+  _process(slmRaw, qRaw, overridesRaw = {}) {
     this.programmes = [];
     this.courseMap.clear();
     this.searchIndex = [];
+    this.overrides = overridesRaw || {};
     this.totalCourses = 0;
     this.totalPyq = 0;
     this.totalAsgn = 0;
@@ -659,6 +674,8 @@ class CatalogService {
           const sKey = normSem(py.semester);
           const cCode = extractCourseCode(py);
           const cleanSubject = cleanSubjectName(py.subject_name);
+          const pUrl = String(py.pdf_url || '').trim();
+          const overrideInfo = (this.overrides && this.overrides[pUrl]) ? this.overrides[pUrl] : null;
           const pyRecord = {
             subject_name: String(py.subject_name || '').trim(),
             clean_name: cleanSubject,
@@ -666,7 +683,8 @@ class CatalogService {
             exam_date: String(py.exam_date || '').trim(),
             admission_batch: String(py.admission_batch || '').trim(),
             semester: sKey,
-            pdf_url: String(py.pdf_url || '').trim()
+            pdf_url: pUrl,
+            override: overrideInfo
           };
           this.totalPyq++;
 
@@ -864,6 +882,11 @@ class CatalogService {
   getCourse(code) {
     if (!code) return null;
     return this.courseMap.get(code.toLowerCase().trim()) || null;
+  }
+
+  getOverride(url) {
+    if (!url || !this.overrides) return null;
+    return this.overrides[url] || null;
   }
 
   filterByLevel(level) {
@@ -1667,11 +1690,11 @@ class UIController {
     }
     const ogImg = document.querySelector('meta[property="og:image"]');
     if (ogImg) {
-      ogImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05');
+      ogImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06');
     }
     const twitterImg = document.querySelector('meta[name="twitter:image"]');
     if (twitterImg) {
-      twitterImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05');
+      twitterImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06');
     }
   }
 
@@ -2129,13 +2152,23 @@ class UIController {
                   <div class="course-pyq-drawer open">
                     ${course.pyqs.map(py => {
                       const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                      const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
+                      const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}${py.override ? '&override=1' : ''}`;
                       return `
-                        <div class="pyq-paper-item">
+                        <div class="pyq-paper-item${py.override ? ' has-override' : ''}">
                           <div class="pyq-paper-info">
                             <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
                             ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                            ${py.override ? `<span class="pyq-override-tag" title="${ea(py.override.reason || 'University upload mismatch')}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${esc(py.override.badge || 'University Mismatch')}</span>` : ''}
                           </div>
+                          ${py.override ? `
+                            <div class="pyq-override-notice">
+                              <span class="pyq-notice-icon">⚠️</span>
+                              <div class="pyq-notice-body">
+                                <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
+                                ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
+                              </div>
+                            </div>
+                          ` : ''}
                           <div class="pyq-paper-actions">
                             <a class="btn-view" href="${ea(vUrlPyq)}" title="View Exam Paper PDF" data-type="PYQ" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -2145,6 +2178,10 @@ class UIController {
                               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                               <span>PDF</span>
                             </a>
+                            <button type="button" class="btn-report-paper" title="Report issue with this document" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-batch="${ea(py.admission_batch || '')}" data-url="${ea(py.pdf_url)}">
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                              <span>Report</span>
+                            </button>
                           </div>
                         </div>
                       `;
@@ -2161,14 +2198,24 @@ class UIController {
                   </div>
                   ${s.generalPyqs.map(py => {
                     const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                    const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(py.clean_name || py.subject_name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
+                    const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(py.clean_name || py.subject_name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}${py.override ? '&override=1' : ''}`;
                     return `
-                      <div class="pyq-paper-item">
+                      <div class="pyq-paper-item${py.override ? ' has-override' : ''}">
                         <div class="pyq-paper-info">
                           <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
                           <strong style="font-size:12px;margin-left:4px">${esc(py.clean_name || py.subject_name)}</strong>
                           ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                          ${py.override ? `<span class="pyq-override-tag" title="${ea(py.override.reason || 'University upload mismatch')}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${esc(py.override.badge || 'University Mismatch')}</span>` : ''}
                         </div>
+                        ${py.override ? `
+                          <div class="pyq-override-notice">
+                            <span class="pyq-notice-icon">⚠️</span>
+                            <div class="pyq-notice-body">
+                              <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
+                              ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
+                            </div>
+                          </div>
+                        ` : ''}
                         <div class="pyq-paper-actions">
                           <a class="btn-view" href="${ea(vUrlG)}" title="View PYQ PDF" data-type="PYQ" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -2178,6 +2225,10 @@ class UIController {
                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                             <span>PDF</span>
                           </a>
+                          <button type="button" class="btn-report-paper" title="Report issue with this document" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-batch="${ea(py.admission_batch || '')}" data-url="${ea(py.pdf_url)}">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                            <span>Report</span>
+                          </button>
                         </div>
                       </div>
                     `;
@@ -2297,13 +2348,23 @@ class UIController {
                       <div class="course-pyq-drawer">
                         ${course.pyqs.map(py => {
                           const fnPyq = sanitize(course.code + '_' + course.name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                          const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
+                          const vUrlPyq = `/?course=${encodeURIComponent(course.code || course.name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(course.name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}${py.override ? '&override=1' : ''}`;
                           return `
-                            <div class="pyq-paper-item">
+                            <div class="pyq-paper-item${py.override ? ' has-override' : ''}">
                               <div class="pyq-paper-info">
                                 <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
                                 ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                                ${py.override ? `<span class="pyq-override-tag" title="${ea(py.override.reason || 'University upload mismatch')}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${esc(py.override.badge || 'University Mismatch')}</span>` : ''}
                               </div>
+                              ${py.override ? `
+                                <div class="pyq-override-notice">
+                                  <span class="pyq-notice-icon">⚠️</span>
+                                  <div class="pyq-notice-body">
+                                    <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
+                                    ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
+                                  </div>
+                                </div>
+                              ` : ''}
                               <div class="pyq-paper-actions">
                                 <a class="btn-view" href="${ea(vUrlPyq)}" title="View PYQ PDF" data-type="PYQ" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -2313,6 +2374,10 @@ class UIController {
                                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                   <span>PDF</span>
                                 </a>
+                                <button type="button" class="btn-report-paper" title="Report issue with this document" data-code="${ea(course.code)}" data-name="${ea(course.name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-batch="${ea(py.admission_batch || '')}" data-url="${ea(py.pdf_url)}">
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                                  <span>Report</span>
+                                </button>
                               </div>
                             </div>
                           `;
@@ -2332,14 +2397,24 @@ class UIController {
                 </div>
                 ${s.generalPyqs.map(py => {
                   const fnG = sanitize(prog.programme_name) + '_' + sanitize(py.clean_name || py.subject_name) + '_PYQ_' + sanitize(py.exam_date || '') + '.pdf';
-                  const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(py.clean_name || py.subject_name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}`;
+                  const vUrlG = `/?course=${encodeURIComponent(py.code || py.clean_name)}&type=pyq${py.exam_date ? '&examdate=' + encodeURIComponent(py.exam_date) : ''}&url=${encodeURIComponent(py.pdf_url)}&name=${encodeURIComponent(py.clean_name || py.subject_name)}&prog=${encodeURIComponent(prog.programme_name)}&level=${encodeURIComponent(prog.level)}${py.override ? '&override=1' : ''}`;
                   return `
-                    <div class="pyq-paper-item">
+                    <div class="pyq-paper-item${py.override ? ' has-override' : ''}">
                       <div class="pyq-paper-info">
                         <span class="pyq-date-pill">${esc(py.exam_date || 'Question Paper')}</span>
                         <strong style="font-size:12px;margin-left:4px">${esc(py.clean_name || py.subject_name)}</strong>
                         ${py.admission_batch ? `<span class="pyq-batch-tag">${esc(py.admission_batch)}</span>` : ''}
+                        ${py.override ? `<span class="pyq-override-tag" title="${ea(py.override.reason || 'University upload mismatch')}"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${esc(py.override.badge || 'University Mismatch')}</span>` : ''}
                       </div>
+                      ${py.override ? `
+                        <div class="pyq-override-notice">
+                          <span class="pyq-notice-icon">⚠️</span>
+                          <div class="pyq-notice-body">
+                            <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
+                            ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
+                          </div>
+                        </div>
+                      ` : ''}
                       <div class="pyq-paper-actions">
                         <a class="btn-view" href="${ea(vUrlG)}" title="View PYQ PDF" data-type="PYQ" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-url="${ea(py.pdf_url)}">
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -2349,6 +2424,10 @@ class UIController {
                           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                           <span>PDF</span>
                         </a>
+                        <button type="button" class="btn-report-paper" title="Report issue with this document" data-code="${ea(py.code || '')}" data-name="${ea(py.clean_name || py.subject_name)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-examdate="${ea(py.exam_date || '')}" data-batch="${ea(py.admission_batch || '')}" data-url="${ea(py.pdf_url)}">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                          <span>Report</span>
+                        </button>
                       </div>
                     </div>
                   `;
@@ -2604,6 +2683,21 @@ class UIController {
       typeTag.className = 'viewer-type-tag ' + (t === 'PYQ' ? 'pyq' : t === 'ASSIGNMENT' ? 'asgn' : 'slm');
     }
 
+    // Upstream data mismatch warning banner in viewer panel
+    const ov = Catalog.getOverride(pdfUrl);
+    const mismatchBanner = $('viewerPanelMismatchBanner');
+    if (mismatchBanner) {
+      if (ov) {
+        mismatchBanner.style.display = 'flex';
+        const b = $('vpMismatchBadge');
+        if (b) b.textContent = ov.badge || 'University Portal Error';
+        const t = $('vpMismatchText');
+        if (t) t.textContent = ov.reason || 'Upstream university error on portal.';
+      } else {
+        mismatchBanner.style.display = 'none';
+      }
+    }
+
     // Dismiss any active floating download progress card
     $('downloadProgressCard')?.classList.remove('visible');
 
@@ -2692,7 +2786,7 @@ class UIController {
       const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
       let fullUrl = '';
       if (pdfUrl) {
-        fullUrl = './reader.html?file=' + encodeURIComponent(pdfUrl) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme);
+        fullUrl = './reader.html?file=' + encodeURIComponent(pdfUrl) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme) + (code ? '&code=' + encodeURIComponent(code) : '') + (ov ? '&override=1' : '');
       }
 
       try {
@@ -2858,6 +2952,75 @@ class UIController {
         this._lastFocusBeforeShortcuts = null;
       }
     }
+  }
+
+  // --- Document Issue Reporting Flow ---
+
+  openReportModal(item = {}) {
+    const modal = $('reportModal');
+    if (!modal) return;
+    this._reportData = item;
+
+    const titleEl = $('reportModalDocTitle');
+    const metaEl = $('reportModalDocMeta');
+    const urlEl = $('reportModalDocUrl');
+    const noteEl = $('reportNoteInput');
+
+    if (titleEl) titleEl.textContent = item.name ? `${item.name} (${item.code || 'No Code'})` : (item.code || 'Course Material');
+    if (metaEl) metaEl.textContent = `${item.prog || 'SGOU'} • ${item.examDate || item.type || 'Academic Material'}${item.batch ? ' • ' + item.batch : ''}`;
+    if (urlEl) {
+      urlEl.textContent = item.url || '';
+      urlEl.title = item.url || '';
+    }
+    if (noteEl) noteEl.value = '';
+
+    modal.classList.add('visible');
+    setTimeout(() => $('reportModalCloseBtn')?.focus(), 60);
+  }
+
+  closeReportModal() {
+    $('reportModal')?.classList.remove('visible');
+  }
+
+  submitReport(channel = 'whatsapp') {
+    const item = this._reportData || {};
+    const note = ($('reportNoteInput')?.value || '').trim();
+    const reasonRadio = document.querySelector('input[name="reportReason"]:checked');
+    const reasonText = reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch';
+
+    const text =
+      `*SGOU Academic Database — Document Issue Report*\n\n` +
+      `• *Course:* ${item.name || 'N/A'} (${item.code || 'N/A'})\n` +
+      `• *Programme:* ${item.prog || 'N/A'}\n` +
+      `• *Material Type:* ${item.type || 'PYQ'}\n` +
+      (item.examDate ? `• *Exam Date:* ${item.examDate}\n` : '') +
+      (item.batch ? `• *Batch:* ${item.batch}\n` : '') +
+      `• *Report Category:* ${reasonText}\n` +
+      (note ? `• *User Notes:* ${note}\n` : '') +
+      `• *Document URL:* ${item.url || 'N/A'}\n\n` +
+      `_Reported via SGOU Academic Database v3.0.0_`;
+
+    if (channel === 'whatsapp') {
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+      this.showToast('Opening WhatsApp to send report...', 3000);
+    } else if (channel === 'email') {
+      const subject = `SGOU Document Issue: ${item.code || ''} ${item.name || ''}`;
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+      this.showToast('Opening email client...', 3000);
+    } else if (channel === 'github') {
+      const title = `[Issue] Document Mismatch: ${item.code || ''} - ${item.name || ''}`;
+      const ghUrl = `https://github.com/researchertizar/sgou-slm-database/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(text)}`;
+      window.open(ghUrl, '_blank');
+      this.showToast('Opening GitHub Issues...', 3000);
+    } else if (channel === 'copy') {
+      navigator.clipboard.writeText(text).then(() => {
+        this.showToast('Report details copied to clipboard!', 3000);
+      }).catch(() => {
+        this.showToast('Please copy report manually', 3000);
+      });
+    }
+
+    this.closeReportModal();
   }
 
   setMaterialType(type) {
@@ -3283,6 +3446,7 @@ class UIController {
       const isStorageHelpOpen = $('storageHelpModal')?.classList.contains('visible');
       const isUpdateOpen = $('updateModal')?.classList.contains('visible');
       const isDownloadModalOpen = $('downloadModal')?.classList.contains('visible');
+      const isReportOpen = $('reportModal')?.classList.contains('visible');
 
       // 1. GLOBAL SHORTCUT: Search Focus (/ or Ctrl+K / Cmd+K)
       if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !isInput)) {
@@ -3306,6 +3470,10 @@ class UIController {
 
       // 3. ESCAPE HANDLING (Top-priority dismissal in reverse stack order)
       if (e.key === 'Escape') {
+        if (isReportOpen) {
+          this.closeReportModal();
+          return;
+        }
         if (isShortcutsOpen) {
           this.closeShortcutsModal();
           return;
@@ -3421,6 +3589,12 @@ class UIController {
           if (panel?._data?.url) window.open(panel._data.url, '_blank', 'noopener noreferrer');
           return;
         }
+        if (keyLow === 'r') {
+          e.preventDefault();
+          const panel = $('viewerPanel');
+          if (panel?._data) this.openReportModal(panel._data);
+          return;
+        }
         return; // Don't fall through to catalog shortcuts while viewer is active
       }
 
@@ -3508,6 +3682,52 @@ class UIController {
 
   initDelegation() {
     document.addEventListener('click', e => {
+      // Document Issue Reporting Actions
+      const reportPaperBtn = e.target.closest('.btn-report-paper');
+      if (reportPaperBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openReportModal({
+          code: reportPaperBtn.getAttribute('data-code') || '',
+          name: reportPaperBtn.getAttribute('data-name') || '',
+          prog: reportPaperBtn.getAttribute('data-prog') || '',
+          level: reportPaperBtn.getAttribute('data-level') || '',
+          examDate: reportPaperBtn.getAttribute('data-examdate') || '',
+          batch: reportPaperBtn.getAttribute('data-batch') || '',
+          url: reportPaperBtn.getAttribute('data-url') || ''
+        });
+        return;
+      }
+
+      if (e.target.closest('#viewerPanelReport')) {
+        e.preventDefault();
+        const data = $('viewerPanel')?._data || {};
+        this.openReportModal(data);
+        return;
+      }
+
+      if (e.target.closest('#reportModalCloseBtn') || (e.target === $('reportModal'))) {
+        this.closeReportModal();
+        return;
+      }
+
+      if (e.target.closest('#reportSendWhatsApp')) {
+        this.submitReport('whatsapp');
+        return;
+      }
+      if (e.target.closest('#reportSendEmail')) {
+        this.submitReport('email');
+        return;
+      }
+      if (e.target.closest('#reportCopyDetails')) {
+        this.submitReport('copy');
+        return;
+      }
+      if (e.target.closest('#reportOpenGithub')) {
+        this.submitReport('github');
+        return;
+      }
+
       // Keyboard Shortcuts Dialog
       if (e.target.closest('#shortcutsBtn')) {
         this.openShortcutsModal();
@@ -3986,7 +4206,7 @@ const UI = new UIController();
 
 const PWAService = {
   APP_VERSION: 'v2026.10.07',
-  BUILD_ID: '20261007_03',
+  BUILD_ID: '20261007_06',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,

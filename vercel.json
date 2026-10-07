@@ -14,6 +14,10 @@
             "destination": "/data/sgou_questions_cleaned.json"
         },
         {
+            "source": "/pyq_overrides.json",
+            "destination": "/data/pyq_overrides.json"
+        },
+        {
             "source": "/og-image.png",
             "destination": "/assets/images/og-image.png"
         },
@@ -160,6 +164,19 @@
         },
         {
             "source": "/sgou_questions_cleaned.json",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=86400, stale-while-revalidate=604800"
+                },
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                }
+            ]
+        },
+        {
+            "source": "/pyq_overrides.json",
             "headers": [
                 {
                     "key": "Cache-Control",

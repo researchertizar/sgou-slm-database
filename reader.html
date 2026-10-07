@@ -481,6 +481,271 @@
       filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
       background: #141210;
     }
+
+    /* Upstream Mismatch Notice Banner */
+    #readerMismatchBanner {
+      position: sticky;
+      top: 0;
+      z-index: 110;
+      width: 100%;
+      background: rgba(245, 158, 11, 0.15);
+      border-bottom: 1px solid rgba(245, 158, 11, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      font-size: 12px;
+      line-height: 1.4;
+      animation: slideDown .2s ease;
+    }
+    .mismatch-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+    }
+    .mismatch-inner svg {
+      color: #d97706;
+      flex-shrink: 0;
+    }
+    html[data-theme="dark"] .mismatch-inner svg {
+      color: #fbbf24;
+    }
+    .mismatch-text {
+      flex: 1;
+    }
+    .mismatch-text strong {
+      color: #b45309;
+      margin-right: 4px;
+    }
+    html[data-theme="dark"] .mismatch-text strong {
+      color: #fcd34d;
+    }
+    .mismatch-report-btn {
+      padding: 4px 10px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--text);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease;
+    }
+    .mismatch-report-btn:hover {
+      background: rgba(245, 158, 11, 0.35);
+    }
+    .mismatch-dismiss-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .mismatch-dismiss-btn:hover {
+      color: var(--text);
+    }
+
+    /* Report Modal Dialog */
+    #reportModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    #reportModal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .report-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+      width: 100%;
+      max-width: 460px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.96);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #reportModal.active .report-card {
+      transform: scale(1);
+    }
+    .report-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--surface-border);
+    }
+    .report-card-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      flex-shrink: 0;
+    }
+    .report-card-title h3 {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+    }
+    .report-card-title p {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin: 2px 0 0;
+    }
+    .report-close-btn {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 6px;
+      border-radius: 6px;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .report-close-btn:hover {
+      color: var(--text);
+    }
+    .report-card-body {
+      padding: 16px 18px;
+    }
+    .reader-report-preview {
+      background: var(--surface-subtle);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+    }
+    .reader-report-doc-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .reader-report-doc-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .report-reasons-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .report-reason-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 7px 11px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--surface-border);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .report-reason-label:hover {
+      border-color: var(--accent);
+    }
+    .report-reason-label input[type="radio"] {
+      margin-top: 2px;
+      accent-color: var(--accent);
+    }
+    .reader-report-textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 12px;
+      line-height: 1.4;
+      padding: 8px 10px;
+      margin-top: 6px;
+      resize: vertical;
+      min-height: 48px;
+      border-radius: 6px;
+      border: 1px solid var(--surface-border);
+      background: var(--surface-subtle);
+      color: var(--text);
+      box-sizing: border-box;
+    }
+    .reader-report-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .reader-report-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all .16s ease;
+    }
+    .reader-report-btn.whatsapp {
+      background: #25d366;
+      color: #fff;
+    }
+    .reader-report-btn.whatsapp:hover {
+      background: #20bd5a;
+    }
+    .reader-report-btn.email {
+      background: var(--surface-subtle);
+      border-color: var(--surface-border);
+      color: var(--text);
+    }
+    .reader-report-btn.email:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .reader-report-btn.copy {
+      background: var(--surface-subtle);
+      border-color: var(--surface-border);
+      color: var(--text-muted);
+    }
+    .reader-report-btn.copy:hover {
+      color: var(--text);
+    }
+    .reader-report-btn.github {
+      background: var(--surface-subtle);
+      border-color: var(--surface-border);
+      color: var(--text-muted);
+    }
+    .reader-report-btn.github:hover {
+      color: var(--text);
+    }
+    @media (max-width: 480px) {
+      .reader-report-actions {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -500,6 +765,23 @@
       <div id="errorBox">
         <div class="error-title" id="errorMsg">Could not load document</div>
         <button type="button" class="retry-btn" id="retryBtn">Retry</button>
+      </div>
+    </div>
+
+    <!-- Upstream University Mismatch Alert Banner -->
+    <div id="readerMismatchBanner" style="display:none;" role="alert">
+      <div class="mismatch-inner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div class="mismatch-text">
+          <strong id="readerMismatchBadge">University Portal Error:</strong>
+          <span id="readerMismatchDesc">SGOU portal uploaded the wrong question paper under this course link.</span>
+        </div>
+        <button type="button" class="mismatch-report-btn" id="readerMismatchReportBtn">Report / Help</button>
+        <button type="button" class="mismatch-dismiss-btn" id="readerMismatchDismissBtn" aria-label="Dismiss banner">&times;</button>
       </div>
     </div>
 
@@ -543,6 +825,14 @@
         </svg>
       </button>
 
+      <!-- Document Issue Report Button -->
+      <button type="button" class="bar-btn" id="reportBtn" title="Report Issue with Document (R)" aria-label="Report issue">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+          <line x1="4" y1="22" x2="4" y2="15"/>
+        </svg>
+      </button>
+
       <!-- Dynamic Fullscreen Button (Toggles between Enter and Exit based on event) -->
       <button type="button" class="bar-btn" id="fullscreenBtn" title="Enter fullscreen (F)" aria-label="Enter fullscreen">
         <svg id="fullscreenIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -579,6 +869,83 @@
         <div class="jump-actions">
           <button type="button" class="jump-btn jump-btn-cancel" id="jumpCancelBtn">Cancel</button>
           <button type="button" class="jump-btn jump-btn-go" id="jumpGoBtn">Jump Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Document Issue Report Modal Dialog -->
+    <div id="reportModal" role="dialog" aria-modal="true" aria-labelledby="readerReportTitle">
+      <div class="report-card">
+        <div class="report-card-header">
+          <div class="report-card-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+              <line x1="4" y1="22" x2="4" y2="15"></line>
+            </svg>
+          </div>
+          <div class="report-card-title">
+            <h3 id="readerReportTitle">Report Document Issue</h3>
+            <p>Found an upstream error or mismatch in this paper?</p>
+          </div>
+          <button type="button" class="report-close-btn" id="readerReportCloseBtn" aria-label="Close">&times;</button>
+        </div>
+        <div class="report-card-body">
+          <div class="reader-report-preview">
+            <div class="reader-report-doc-title" id="readerReportDocTitle">Course Document</div>
+            <div class="reader-report-doc-meta" id="readerReportDocMeta">SGOU Academic Material</div>
+          </div>
+          <div class="report-reasons-group">
+            <label class="report-reason-label">
+              <input type="radio" name="readerReportReason" value="mismatch" checked>
+              <span><strong>Subject Mismatch / Wrong Paper</strong> (e.g. Economics paper shown in English)</span>
+            </label>
+            <label class="report-reason-label">
+              <input type="radio" name="readerReportReason" value="corrupted">
+              <span><strong>Blank or Unreadable Scans</strong> (pages missing, corrupted file)</span>
+            </label>
+            <label class="report-reason-label">
+              <input type="radio" name="readerReportReason" value="metadata">
+              <span><strong>Wrong Exam Date / Year / Course Code</strong></span>
+            </label>
+            <label class="report-reason-label">
+              <input type="radio" name="readerReportReason" value="other">
+              <span><strong>Other Issue</strong></span>
+            </label>
+          </div>
+          <div style="margin-top:12px">
+            <label for="readerReportNote" style="display:block;font-size:11.5px;font-weight:600;margin-bottom:2px;color:var(--text)">
+              Additional Notes (Optional)
+            </label>
+            <textarea id="readerReportNote" class="reader-report-textarea" rows="2" placeholder="e.g. Page 1 displays QP Code T5020..."></textarea>
+          </div>
+          <div class="reader-report-actions">
+            <button type="button" class="reader-report-btn whatsapp" id="readerReportWhatsApp">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+              </svg>
+              <span>WhatsApp</span>
+            </button>
+            <button type="button" class="reader-report-btn email" id="readerReportEmail">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span>Email</span>
+            </button>
+            <button type="button" class="reader-report-btn copy" id="readerReportCopy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>Copy</span>
+            </button>
+            <button type="button" class="reader-report-btn github" id="readerReportGithub">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+              </svg>
+              <span>GitHub</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -1617,8 +1984,131 @@
 
       document.getElementById('retryBtn').addEventListener('click', loadDocument);
 
+      // --- Document Issue Report & Mismatch Warning System ---
+      var reportModal = document.getElementById('reportModal');
+      var reportBtn = document.getElementById('reportBtn');
+      var readerMismatchReportBtn = document.getElementById('readerMismatchReportBtn');
+      var readerMismatchDismissBtn = document.getElementById('readerMismatchDismissBtn');
+      var reportCloseBtn = document.getElementById('readerReportCloseBtn');
+      var courseCode = params.get('code') || '';
+      var isOverrideParam = params.get('override') === '1' || params.get('mismatch') === '1';
+
+      function checkAndDisplayMismatch() {
+        var banner = document.getElementById('readerMismatchBanner');
+        if (!banner) return;
+        if (isOverrideParam) {
+          banner.style.display = 'block';
+        }
+        var sources = ['./data/pyq_overrides.json', '/data/pyq_overrides.json', '/pyq_overrides.json'];
+        function tryLoad(idx) {
+          if (idx >= sources.length) return;
+          fetch(sources[idx])
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+              if (!data) return tryLoad(idx + 1);
+              var matched = null;
+              for (var key in data) {
+                if (rawFile.includes(encodeURIComponent(key)) || rawFile.includes(key) || (courseCode && key.includes(courseCode))) {
+                  matched = data[key];
+                  break;
+                }
+              }
+              if (matched || isOverrideParam) {
+                banner.style.display = 'block';
+                if (matched) {
+                  var b = document.getElementById('readerMismatchBadge');
+                  var d = document.getElementById('readerMismatchDesc');
+                  if (b && matched.badge) b.textContent = matched.badge + ':';
+                  if (d && matched.reason) d.textContent = matched.reason;
+                }
+              }
+            })
+            .catch(function () { tryLoad(idx + 1); });
+        }
+        tryLoad(0);
+      }
+
+      function openReaderReport() {
+        if (!reportModal) return;
+        var t = document.getElementById('readerReportDocTitle');
+        var m = document.getElementById('readerReportDocMeta');
+        if (t) t.textContent = docName + (courseCode ? ' (' + courseCode + ')' : '');
+        if (m) m.textContent = 'SGOU Academic Paper \u2022 Page ' + currentPage + ' of ' + (totalPages || 1);
+        var note = document.getElementById('readerReportNote');
+        if (note) note.value = '';
+        reportModal.classList.add('active');
+        setTimeout(function () { reportCloseBtn?.focus(); }, 50);
+      }
+
+      function closeReaderReport() {
+        if (reportModal) reportModal.classList.remove('active');
+      }
+
+      function submitReaderReport(channel) {
+        var note = (document.getElementById('readerReportNote')?.value || '').trim();
+        var reasonRadio = document.querySelector('input[name="readerReportReason"]:checked');
+        var reasonText = reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch';
+
+        var reportText =
+          '*SGOU Academic Database \u2014 Document Issue Report*\n\n' +
+          '\u2022 *Course / Paper:* ' + (docName || 'N/A') + (courseCode ? ' (' + courseCode + ')' : '') + '\n' +
+          '\u2022 *Page Viewed:* ' + currentPage + ' of ' + totalPages + '\n' +
+          '\u2022 *Report Category:* ' + reasonText + '\n' +
+          (note ? '\u2022 *User Notes:* ' + note + '\n' : '') +
+          '\u2022 *File Source:* ' + (rawFile || 'N/A') + '\n\n' +
+          '_Reported via SGOU Academic Reader v3.0.0_';
+
+        if (channel === 'whatsapp') {
+          window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(reportText), '_blank');
+          showToast('Opening WhatsApp to send report...');
+        } else if (channel === 'email') {
+          var subject = 'SGOU Reader Issue: ' + (courseCode || '') + ' ' + (docName || '');
+          window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(reportText);
+          showToast('Opening email client...');
+        } else if (channel === 'github') {
+          var ghTitle = '[Issue] Document Mismatch: ' + (courseCode || '') + ' - ' + (docName || '');
+          var ghUrl = 'https://github.com/researchertizar/sgou-slm-database/issues/new?title=' + encodeURIComponent(ghTitle) + '&body=' + encodeURIComponent(reportText);
+          window.open(ghUrl, '_blank');
+          showToast('Opening GitHub Issues...');
+        } else if (channel === 'copy') {
+          navigator.clipboard.writeText(reportText).then(function () {
+            showToast('Report details copied to clipboard!');
+          }).catch(function () {
+            showToast('Please copy report manually');
+          });
+        }
+        closeReaderReport();
+      }
+
+      if (reportBtn) reportBtn.addEventListener('click', openReaderReport);
+      if (readerMismatchReportBtn) readerMismatchReportBtn.addEventListener('click', openReaderReport);
+      if (readerMismatchDismissBtn) {
+        readerMismatchDismissBtn.addEventListener('click', function () {
+          var b = document.getElementById('readerMismatchBanner');
+          if (b) b.style.display = 'none';
+        });
+      }
+      if (reportCloseBtn) reportCloseBtn.addEventListener('click', closeReaderReport);
+      if (reportModal) {
+        reportModal.addEventListener('click', function (e) {
+          if (e.target === reportModal) closeReaderReport();
+        });
+      }
+      document.getElementById('readerReportWhatsApp')?.addEventListener('click', function () { submitReaderReport('whatsapp'); });
+      document.getElementById('readerReportEmail')?.addEventListener('click', function () { submitReaderReport('email'); });
+      document.getElementById('readerReportCopy')?.addEventListener('click', function () { submitReaderReport('copy'); });
+      document.getElementById('readerReportGithub')?.addEventListener('click', function () { submitReaderReport('github'); });
+
       // Keyboard navigation
       window.addEventListener('keydown', function (e) {
+        if (reportModal && reportModal.classList.contains('active')) {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            closeReaderReport();
+            return;
+          }
+          return;
+        }
         if (jumpModal.classList.contains('active')) return;
 
         if (e.key === 'Escape' || e.key === 'Backspace') {
@@ -1651,6 +2141,9 @@
         } else if (key === 'f') {
           e.preventDefault();
           toggleFullscreen();
+        } else if (key === 'r') {
+          e.preventDefault();
+          openReaderReport();
         } else if (key === 't' || key === 'e') {
           e.preventDefault();
           cycleFilterMode();
@@ -1677,6 +2170,7 @@
       });
 
       loadDocument();
+      checkAndDisplayMismatch();
     })();
   </script>
 </body>

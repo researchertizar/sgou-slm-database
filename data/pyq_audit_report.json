@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-10-07T14:39:01Z",
+  "total_audited": 964,
+  "mismatches_count": 1,
+  "errors_count": 0,
+  "mismatches": [
+    {
+      "url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/expreviousquestion/E4vT5zofoMWZH6Ek3gStWpTKVr2WedesHiOA3kSS.pdf",
+      "declared_code": "M21EG01DC",
+      "declared_subject": "M.A. English Language and Literature M21EG01DC \u2013 Chaucer to the Elizabethan Age (2023 July admissions)",
+      "program": "MASTER OF ARTS (ENGLISH)",
+      "result": "mismatch",
+      "mismatch_reason": "Document contains codes ['M23EC01DC'] instead of declared M21EG01DC",
+      "codes_in_doc": [
+        "M23EC01DC"
+      ],
+      "qp_code": "Enrollment",
+      "header_sample": "Page 1 of 2    QP CODE                                                   Enrollment Number: \u2026\u2026\u2026\u2026\u2026\u2026     T5020                          Name: \u2026\u2026\u2026\u2026.\u2026\u2026..\u2026\u2026\u2026\u2026\u2026..  MA DEGREE EXAMINATIONS, MAY 2024  First Semester  M.A. Economics  M23EC01DC \u2013 Microeconomics",
+      "pages": 2
+    }
+  ],
+  "errors": []
+}

@@ -38,8 +38,8 @@
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_IN">
-    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -50,7 +50,7 @@
     <meta name="twitter:title" content="SGOU Academic Database — By Ahayas">
     <meta name="twitter:description"
         content="Free academic portal for Sree Narayana Guru Open University (SNGOU): 1,200+ SLM books, 950+ PYQs, and 75+ assignments with offline PWA support.">
-    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_05">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
     <meta name="twitter:image:alt" content="SGOU Academic Database — Preview Card">
     <meta name="twitter:creator" content="@researchertizar">
 
@@ -61,7 +61,7 @@
     <meta name="ICBM" content="8.8932, 76.6141">
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="manifest.json?v=20261007_05">
+    <link rel="manifest" href="manifest.json?v=20261007_06">
     <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png?v=20260904_10">
@@ -74,7 +74,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261007_05">
+    <link rel="stylesheet" href="css/style.css?v=20261007_06">
 
     <!-- Schema.org Knowledge Graph (JSON-LD) for Search Engines & AI Crawlers -->
     <!-- Search Engine Webmaster Verification Hooks -->
@@ -645,6 +645,13 @@
                             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                         </svg>
                     </button>
+                    <button class="vp-btn" id="viewerPanelReport" aria-label="Report issue" title="Report issue with document (R)" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                            <line x1="4" y1="22" x2="4" y2="15" />
+                        </svg>
+                    </button>
                 </div>
             </div>
             <div class="vp-info">
@@ -653,6 +660,17 @@
                 <span class="viewer-type-tag" id="viewerTypeTag"></span>
                 <span class="vp-code" id="viewerCourseCode"></span>
             </div>
+            <div class="vp-mismatch-banner" id="viewerPanelMismatchBanner" style="display:none;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <div class="vp-mismatch-content">
+                    <strong id="vpMismatchBadge">University Portal Error:</strong>
+                    <span id="vpMismatchText">SGOU portal uploaded the wrong question paper under this course link.</span>
+                </div>
+            </div>
         </div>
         <div class="vp-body">
             <div class="vp-loading" id="viewerPanelLoading">
@@ -660,6 +678,93 @@
                 <span>Loading PDF preview&hellip;</span>
             </div>
             <iframe id="viewerPanelFrame" title="PDF Viewer"></iframe>
+        </div>
+    </div>
+
+    <!-- ============ DOCUMENT ISSUE REPORT MODAL ============ -->
+    <div class="modal-backdrop" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+        <div class="modal-card report-modal-card">
+            <div class="modal-header">
+                <div class="modal-header-icon report-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </div>
+                <div class="modal-header-text">
+                    <h3 id="reportModalTitle">Report Document Issue</h3>
+                    <p id="reportModalSubtitle">Found an upstream university error, wrong paper, or unreadable scan?</p>
+                </div>
+                <button class="modal-close" id="reportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="report-doc-preview">
+                    <div class="report-doc-title" id="reportModalDocTitle">Course Material</div>
+                    <div class="report-doc-meta" id="reportModalDocMeta">SGOU Academic Material</div>
+                    <div class="report-doc-url" id="reportModalDocUrl"></div>
+                </div>
+
+                <div class="report-reasons-group">
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="mismatch" checked>
+                        <span><strong>Subject Mismatch / Wrong Paper</strong> (e.g. Economics paper shown in English)</span>
+                    </label>
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="corrupted">
+                        <span><strong>Blank or Unreadable Scans</strong> (pages missing, broken text, corrupt file)</span>
+                    </label>
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="metadata">
+                        <span><strong>Wrong Exam Date / Year / Course Code</strong></span>
+                    </label>
+                    <label class="report-reason-label">
+                        <input type="radio" name="reportReason" value="other">
+                        <span><strong>Other Problem</strong></span>
+                    </label>
+                </div>
+
+                <div class="form-group" style="margin-top:14px">
+                    <label for="reportNoteInput" class="form-label">
+                        Additional Notes (Optional)
+                        <span class="form-sublabel">Details like page numbers, QP codes, or corrections</span>
+                    </label>
+                    <textarea id="reportNoteInput" class="form-input report-textarea" rows="2" placeholder="e.g. Page 1 displays QP Code T5020 Microeconomics..."></textarea>
+                </div>
+
+                <div class="report-actions-grid">
+                    <button type="button" class="report-action-btn whatsapp-btn" id="reportSendWhatsApp">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+                        </svg>
+                        <span>Send via WhatsApp</span>
+                    </button>
+                    <button type="button" class="report-action-btn email-btn" id="reportSendEmail">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span>Send via Email</span>
+                    </button>
+                    <button type="button" class="report-action-btn copy-btn" id="reportCopyDetails">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span>Copy Report</span>
+                    </button>
+                    <button type="button" class="report-action-btn github-btn" id="reportOpenGithub">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+                        </svg>
+                        <span>GitHub Issue</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1064,7 +1169,7 @@
     <!-- Toast & Update Notification Container -->
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/script.js?v=20261007_05" defer></script>
+    <script src="js/script.js?v=20261007_06" defer></script>
 </body>
 
 </html>
