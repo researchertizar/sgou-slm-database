@@ -222,15 +222,15 @@ const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname) || locat
  * paste your Google Form formResponse endpoint and entry IDs here.
  */
 window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
-  supportPhone: '919544572262', // Demo / placeholder support phone number
-  formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_DEMO_FORM_ID_REPLACE_ME/formResponse',
+  supportPhone: '919544572262',
+  formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSelryRvL0B93bWMePwpA2ElZNcbVJTXERAgxOza0Iy6TSVJUA/formResponse',
   entries: {
-    course: 'entry.1000001',
-    programme: 'entry.1000002',
-    materialType: 'entry.1000003',
-    category: 'entry.1000004',
-    notes: 'entry.1000005',
-    url: 'entry.1000006'
+    course: 'entry.155826295',
+    programme: 'entry.1510261168',
+    materialType: 'entry.271473120',
+    category: 'entry.2021342413',
+    notes: 'entry.1696689688',
+    url: 'entry.1117249821'
   }
 };
 
