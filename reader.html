@@ -947,14 +947,31 @@
           container.classList.remove('is-zooming-interactive');
         }
 
-        // Focal point in container viewport coordinates
-        var cRect = container.getBoundingClientRect();
-        var fx = (typeof focalX === 'number') ? (focalX - cRect.left) : (container.clientWidth / 2);
-        var fy = (typeof focalY === 'number') ? (focalY - cRect.top) : (container.clientHeight / 2);
+        // Find the specific page under the focal point
+        var targetWrap = null;
+        var r = null;
+        if (typeof focalX === 'number' && typeof focalY === 'number') {
+          for (var i = 0; i < pageWrappers.length; i++) {
+            var b = pageWrappers[i].getBoundingClientRect();
+            if (focalY >= b.top && focalY <= b.bottom) {
+              targetWrap = pageWrappers[i];
+              r = b;
+              break;
+            }
+          }
+        }
+        if (!targetWrap && pageWrappers.length > 0) {
+          var curIdx = Math.min(Math.max(currentPage - 1, 0), pageWrappers.length - 1);
+          targetWrap = pageWrappers[curIdx];
+          r = targetWrap.getBoundingClientRect();
+        }
 
-        // Content point under focal center before scaling
-        var contentX = container.scrollLeft + fx;
-        var contentY = container.scrollTop + fy;
+        var fractionX = 0.5;
+        var fractionY = 0.5;
+        if (r && r.width > 0 && r.height > 0 && typeof focalX === 'number' && typeof focalY === 'number') {
+          fractionX = Math.min(Math.max((focalX - r.left) / r.width, 0), 1);
+          fractionY = Math.min(Math.max((focalY - r.top) / r.height, 0), 1);
+        }
 
         currentScale = newScale;
         updateZoomUI();
@@ -969,13 +986,22 @@
           wrap.style.height = scaledHeight + 'px';
         }
 
-        // Keep focal point stationary under cursor or fingers
-        var scaleRatio = newScale / oldScale;
-        var targetScrollLeft = (contentX * scaleRatio) - fx;
-        var targetScrollTop = (contentY * scaleRatio) - fy;
+        // Keep focal point stationary directly under cursor or fingers
+        if (targetWrap && typeof focalX === 'number' && typeof focalY === 'number') {
+          var cRect = container.getBoundingClientRect();
+          var fx = focalX - cRect.left;
+          var fy = focalY - cRect.top;
 
-        container.scrollLeft = Math.max(0, targetScrollLeft);
-        container.scrollTop = Math.max(0, targetScrollTop);
+          var pointInContainerX = targetWrap.offsetLeft + (fractionX * scaledWidth);
+          var pointInContainerY = targetWrap.offsetTop + (fractionY * scaledHeight);
+
+          container.scrollLeft = Math.max(0, pointInContainerX - fx);
+          container.scrollTop = Math.max(0, pointInContainerY - fy);
+        } else {
+          var scaleRatio = newScale / oldScale;
+          container.scrollLeft = Math.max(0, container.scrollLeft * scaleRatio);
+          container.scrollTop = Math.max(0, container.scrollTop * scaleRatio);
+        }
 
         updateReadingProgress();
 
@@ -1049,7 +1075,7 @@
           });
         }, {
           root: container,
-          rootMargin: '200px 0px 200px 0px',
+          rootMargin: '600px 0px 600px 0px',
           threshold: 0.01
         });
 
@@ -1059,11 +1085,11 @@
       function getOptimalRasterScale(scale) {
         var dpr = window.devicePixelRatio || 1;
         var isMobile = (window.innerWidth <= 768) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 1);
-        // On mobile and budget devices, clamp effective rasterization density to 1.65x max.
-        // Provides crystal-clear text on Retina screens while rendering 4x faster with 75% less GPU RAM.
-        // On desktop widescreen, allow up to 2.0x max for large monitors.
-        var maxScale = isMobile ? 1.65 : 2.0;
-        var targetScale = Math.min(scale * dpr, maxScale);
+        // Guarantee 100% uncompromising, crystal-clear vector sharpness at any magnification.
+        // Effective density scales with zoom level * DPR, up to a safe 3.2x ceiling on mobile (4.0x on desktop)
+        // to prevent GPU memory crashes while maintaining print-grade typography even at high zoom.
+        var maxScale = isMobile ? 3.2 : 4.0;
+        var targetScale = Math.min(scale * Math.min(dpr, 2.5), maxScale);
         return Math.max(targetScale, 0.75);
       }
 
@@ -1232,7 +1258,7 @@
       }
 
       function pruneFarCanvases(cur) {
-        var keepDistance = (window.innerWidth <= 768) ? 3 : 5;
+        var keepDistance = (window.innerWidth <= 768) ? 6 : 8;
         for (var p in pageRenders) {
           if (!Object.prototype.hasOwnProperty.call(pageRenders, p)) continue;
           var num = parseInt(p, 10);
@@ -1298,13 +1324,17 @@
           e.preventDefault();
           var isDesktop = (container.clientWidth || window.innerWidth) >= 840;
           var baseFit = isDesktop ? getFitHeightScale() : getFitWidthScale();
-          if (currentScale > baseFit * 1.25) {
-            // Already zoomed in: double-tap smoothly zooms back to fit
+          if (currentScale < baseFit - 0.03) {
+            // Below fit width (e.g. 35% or 50% zoomed out): double-tap restores directly to Fit Width (e.g. 68% on phone)
+            applySmoothScale(baseFit, e.clientX, e.clientY, false);
+            showToast('Fit (' + Math.round(baseFit * 100) + '%)');
+          } else if (currentScale > baseFit + 0.08) {
+            // Already zoomed in above fit width: double-tap smoothly zooms back out to Fit Width
             applySmoothScale(baseFit, e.clientX, e.clientY, false);
             showToast('Fit (' + Math.round(baseFit * 100) + '%)');
           } else {
-            // In fit mode: double-tap smoothly zooms in (1.6x) centered at the tap coordinate
-            var targetZoom = Math.min(baseFit * 1.6, MAX_SCALE);
+            // At Fit Width: double-tap smoothly zooms in (1.65x) centered directly where user double-tapped!
+            var targetZoom = Math.min(baseFit * 1.65, MAX_SCALE);
             applySmoothScale(targetZoom, e.clientX, e.clientY, false);
             showToast('Zoom ' + Math.round(targetZoom * 100) + '%');
           }

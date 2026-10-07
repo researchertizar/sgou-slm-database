@@ -1542,6 +1542,10 @@ class RouterService {
     // Search Query (?q=english or ?search=english)
     const query = params.get('q') || params.get('search') || '';
 
+    if (type === 'SLM') {
+      UI._pushedTabState = false;
+    }
+
     UI.restoreState(query, level, type);
     Analytics.trackPageView(window.location.pathname + window.location.search, document.title);
     this.isResolving = false;
@@ -2845,9 +2849,10 @@ class UIController {
     }
   }
 
-  setMaterialType(type, push = false) {
+  setMaterialType(type) {
     const targetType = (type || 'SLM').toUpperCase();
     if (this.activeType === targetType) return;
+    const prevType = this.activeType;
     this.activeType = targetType;
     const switcher = $('materialTypeSwitcher');
     if (switcher) {
@@ -2860,7 +2865,27 @@ class UIController {
     });
     Analytics.trackFilter('type_' + this.activeType);
     this.executeSearch();
-    this.syncUrlFromState(push);
+
+    // Primary Tab Hierarchy:
+    // SLM is the primary root tab. Switching from SLM to a secondary tab (PYQ/ASSIGNMENT)
+    // pushes exactly 1 history state so pressing Android Back returns cleanly to SLM.
+    // Switching between secondary tabs replaces state silently to prevent history loops.
+    // Tapping SLM directly pops the state via history.back() to keep the root frame clean.
+    if (this.activeType === 'SLM') {
+      if (this._pushedTabState) {
+        this._pushedTabState = false;
+        history.back();
+      } else {
+        this.syncUrlFromState(false);
+      }
+    } else {
+      if (prevType === 'SLM' && !this._pushedTabState) {
+        this._pushedTabState = true;
+        this.syncUrlFromState(true);
+      } else {
+        this.syncUrlFromState(false);
+      }
+    }
   }
 
   renderMyDownloads() {
@@ -3942,7 +3967,7 @@ const UI = new UIController();
 
 const PWAService = {
   APP_VERSION: 'v2026.10.07',
-  BUILD_ID: '20261007_02',
+  BUILD_ID: '20261007_03',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,
