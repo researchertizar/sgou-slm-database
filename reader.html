@@ -589,6 +589,79 @@
     (function () {
       'use strict';
 
+      // --- Eye-Comfort Filter Synchronization & Cycling ---
+      var container = document.getElementById('viewerContainer');
+      var filterBtn = document.getElementById('filterBtn');
+      var filterIcon = document.getElementById('filterIcon');
+      var toastEl = document.getElementById('readerToast');
+      var toastTimer = null;
+
+      var FILTER_MODES = ['normal', 'sepia', 'dark'];
+      var FILTER_LABELS = {
+        normal: 'Natural Document',
+        sepia: 'Warm Sepia (Eye Comfort)',
+        dark: 'Night Invert (Dark Mode)'
+      };
+
+      function showToast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toastEl.classList.remove('show');
+        }, 1800);
+      }
+
+      function updateFilterUI(mode) {
+        if (!container) container = document.getElementById('viewerContainer');
+        if (!filterBtn) filterBtn = document.getElementById('filterBtn');
+        if (!filterIcon) filterIcon = document.getElementById('filterIcon');
+        if (container) {
+          container.classList.remove('filter-sepia', 'filter-dark');
+          if (mode === 'sepia') {
+            container.classList.add('filter-sepia');
+          } else if (mode === 'dark') {
+            container.classList.add('filter-dark');
+          }
+        }
+        if (filterIcon) {
+          if (mode === 'sepia') {
+            filterIcon.innerHTML = '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10M6 14h6"/>';
+          } else if (mode === 'dark') {
+            filterIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+          } else {
+            filterIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
+          }
+        }
+        if (filterBtn) {
+          if (mode === 'sepia') {
+            filterBtn.title = 'Warm Sepia Mode (T)';
+          } else if (mode === 'dark') {
+            filterBtn.title = 'Night Invert Mode (T)';
+          } else {
+            filterBtn.title = 'Natural Document Mode (T)';
+          }
+        }
+      }
+
+      function applySavedFilter() {
+        var mode = 'normal';
+        try { mode = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
+        updateFilterUI(mode);
+      }
+
+      function cycleFilterMode() {
+        var cur = 'normal';
+        try { cur = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
+        var nextIdx = (FILTER_MODES.indexOf(cur) + 1) % FILTER_MODES.length;
+        var next = FILTER_MODES[nextIdx];
+        try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
+        updateFilterUI(next);
+        showToast(FILTER_LABELS[next]);
+      }
+      if (filterBtn) filterBtn.addEventListener('click', cycleFilterMode);
+
       // --- Theme Synchronization & Adaptive Reading Mode ---
       function applyTheme(themeOverride, filterOverride) {
         var params = new URLSearchParams(window.location.search);
@@ -625,65 +698,6 @@
           applyTheme(e.data.theme, e.data.filter);
         }
       });
-
-      // --- Eye-Comfort Filter Synchronization & Cycling ---
-      var container = document.getElementById('viewerContainer');
-      var filterBtn = document.getElementById('filterBtn');
-      var filterIcon = document.getElementById('filterIcon');
-      var toastEl = document.getElementById('readerToast');
-      var toastTimer = null;
-
-      var FILTER_MODES = ['normal', 'sepia', 'dark'];
-      var FILTER_LABELS = {
-        normal: 'Natural Document',
-        sepia: 'Warm Sepia (Eye Comfort)',
-        dark: 'Night Invert (Dark Mode)'
-      };
-
-      function showToast(msg) {
-        if (!toastEl) return;
-        toastEl.textContent = msg;
-        toastEl.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          toastEl.classList.remove('show');
-        }, 1800);
-      }
-
-      function updateFilterUI(mode) {
-        container.classList.remove('filter-sepia', 'filter-dark');
-        if (mode === 'sepia') {
-          container.classList.add('filter-sepia');
-          filterIcon.innerHTML = '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10M6 14h6"/>';
-          filterBtn.title = 'Warm Sepia Mode (T)';
-        } else if (mode === 'dark') {
-          container.classList.add('filter-dark');
-          filterIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-          filterBtn.title = 'Night Invert Mode (T)';
-        } else {
-          filterIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
-          filterBtn.title = 'Natural Document Mode (T)';
-        }
-      }
-
-      function applySavedFilter() {
-        var mode = 'normal';
-        try { mode = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-        updateFilterUI(mode);
-      }
-      applySavedFilter();
-      window.addEventListener('storage', applySavedFilter);
-
-      function cycleFilterMode() {
-        var cur = 'normal';
-        try { cur = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-        var nextIdx = (FILTER_MODES.indexOf(cur) + 1) % FILTER_MODES.length;
-        var next = FILTER_MODES[nextIdx];
-        try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
-        updateFilterUI(next);
-        showToast(FILTER_LABELS[next]);
-      }
-      filterBtn.addEventListener('click', cycleFilterMode);
 
       // --- Fullscreen Dynamic Management ---
       var fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -861,28 +875,49 @@
           };
 
           pdfDoc = await loadingTask.promise;
-          totalPages = pdfDoc.numPages;
-          pageCountEl.textContent = totalPages;
-
-          // Compute initial scale to fit container width cleanly
-          var firstPage = await pdfDoc.getPage(1);
-          var unscaledViewport = firstPage.getViewport({ scale: 1 });
-          unscaledPageWidth = unscaledViewport.width;
-          unscaledPageHeight = unscaledViewport.height;
-
-          calculateInitialScale();
-          createPagePlaceholders();
-          initIntersectionObserver();
-
-          loadingOverlay.classList.add('hidden');
-
-          // Render active page and adjacent page sequentially on initial load
-          queuePageRender(1, true);
-          if (totalPages >= 2) queuePageRender(2, false);
         } catch (err) {
-          console.error('[PDF Reader Error]', err);
-          showError('Could not load document preview (' + (err.message || 'Error') + ')');
+          // If proxy stream failed or returned error, fallback directly to raw file URL
+          if (!pdfData && targetUrl !== rawFile && rawFile) {
+            try {
+              console.warn('[PDF Reader] Proxy stream failed, retrying direct URL:', rawFile);
+              loadingMsg.textContent = 'Connecting direct preview\u2026';
+              var directTask = pdfjsLib.getDocument({
+                url: rawFile,
+                rangeChunkSize: 65536,
+                disableAutoFetch: false,
+                disableStream: false
+              });
+              pdfDoc = await directTask.promise;
+            } catch (directErr) {
+              console.error('[PDF Reader Direct Error]', directErr);
+              showError('Could not load document preview (' + (directErr.message || 'Error') + ')');
+              return;
+            }
+          } else {
+            console.error('[PDF Reader Error]', err);
+            showError('Could not load document preview (' + (err.message || 'Error') + ')');
+            return;
+          }
         }
+
+        totalPages = pdfDoc.numPages;
+        pageCountEl.textContent = totalPages;
+
+        // Compute initial scale to fit container width cleanly
+        var firstPage = await pdfDoc.getPage(1);
+        var unscaledViewport = firstPage.getViewport({ scale: 1 });
+        unscaledPageWidth = unscaledViewport.width;
+        unscaledPageHeight = unscaledViewport.height;
+
+        calculateInitialScale();
+        createPagePlaceholders();
+        initIntersectionObserver();
+
+        loadingOverlay.classList.add('hidden');
+
+        // Render active page and adjacent page sequentially on initial load
+        queuePageRender(1, true);
+        if (totalPages >= 2) queuePageRender(2, false);
       }
 
       var zoomPresetBtn = document.getElementById('zoomPresetBtn');

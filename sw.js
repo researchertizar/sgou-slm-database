@@ -44,8 +44,9 @@ self.addEventListener('fetch', e => {
     if (e.request.method !== 'GET') return;
     const url = new URL(e.request.url);
 
-    // Never cache analytics / tracking / ads
+    // Never cache analytics / tracking / ads / CDN streaming
     if (
+        url.hostname === 'd198y4z1gpgoxg.cloudfront.net' ||
         url.hostname === 'www.googletagmanager.com' ||
         url.hostname === 'www.google-analytics.com' ||
         url.hostname === 'analytics.google.com' ||
@@ -87,6 +88,16 @@ self.addEventListener('fetch', e => {
         e.respondWith(
             fetch(e.request).catch(async () => {
                 const c = await caches.open(CACHE);
+                const isReader = url.pathname.includes('reader');
+                const isView = url.pathname.includes('view');
+                if (isReader) {
+                    const readerShell = (await c.match('./reader.html')) || (await c.match('/reader.html'));
+                    if (readerShell) return readerShell;
+                }
+                if (isView) {
+                    const viewShell = (await c.match('./view.html')) || (await c.match('/view.html'));
+                    if (viewShell) return viewShell;
+                }
                 return (await c.match(e.request)) ||
                        (await c.match(e.request, { ignoreSearch: true })) ||
                        (await c.match('./index.html')) ||

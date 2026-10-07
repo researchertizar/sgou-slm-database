@@ -131,6 +131,16 @@ const server = http.createServer((req, res) => {
     filePath = path.join(__dirname, 'view.html');
   }
 
+  // Rewrite /reader to reader.html
+  if (reqUrl.pathname === '/reader' || reqUrl.pathname.startsWith('/reader/')) {
+    filePath = path.join(__dirname, 'reader.html');
+  }
+
+  // Support clean URLs (e.g. /reader -> reader.html, /view -> view.html)
+  if (!fs.existsSync(filePath) && fs.existsSync(filePath + '.html')) {
+    filePath = filePath + '.html';
+  }
+
   // Fallback checks for moved assets in subdirectories (data/, assets/icons/, assets/images/)
   if (!fs.existsSync(filePath)) {
     const base = path.basename(reqUrl.pathname);
