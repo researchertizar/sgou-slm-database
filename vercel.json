@@ -14,6 +14,42 @@
             "destination": "/data/sgou_questions_cleaned.json"
         },
         {
+            "source": "/og-image.png",
+            "destination": "/assets/images/og-image.png"
+        },
+        {
+            "source": "/og-image-dark.png",
+            "destination": "/assets/images/og-image-dark.png"
+        },
+        {
+            "source": "/favicon.ico",
+            "destination": "/assets/icons/favicon.ico"
+        },
+        {
+            "source": "/favicon-32x32.png",
+            "destination": "/assets/icons/favicon-32x32.png"
+        },
+        {
+            "source": "/favicon-16x16.png",
+            "destination": "/assets/icons/favicon-16x16.png"
+        },
+        {
+            "source": "/apple-touch-icon.png",
+            "destination": "/assets/icons/apple-touch-icon.png"
+        },
+        {
+            "source": "/icon.svg",
+            "destination": "/assets/icons/icon.svg"
+        },
+        {
+            "source": "/icon-192.png",
+            "destination": "/assets/icons/icon-192.png"
+        },
+        {
+            "source": "/icon-512.png",
+            "destination": "/assets/icons/icon-512.png"
+        },
+        {
             "source": "/((?!view|.*\\.).*)",
             "destination": "/index.html"
         }
@@ -76,6 +112,19 @@
                 {
                     "key": "Cache-Control",
                     "value": "public, max-age=0, must-revalidate"
+                },
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                }
+            ]
+        },
+        {
+            "source": "/assets/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=86400, stale-while-revalidate=604800"
                 },
                 {
                     "key": "Access-Control-Allow-Origin",

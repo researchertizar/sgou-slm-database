@@ -131,9 +131,16 @@ const server = http.createServer((req, res) => {
     filePath = path.join(__dirname, 'view.html');
   }
 
-  // Fallback check in data/ folder if not found in root (e.g. /sgou_slm_data.json -> /data/sgou_slm_data.json)
-  if (!fs.existsSync(filePath) && fs.existsSync(path.join(__dirname, 'data', path.basename(reqUrl.pathname)))) {
-    filePath = path.join(__dirname, 'data', path.basename(reqUrl.pathname));
+  // Fallback checks for moved assets in subdirectories (data/, assets/icons/, assets/images/)
+  if (!fs.existsSync(filePath)) {
+    const base = path.basename(reqUrl.pathname);
+    if (fs.existsSync(path.join(__dirname, 'data', base))) {
+      filePath = path.join(__dirname, 'data', base);
+    } else if (fs.existsSync(path.join(__dirname, 'assets', 'icons', base))) {
+      filePath = path.join(__dirname, 'assets', 'icons', base);
+    } else if (fs.existsSync(path.join(__dirname, 'assets', 'images', base))) {
+      filePath = path.join(__dirname, 'assets', 'images', base);
+    }
   }
 
   fs.stat(filePath, (err, stats) => {
