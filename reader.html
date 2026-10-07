@@ -574,35 +574,82 @@
     .report-card {
       background: var(--surface);
       border: 1px solid var(--surface-border);
-      border-radius: 14px;
-      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
       width: 100%;
-      max-width: 410px;
+      max-width: 440px;
       overflow: hidden;
       transform: scale(0.96);
       transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    [data-theme="dark"] .report-card {
+      background: #18181b;
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65);
     }
     #reportModal.active .report-card {
       transform: scale(1);
     }
     .report-card-header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      padding: 13px 16px 10px;
+      gap: 12px;
+      padding: 13px 16px 11px;
       border-bottom: 1px solid var(--surface-border);
+      background: var(--surface-subtle);
+    }
+    [data-theme="dark"] .report-card-header {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom-color: rgba(255, 255, 255, 0.07);
+    }
+    .report-header-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+      flex: 1;
     }
     .report-header-title {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 14.5px;
+      gap: 7px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--text);
       letter-spacing: -0.01em;
     }
     .report-header-title svg {
-      color: #ef4444;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .report-header-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .report-header-subtitle .reader-report-doc-title {
+      font-weight: 500;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .report-header-subtitle .report-doc-sep {
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+    .report-header-subtitle .reader-report-doc-meta {
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     .report-close-btn {
       background: transparent;
@@ -615,150 +662,203 @@
       align-items: center;
       justify-content: center;
       transition: all .15s ease;
+      flex-shrink: 0;
     }
     .report-close-btn:hover {
       background: var(--surface-subtle);
       color: var(--text);
     }
+    .report-close-btn:focus {
+      outline: none;
+    }
+    .report-close-btn:focus-visible {
+      outline: 2px solid var(--accent);
+    }
     .report-card-body {
-      padding: 13px 16px 15px;
+      padding: 13px 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
     }
-    .reader-report-preview {
-      background: var(--surface-subtle);
-      border: 1px solid var(--surface-border);
-      border-radius: 8px;
-      padding: 7px 11px;
-      margin-bottom: 11px;
+    .report-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
     }
-    .reader-report-doc-title {
-      font-size: 12.5px;
+    .report-field-label {
+      font-size: 11.5px;
       font-weight: 600;
       color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
-    .reader-report-doc-meta {
-      font-size: 11px;
+    .report-label-opt {
+      font-weight: 400;
       color: var(--text-muted);
-      margin-top: 1px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      font-size: 11px;
     }
-    .report-reasons-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .report-chip {
+    .report-select-wrap {
       position: relative;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 7px 8px;
-      min-height: 33px;
+    }
+    .report-select {
+      width: 100%;
+      height: 35px;
+      padding: 0 30px 0 10px;
+      font-family: inherit;
+      font-size: 12.5px;
+      color: var(--text);
       background: var(--surface);
       border: 1px solid var(--surface-border);
       border-radius: 7px;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    [data-theme="dark"] .report-select {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .report-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.15);
+    }
+    .report-select-arrow {
+      position: absolute;
+      right: 10px;
+      pointer-events: none;
+      color: var(--text-muted);
+    }
+    .report-input {
+      width: 100%;
+      height: 35px;
+      padding: 0 10px;
+      font-family: inherit;
+      font-size: 12.5px;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 7px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    [data-theme="dark"] .report-input {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .report-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.15);
+    }
+    .report-input::placeholder {
+      color: var(--text-muted);
+      opacity: 0.7;
+    }
+    .report-modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--surface-border);
+      background: var(--surface-subtle);
+    }
+    [data-theme="dark"] .report-modal-footer {
+      background: rgba(255, 255, 255, 0.02);
+      border-top-color: rgba(255, 255, 255, 0.07);
+    }
+    .report-footer-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .report-tool-btn {
+      background: transparent;
+      border: 1px solid var(--surface-border);
+      padding: 5px 9px;
+      border-radius: 6px;
       font-size: 11.5px;
       font-weight: 500;
       color: var(--text-muted);
       cursor: pointer;
-      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
       transition: all .14s ease;
-      text-align: center;
     }
-    .report-chip input[type="radio"] {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-      margin: 0;
-      pointer-events: none;
+    [data-theme="dark"] .report-tool-btn {
+      border-color: rgba(255, 255, 255, 0.1);
     }
-    .report-chip:hover {
+    .report-tool-btn:hover {
       background: var(--surface-subtle);
       color: var(--text);
     }
-    .report-chip:has(input:checked) {
-      background: rgba(180, 61, 40, 0.08);
-      border-color: var(--accent);
-      color: var(--accent);
-      font-weight: 600;
+    .report-tool-btn.whatsapp-tool-btn {
+      color: #16a34a;
     }
-    [data-theme="dark"] .report-chip:has(input:checked) {
-      background: rgba(229, 114, 90, 0.12);
-      border-color: var(--accent);
-      color: var(--accent);
+    [data-theme="dark"] .report-tool-btn.whatsapp-tool-btn {
+      color: #22c55e;
     }
-    .report-quick-input {
-      width: 100%;
-      height: 35px;
-      padding: 0 11px;
-      font-family: inherit;
-      font-size: 12px;
-      border-radius: 7px;
-      border: 1px solid var(--surface-border);
-      background: var(--surface);
-      color: var(--text);
-      box-sizing: border-box;
-      margin-bottom: 11px;
-      transition: border-color .14s ease, box-shadow .14s ease;
+    .report-tool-btn.whatsapp-tool-btn:hover {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.08);
     }
-    .report-quick-input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.12);
-    }
-    .report-primary-btn {
-      width: 100%;
-      height: 36px;
+    .report-footer-right {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 7px;
-      background: #25d366;
+      gap: 8px;
+    }
+    .report-cancel-btn {
+      background: transparent;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .14s ease;
+    }
+    .report-cancel-btn:hover {
+      color: var(--text);
+      background: var(--surface-subtle);
+    }
+    .report-submit-btn {
+      height: 33px;
+      padding: 0 14px;
+      background: var(--accent);
       color: #ffffff;
       border: none;
       border-radius: 7px;
       font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       transition: all .15s ease;
+      box-shadow: 0 1px 4px rgba(180, 61, 40, 0.2);
     }
-    .report-primary-btn:hover {
-      background: #20bd5a;
+    .report-submit-btn:hover {
+      filter: brightness(1.08);
       transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(180, 61, 40, 0.28);
     }
-    .report-primary-btn:active {
+    .report-submit-btn:active {
       transform: translateY(0);
     }
-    .report-secondary-row {
-      display: flex;
-      gap: 6px;
-      margin-top: 6px;
+    .report-submit-btn.submitting {
+      opacity: 0.85;
+      cursor: wait;
     }
-    .report-sub-btn {
-      flex: 1;
-      height: 29px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      font-size: 11px;
-      font-weight: 500;
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 6px;
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all .14s ease;
-    }
-    .report-sub-btn:hover {
-      background: var(--surface-subtle);
-      color: var(--text);
+    .report-submit-btn.success {
+      background: #10b981 !important;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
     }
   </style>
 </head>
@@ -891,74 +991,73 @@
     <div id="reportModal" role="dialog" aria-modal="true" aria-labelledby="readerReportTitle">
       <div class="report-card">
         <div class="report-card-header">
-          <div class="report-header-title">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-              <line x1="4" y1="22" x2="4" y2="15"></line>
-            </svg>
-            <span id="readerReportTitle">Report Document Issue</span>
+          <div class="report-header-info">
+            <div class="report-header-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                <line x1="4" y1="22" x2="4" y2="15"></line>
+              </svg>
+              <span id="readerReportTitle">Report Document Issue</span>
+            </div>
+            <div class="report-header-subtitle">
+              <span class="reader-report-doc-title" id="readerReportDocTitle">Course Document</span>
+              <span class="report-doc-sep">•</span>
+              <span class="reader-report-doc-meta" id="readerReportDocMeta">SGOU Academic Material</span>
+            </div>
           </div>
           <button type="button" class="report-close-btn" id="readerReportCloseBtn" aria-label="Close dialog" title="Close (Esc)">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
         </div>
         <div class="report-card-body">
-          <div class="reader-report-preview">
-            <div class="reader-report-doc-title" id="readerReportDocTitle">Course Document</div>
-            <div class="reader-report-doc-meta" id="readerReportDocMeta">SGOU Academic Material</div>
+          <div class="report-field-group">
+            <label for="readerReportReasonSelect" class="report-field-label">Issue Type</label>
+            <div class="report-select-wrap">
+              <select id="readerReportReasonSelect" class="report-select" aria-label="Issue Type">
+                <option value="mismatch">Wrong Document / Syllabus Mismatch</option>
+                <option value="corrupted">Blank or Corrupt PDF</option>
+                <option value="metadata">Incorrect Date or Subject Code</option>
+                <option value="other">Other Issue</option>
+              </select>
+              <svg class="report-select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
           </div>
 
-          <div class="report-reasons-grid">
-            <label class="report-chip">
-              <input type="radio" name="readerReportReason" value="mismatch" checked>
-              <span>Wrong Paper</span>
-            </label>
-            <label class="report-chip">
-              <input type="radio" name="readerReportReason" value="corrupted">
-              <span>Blank / Corrupt</span>
-            </label>
-            <label class="report-chip">
-              <input type="radio" name="readerReportReason" value="metadata">
-              <span>Wrong Date / Code</span>
-            </label>
-            <label class="report-chip">
-              <input type="radio" name="readerReportReason" value="other">
-              <span>Other Issue</span>
-            </label>
+          <div class="report-field-group">
+            <label for="readerReportNote" class="report-field-label">Description <span class="report-label-opt">(optional)</span></label>
+            <input type="text" id="readerReportNote" class="report-input" placeholder="e.g. Missing pages or unreadable scan..." maxlength="250">
           </div>
+        </div>
 
-          <input type="text" id="readerReportNote" class="report-quick-input" placeholder="Add details or notes (optional)..." maxlength="250">
-
-          <button type="button" class="report-primary-btn" id="readerReportWhatsApp">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
-            </svg>
-            <span>Send via WhatsApp</span>
-          </button>
-
-          <div class="report-secondary-row">
-            <button type="button" class="report-sub-btn" id="readerReportCopy">
+        <div class="report-modal-footer">
+          <div class="report-footer-left">
+            <button type="button" class="report-tool-btn whatsapp-tool-btn" id="readerReportWhatsApp" title="Send structured report directly on WhatsApp">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+              </svg>
+              <span>WhatsApp</span>
+            </button>
+            <button type="button" class="report-tool-btn" id="readerReportCopy" title="Copy structured report to clipboard">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
               <span>Copy</span>
             </button>
-            <button type="button" class="report-sub-btn" id="readerReportEmail">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                <polyline points="22,6 12,13 2,6"></polyline>
+          </div>
+          <div class="report-footer-right">
+            <button type="button" class="report-cancel-btn" id="readerReportCancelBtn">Cancel</button>
+            <button type="button" class="report-submit-btn" id="readerReportSubmit">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
               </svg>
-              <span>Email</span>
-            </button>
-            <button type="button" class="report-sub-btn" id="readerReportGithub">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-              </svg>
-              <span>GitHub</span>
+              <span id="readerReportSubmitBtnText">Submit</span>
             </button>
           </div>
         </div>
@@ -2000,6 +2099,16 @@
       document.getElementById('retryBtn').addEventListener('click', loadDocument);
 
       // --- Document Issue Report & Mismatch Warning System ---
+      window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
+        supportPhone: '919876543210',
+        formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_DEMO_FORM_ID_REPLACE_ME/formResponse',
+        entries: {
+          course: 'entry.1000001',
+          category: 'entry.1000004',
+          notes: 'entry.1000005',
+          url: 'entry.1000006'
+        }
+      };
       var reportModal = document.getElementById('reportModal');
       var reportBtn = document.getElementById('reportBtn');
       var readerMismatchReportBtn = document.getElementById('readerMismatchReportBtn');
@@ -2050,9 +2159,13 @@
         if (t) t.textContent = docName + (courseCode ? ' (' + courseCode + ')' : '');
         if (m) m.textContent = 'SGOU Academic Paper \u2022 Page ' + currentPage + ' of ' + (totalPages || 1);
         var note = document.getElementById('readerReportNote');
+        var selectEl = document.getElementById('readerReportReasonSelect');
         if (note) note.value = '';
+        if (selectEl) selectEl.selectedIndex = 0;
         reportModal.classList.add('active');
-        setTimeout(function () { reportCloseBtn?.focus(); }, 50);
+        setTimeout(function () {
+          if (selectEl) selectEl.focus();
+        }, 60);
       }
 
       function closeReaderReport() {
@@ -2061,44 +2174,111 @@
 
       function submitReaderReport(channel) {
         var note = (document.getElementById('readerReportNote')?.value || '').trim();
-        var reasonRadio = document.querySelector('input[name="readerReportReason"]:checked');
+        var selectEl = document.getElementById('readerReportReasonSelect');
+        var reasonVal = selectEl ? selectEl.value : 'mismatch';
         var reasonMap = {
-          mismatch: 'Subject Mismatch / Wrong Paper',
-          corrupted: 'Blank / Unreadable Scan',
-          metadata: 'Wrong Date / Course Code',
+          mismatch: 'Wrong Document / Syllabus Mismatch',
+          corrupted: 'Blank or Corrupt PDF',
+          metadata: 'Incorrect Date or Subject Code',
           other: 'Other Issue'
         };
-        var reasonText = (reasonRadio && reasonMap[reasonRadio.value]) || (reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch');
+        var reasonText = reasonMap[reasonVal] || 'Other Issue';
+        var docTitle = (docName ? docName + (courseCode ? ' (' + courseCode + ')' : '') : (courseCode || 'Course Material'));
+        var docUrl = rawFile || window.location.href;
 
-        var reportText =
-          '*SGOU Academic Database \u2014 Document Issue Report*\n\n' +
-          '\u2022 *Course / Paper:* ' + (docName || 'N/A') + (courseCode ? ' (' + courseCode + ')' : '') + '\n' +
-          '\u2022 *Page Viewed:* ' + currentPage + ' of ' + totalPages + '\n' +
-          '\u2022 *Report Category:* ' + reasonText + '\n' +
-          (note ? '\u2022 *User Notes:* ' + note + '\n' : '') +
-          '\u2022 *File Source:* ' + (rawFile || 'N/A') + '\n\n' +
-          '_Reported via SGOU Academic Reader v3.0.0_';
+        if (channel === 'form') {
+          var submitBtn = document.getElementById('readerReportSubmit');
+          var submitText = document.getElementById('readerReportSubmitBtnText');
+          var origText = submitText ? submitText.textContent : 'Submit';
+
+          if (submitBtn) {
+            submitBtn.classList.add('submitting');
+            submitBtn.disabled = true;
+          }
+          if (submitText) submitText.textContent = 'Submitting...';
+
+          var doFinish = function () {
+            if (submitBtn) {
+              submitBtn.classList.remove('submitting');
+              submitBtn.classList.add('success');
+            }
+            if (submitText) submitText.textContent = 'Report Submitted';
+            showToast('Thank you! Document issue reported for inspection.');
+
+            setTimeout(function () {
+              closeReaderReport();
+              if (submitBtn) {
+                submitBtn.classList.remove('success');
+                submitBtn.disabled = false;
+              }
+              if (submitText) submitText.textContent = origText;
+            }, 1000);
+          };
+
+          if (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.formUrl) {
+            try {
+              var cfg = window.SGOU_REPORT_FORM;
+              var formData = new FormData();
+              if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, docTitle);
+              if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
+              if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, (note ? note + ' [Page ' + currentPage + ']' : '[Page ' + currentPage + ']'));
+              if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
+
+              fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData })
+                .then(doFinish)
+                .catch(doFinish);
+            } catch (_) {
+              doFinish();
+            }
+          } else {
+            setTimeout(doFinish, 400);
+          }
+          return;
+        }
 
         if (channel === 'whatsapp') {
-          window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(reportText), '_blank');
+          var phone = (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.supportPhone) || '919876543210';
+          var waMessage = [
+            '*SGOU Document Issue Report*',
+            '----------------------------------------',
+            '*Document:* ' + docTitle,
+            '*Course Code:* ' + (courseCode || 'N/A'),
+            '*Page Viewed:* Page ' + currentPage + ' of ' + totalPages,
+            '*Issue Type:* ' + reasonText,
+            note ? '*Note:* ' + note : null,
+            '*URL:* ' + docUrl,
+            '----------------------------------------',
+            '_Reported via SGOU Academic Reader v3.0.0_'
+          ].filter(Boolean).join('\n');
+
+          window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage), '_blank', 'noopener,noreferrer');
           showToast('Opening WhatsApp to send report...');
-        } else if (channel === 'email') {
-          var subject = 'SGOU Reader Issue: ' + (courseCode || '') + ' ' + (docName || '');
-          window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(reportText);
-          showToast('Opening email client...');
-        } else if (channel === 'github') {
-          var ghTitle = '[Issue] Document Mismatch: ' + (courseCode || '') + ' - ' + (docName || '');
-          var ghUrl = 'https://github.com/researchertizar/sgou-slm-database/issues/new?title=' + encodeURIComponent(ghTitle) + '&body=' + encodeURIComponent(reportText);
-          window.open(ghUrl, '_blank');
-          showToast('Opening GitHub Issues...');
-        } else if (channel === 'copy') {
-          navigator.clipboard.writeText(reportText).then(function () {
-            showToast('Report details copied to clipboard!');
+          closeReaderReport();
+          return;
+        }
+
+        if (channel === 'copy') {
+          var copyText = [
+            '[SGOU Document Issue Report]',
+            '----------------------------------------',
+            'Document:    ' + docTitle,
+            'Course Code: ' + (courseCode || 'N/A'),
+            'Page Viewed: Page ' + currentPage + ' of ' + totalPages,
+            'Issue Type:  ' + reasonText,
+            note ? 'Note:        ' + note : null,
+            'URL:         ' + docUrl,
+            'Timestamp:   ' + new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+            '----------------------------------------'
+          ].filter(Boolean).join('\n');
+
+          navigator.clipboard.writeText(copyText).then(function () {
+            showToast('Report details copied to clipboard');
           }).catch(function () {
             showToast('Please copy report manually');
           });
+          closeReaderReport();
+          return;
         }
-        closeReaderReport();
       }
 
       if (reportBtn) reportBtn.addEventListener('click', openReaderReport);
@@ -2110,15 +2290,16 @@
         });
       }
       if (reportCloseBtn) reportCloseBtn.addEventListener('click', closeReaderReport);
+      var reportCancelBtn = document.getElementById('readerReportCancelBtn');
+      if (reportCancelBtn) reportCancelBtn.addEventListener('click', closeReaderReport);
       if (reportModal) {
         reportModal.addEventListener('click', function (e) {
           if (e.target === reportModal) closeReaderReport();
         });
       }
+      document.getElementById('readerReportSubmit')?.addEventListener('click', function () { submitReaderReport('form'); });
       document.getElementById('readerReportWhatsApp')?.addEventListener('click', function () { submitReaderReport('whatsapp'); });
-      document.getElementById('readerReportEmail')?.addEventListener('click', function () { submitReaderReport('email'); });
       document.getElementById('readerReportCopy')?.addEventListener('click', function () { submitReaderReport('copy'); });
-      document.getElementById('readerReportGithub')?.addEventListener('click', function () { submitReaderReport('github'); });
 
       // Keyboard navigation
       window.addEventListener('keydown', function (e) {

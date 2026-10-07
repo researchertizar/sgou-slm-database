@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://drive.google.com blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://d198y4z1gpgoxg.cloudfront.net https://www.google-analytics.com https://*.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://drive.google.com blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self';">
     <meta name="description"
         content="Document Viewer — Preview, read, and download Sree Narayana Guru Open University (SGOU / SNGOU) SLM textbooks, previous year question papers (PYQs), and assignment booklets.">
     <meta name="keywords"
@@ -31,8 +31,8 @@
         content="Preview, read, and download official SGOU SLM course textbooks, question papers, and assignments offline.">
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/view.html">
     <meta property="og:type" content="article">
-    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Document Viewer — SGOU Academic Database">
@@ -42,7 +42,7 @@
     <meta name="twitter:title" content="Document Viewer — SGOU Academic Database">
     <meta name="twitter:description"
         content="Preview and download SGOU distance education textbooks, question papers, and assignment booklets.">
-    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07">
     <meta name="twitter:creator" content="@researchertizar">
 
     <!-- Geographic & Local Knowledge Meta Tags (GEO SEO) -->
@@ -107,7 +107,7 @@
     </script>
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20261007_06">
+    <link rel="manifest" href="/manifest.json?v=20261007_07">
     <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png?v=20260904_10">
@@ -1159,136 +1159,270 @@
             padding: 16px 18px;
         }
         /* Issue Reporting Modal — Minimal, Zero-Scroll Dialog */
+        /* Issue Reporting Modal — Professional Standard Minimal Dialog */
         .report-modal-card {
-            max-width: 410px;
-            border-radius: 14px;
+            max-width: 440px;
+            width: 92vw;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
         }
+        [data-theme="dark"] .report-modal-card {
+            background: #18181b;
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+        }
+        /* Header */
         .report-modal-header {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
-            padding: 13px 16px 10px;
+            gap: 12px;
+            padding: 13px 16px 11px;
             border-bottom: 1px solid var(--border-light);
+            background: var(--surface-subtle);
+        }
+        [data-theme="dark"] .report-modal-header {
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom-color: rgba(255, 255, 255, 0.07);
+        }
+        .report-header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+            flex: 1;
         }
         .report-header-title {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             font-family: var(--font-sans);
-            font-size: 14.5px;
+            font-size: 14px;
             font-weight: 600;
             color: var(--ink);
             letter-spacing: -0.01em;
         }
         .report-header-title svg {
-            color: #ef4444;
+            color: var(--accent);
+            flex-shrink: 0;
         }
-        .report-modal-body {
-            padding: 13px 16px 15px;
-        }
-        .report-doc-preview {
-            background: var(--bg-deep);
-            border: 1px solid var(--border-light);
-            border-radius: 8px;
-            padding: 7px 11px;
-            margin-bottom: 11px;
-        }
-        .report-doc-title {
-            font-family: var(--font-sans);
-            font-size: 12.5px;
-            font-weight: 600;
-            color: var(--ink);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .report-doc-meta {
-            font-family: var(--font-sans);
-            font-size: 11px;
-            color: var(--ink-muted);
-            margin-top: 1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .report-reasons-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .report-header-subtitle {
+            display: flex;
+            align-items: center;
             gap: 6px;
-            margin-bottom: 10px;
+            font-family: var(--font-sans);
+            font-size: 11.5px;
+            color: var(--ink-muted);
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        .report-chip {
+        .report-header-subtitle .report-doc-title {
+            font-weight: 500;
+            color: var(--ink-soft);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .report-header-subtitle .report-doc-sep {
+            opacity: 0.5;
+            flex-shrink: 0;
+        }
+        .report-header-subtitle .report-doc-meta {
+            color: var(--ink-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .report-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--ink-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .15s ease;
+            flex-shrink: 0;
+        }
+        .report-close-btn:hover {
+            background: var(--surface-hover);
+            color: var(--ink);
+        }
+        .report-close-btn:focus {
+            outline: none;
+        }
+        .report-close-btn:focus-visible {
+            outline: 2px solid var(--accent);
+        }
+        /* Body */
+        .report-modal-body {
+            padding: 13px 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+        .report-field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .report-field-label {
+            font-family: var(--font-sans);
+            font-size: 11.5px;
+            font-weight: 600;
+            color: var(--ink-soft);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .report-label-opt {
+            font-weight: 400;
+            color: var(--ink-muted);
+            font-size: 11px;
+        }
+        .report-select-wrap {
             position: relative;
             display: flex;
             align-items: center;
-            justify-content: center;
-            padding: 7px 8px;
-            min-height: 33px;
+        }
+        .report-select {
+            width: 100%;
+            height: 35px;
+            padding: 0 30px 0 10px;
+            font-family: var(--font-sans);
+            font-size: 12.5px;
+            color: var(--ink);
             background: var(--surface);
             border: 1px solid var(--border-light);
             border-radius: 7px;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+            outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        [data-theme="dark"] .report-select {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .report-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.15);
+        }
+        .report-select-arrow {
+            position: absolute;
+            right: 10px;
+            pointer-events: none;
+            color: var(--ink-muted);
+        }
+        .report-input {
+            width: 100%;
+            height: 35px;
+            padding: 0 10px;
+            font-family: var(--font-sans);
+            font-size: 12.5px;
+            color: var(--ink);
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            border-radius: 7px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        [data-theme="dark"] .report-input {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .report-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.15);
+        }
+        .report-input::placeholder {
+            color: var(--ink-muted);
+            opacity: 0.7;
+        }
+        /* Footer */
+        .report-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 16px 12px;
+            border-top: 1px solid var(--border-light);
+            background: var(--surface-subtle);
+        }
+        [data-theme="dark"] .report-modal-footer {
+            background: rgba(255, 255, 255, 0.02);
+            border-top-color: rgba(255, 255, 255, 0.07);
+        }
+        .report-footer-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .report-tool-btn {
+            background: transparent;
+            border: 1px solid var(--border-light);
+            padding: 5px 9px;
+            border-radius: 6px;
             font-family: var(--font-sans);
             font-size: 11.5px;
             font-weight: 500;
-            color: var(--ink-soft);
+            color: var(--ink-muted);
             cursor: pointer;
-            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
             transition: all .14s ease;
-            text-align: center;
         }
-        .report-chip input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-            width: 0;
-            height: 0;
-            margin: 0;
-            pointer-events: none;
+        [data-theme="dark"] .report-tool-btn {
+            border-color: rgba(255, 255, 255, 0.1);
         }
-        .report-chip:hover {
+        .report-tool-btn:hover {
             background: var(--surface-hover);
+            color: var(--ink);
             border-color: var(--border);
-            color: var(--ink);
         }
-        .report-chip:has(input:checked) {
-            background: rgba(180, 61, 40, 0.08);
-            border-color: var(--accent);
-            color: var(--accent);
-            font-weight: 600;
+        .report-tool-btn.whatsapp-tool-btn {
+            color: #16a34a;
         }
-        [data-theme="dark"] .report-chip:has(input:checked) {
-            background: rgba(229, 114, 90, 0.12);
-            border-color: var(--accent);
-            color: var(--accent);
+        [data-theme="dark"] .report-tool-btn.whatsapp-tool-btn {
+            color: #22c55e;
         }
-        .report-quick-input {
-            width: 100%;
-            height: 35px;
-            padding: 0 11px;
-            font-family: var(--font-sans);
-            font-size: 12px;
-            border-radius: 7px;
-            border: 1px solid var(--border-light);
-            background: var(--surface);
-            color: var(--ink);
-            box-sizing: border-box;
-            margin-bottom: 11px;
-            transition: border-color .14s ease, box-shadow .14s ease;
+        .report-tool-btn.whatsapp-tool-btn:hover {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.08);
         }
-        .report-quick-input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.12);
-        }
-        .report-primary-btn {
-            width: 100%;
-            height: 36px;
+        .report-footer-right {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 7px;
-            background: #25d366;
+            gap: 8px;
+        }
+        .report-cancel-btn {
+            background: transparent;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink-muted);
+            cursor: pointer;
+            transition: all .14s ease;
+        }
+        .report-cancel-btn:hover {
+            color: var(--ink);
+            background: var(--surface-hover);
+        }
+        .report-submit-btn {
+            height: 33px;
+            padding: 0 14px;
+            background: var(--accent);
             color: #ffffff;
             border: none;
             border-radius: 7px;
@@ -1296,41 +1430,27 @@
             font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             transition: all .15s ease;
+            box-shadow: 0 1px 4px rgba(180, 61, 40, 0.2);
         }
-        .report-primary-btn:hover {
-            background: #20bd5a;
+        .report-submit-btn:hover {
+            filter: brightness(1.08);
             transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(180, 61, 40, 0.28);
         }
-        .report-primary-btn:active {
+        .report-submit-btn:active {
             transform: translateY(0);
         }
-        .report-secondary-row {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
+        .report-submit-btn.submitting {
+            opacity: 0.85;
+            cursor: wait;
         }
-        .report-sub-btn {
-            flex: 1;
-            height: 29px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            font-family: var(--font-sans);
-            font-size: 11px;
-            font-weight: 500;
-            background: var(--surface);
-            border: 1px solid var(--border-light);
-            border-radius: 6px;
-            color: var(--ink-muted);
-            cursor: pointer;
-            transition: all .14s ease;
-        }
-        .report-sub-btn:hover {
-            background: var(--surface-hover);
-            border-color: var(--border);
-            color: var(--ink);
+        .report-submit-btn.success {
+            background: #10b981 !important;
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
         }
     </style>
 
@@ -1549,74 +1669,74 @@
     <div class="modal-backdrop" id="reportModal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
         <div class="modal-card report-modal-card">
             <div class="report-modal-header">
-                <div class="report-header-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
-                        <line x1="4" y1="22" x2="4" y2="15"></line>
-                    </svg>
-                    <span id="reportModalTitle">Report Document Issue</span>
+                <div class="report-header-info">
+                    <div class="report-header-title">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                            <line x1="4" y1="22" x2="4" y2="15"></line>
+                        </svg>
+                        <span id="reportModalTitle">Report Document Issue</span>
+                    </div>
+                    <div class="report-header-subtitle">
+                        <span class="report-doc-title" id="reportModalDocTitle">Course Material</span>
+                        <span class="report-doc-sep">•</span>
+                        <span class="report-doc-meta" id="reportModalDocMeta">SGOU Academic Material</span>
+                    </div>
                 </div>
-                <button class="modal-close" id="reportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="report-close-btn" id="reportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
             </div>
+
             <div class="report-modal-body">
-                <div class="report-doc-preview">
-                    <div class="report-doc-title" id="reportModalDocTitle">Course Material</div>
-                    <div class="report-doc-meta" id="reportModalDocMeta">SGOU Academic Material</div>
+                <div class="report-field-group">
+                    <label for="reportReasonSelect" class="report-field-label">Issue Type</label>
+                    <div class="report-select-wrap">
+                        <select id="reportReasonSelect" class="report-select" aria-label="Issue Type">
+                            <option value="mismatch">Wrong Document / Syllabus Mismatch</option>
+                            <option value="corrupted">Blank or Corrupt PDF</option>
+                            <option value="metadata">Incorrect Date or Subject Code</option>
+                            <option value="other">Other Issue</option>
+                        </select>
+                        <svg class="report-select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
                 </div>
 
-                <div class="report-reasons-grid">
-                    <label class="report-chip">
-                        <input type="radio" name="reportReason" value="mismatch" checked>
-                        <span>Wrong Paper</span>
-                    </label>
-                    <label class="report-chip">
-                        <input type="radio" name="reportReason" value="corrupted">
-                        <span>Blank / Corrupt</span>
-                    </label>
-                    <label class="report-chip">
-                        <input type="radio" name="reportReason" value="metadata">
-                        <span>Wrong Date / Code</span>
-                    </label>
-                    <label class="report-chip">
-                        <input type="radio" name="reportReason" value="other">
-                        <span>Other Issue</span>
-                    </label>
+                <div class="report-field-group">
+                    <label for="reportNoteInput" class="report-field-label">Description <span class="report-label-opt">(optional)</span></label>
+                    <input type="text" id="reportNoteInput" class="report-input" placeholder="e.g. Missing pages or incorrect year..." maxlength="250">
                 </div>
+            </div>
 
-                <input type="text" id="reportNoteInput" class="report-quick-input" placeholder="Add details or notes (optional)..." maxlength="250">
-
-                <button type="button" class="report-primary-btn" id="reportSendWhatsApp">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
-                    </svg>
-                    <span>Send via WhatsApp</span>
-                </button>
-
-                <div class="report-secondary-row">
-                    <button type="button" class="report-sub-btn" id="reportCopyDetails">
+            <div class="report-modal-footer">
+                <div class="report-footer-left">
+                    <button type="button" class="report-tool-btn whatsapp-tool-btn" id="reportSendWhatsApp" title="Send structured report directly on WhatsApp">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+                        </svg>
+                        <span>WhatsApp</span>
+                    </button>
+                    <button type="button" class="report-tool-btn" id="reportCopyDetails" title="Copy structured report to clipboard">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
                         <span>Copy</span>
                     </button>
-                    <button type="button" class="report-sub-btn" id="reportSendEmail">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
+                </div>
+                <div class="report-footer-right">
+                    <button type="button" class="report-cancel-btn" id="reportCancelBtn">Cancel</button>
+                    <button type="button" class="report-submit-btn" id="reportSubmitForm">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
-                        <span>Email</span>
-                    </button>
-                    <button type="button" class="report-sub-btn" id="reportOpenGithub">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
-                        </svg>
-                        <span>GitHub</span>
+                        <span id="reportSubmitBtnText">Submit</span>
                     </button>
                 </div>
             </div>
@@ -2234,28 +2354,40 @@
                 }
 
                 // Document Issue Reporting Modal Wiring
+                window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
+                    supportPhone: '919876543210',
+                    formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_DEMO_FORM_ID_REPLACE_ME/formResponse',
+                    entries: {
+                        course: 'entry.1000001',
+                        programme: 'entry.1000002',
+                        materialType: 'entry.1000003',
+                        category: 'entry.1000004',
+                        notes: 'entry.1000005',
+                        url: 'entry.1000006'
+                    }
+                };
                 var reportModal = document.getElementById('reportModal');
                 var reportBtn = document.getElementById('topbarReport');
                 var reportCloseBtn = document.getElementById('reportModalCloseBtn');
+                var reportCancelBtn = document.getElementById('reportCancelBtn');
                 var mismatchBanner = document.getElementById('mismatchBanner');
 
                 function openReportDialog() {
                     if (!reportModal) return;
                     var titleEl = document.getElementById('reportModalDocTitle');
                     var metaEl = document.getElementById('reportModalDocMeta');
-                    var urlEl = document.getElementById('reportModalDocUrl');
                     var noteEl = document.getElementById('reportNoteInput');
+                    var selectEl = document.getElementById('reportReasonSelect');
 
                     if (titleEl) titleEl.textContent = name ? (name + (code ? ' (' + code + ')' : '')) : (code || 'Course Material');
                     if (metaEl) metaEl.textContent = (prog || 'SGOU') + ' \u2022 ' + (examDate || matType || 'Academic Material') + (batch ? ' \u2022 ' + batch : '');
-                    if (urlEl) {
-                        urlEl.textContent = pdfUrl || '';
-                        urlEl.title = pdfUrl || '';
-                    }
                     if (noteEl) noteEl.value = '';
+                    if (selectEl) selectEl.selectedIndex = 0;
 
                     reportModal.classList.add('visible');
-                    setTimeout(function () { reportCloseBtn?.focus(); }, 60);
+                    setTimeout(function () {
+                        if (selectEl) selectEl.focus();
+                    }, 60);
                 }
 
                 function closeReportDialog() {
@@ -2264,26 +2396,20 @@
 
                 function submitReportChannel(channel) {
                     var note = (document.getElementById('reportNoteInput')?.value || '').trim();
-                    var reasonRadio = document.querySelector('input[name="reportReason"]:checked');
+                    var selectEl = document.getElementById('reportReasonSelect');
+                    var radioEl = document.querySelector('input[name="reportReason"]:checked');
+                    var reasonVal = selectEl ? selectEl.value : (radioEl ? radioEl.value : 'mismatch');
+
                     var reasonMap = {
-                        mismatch: 'Subject Mismatch / Wrong Paper',
-                        corrupted: 'Blank / Unreadable Scan',
-                        metadata: 'Wrong Date / Course Code',
+                        mismatch: 'Wrong Document / Syllabus Mismatch',
+                        corrupted: 'Blank or Corrupt PDF',
+                        metadata: 'Incorrect Date or Subject Code',
                         other: 'Other Issue'
                     };
-                    var reasonText = (reasonRadio && reasonMap[reasonRadio.value]) || (reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch');
-
-                    var reportText =
-                        '*SGOU Academic Database \u2014 Document Issue Report*\n\n' +
-                        '\u2022 *Course:* ' + (name || 'N/A') + ' (' + (code || 'N/A') + ')\n' +
-                        '\u2022 *Programme:* ' + (prog || 'N/A') + '\n' +
-                        '\u2022 *Material Type:* ' + (matType || 'PYQ') + '\n' +
-                        (examDate ? '\u2022 *Exam Date:* ' + examDate + '\n' : '') +
-                        (batch ? '\u2022 *Batch:* ' + batch + '\n' : '') +
-                        '\u2022 *Report Category:* ' + reasonText + '\n' +
-                        (note ? '\u2022 *User Notes:* ' + note + '\n' : '') +
-                        '\u2022 *Document URL:* ' + (pdfUrl || 'N/A') + '\n\n' +
-                        '_Reported via SGOU Academic Database v3.0.0_';
+                    var reasonText = reasonMap[reasonVal] || 'General Issue';
+                    var courseTitle = name ? (name + (code ? ' (' + code + ')' : '')) : (code || 'Course Material');
+                    var programme = prog || 'SGOU Academic Material';
+                    var docUrl = pdfUrl || (code ? ('https://sgou-slm-database.vercel.app/view.html?code=' + code) : window.location.href);
 
                     var t = document.getElementById('toast');
                     function showT(msg) {
@@ -2294,26 +2420,101 @@
                         }
                     }
 
+                    if (channel === 'form') {
+                        var submitBtn = document.getElementById('reportSubmitForm');
+                        var submitText = document.getElementById('reportSubmitBtnText');
+                        var origText = submitText ? submitText.textContent : 'Submit';
+
+                        if (submitBtn) {
+                            submitBtn.classList.add('submitting');
+                            submitBtn.disabled = true;
+                        }
+                        if (submitText) submitText.textContent = 'Submitting...';
+
+                        var doFinish = function () {
+                            if (submitBtn) {
+                                submitBtn.classList.remove('submitting');
+                                submitBtn.classList.add('success');
+                            }
+                            if (submitText) submitText.textContent = 'Report Submitted';
+                            showT('Thank you! Document issue reported for inspection.');
+
+                            setTimeout(function () {
+                                closeReportDialog();
+                                if (submitBtn) {
+                                    submitBtn.classList.remove('success');
+                                    submitBtn.disabled = false;
+                                }
+                                if (submitText) submitText.textContent = origText;
+                            }, 1000);
+                        };
+
+                        if (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.formUrl) {
+                            try {
+                                var cfg = window.SGOU_REPORT_FORM;
+                                var formData = new FormData();
+                                if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, courseTitle);
+                                if (cfg.entries && cfg.entries.programme) formData.append(cfg.entries.programme, programme);
+                                if (cfg.entries && cfg.entries.materialType) formData.append(cfg.entries.materialType, matType || 'Material');
+                                if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
+                                if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, note || 'None');
+                                if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
+
+                                fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData })
+                                    .then(doFinish)
+                                    .catch(doFinish);
+                            } catch (_) {
+                                doFinish();
+                            }
+                        } else {
+                            setTimeout(doFinish, 400);
+                        }
+                        return;
+                    }
+
                     if (channel === 'whatsapp') {
-                        window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(reportText), '_blank');
+                        var phone = (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.supportPhone) || '919876543210';
+                        var waMessage = [
+                            '*SGOU Document Issue Report*',
+                            '----------------------------------------',
+                            '*Document:* ' + courseTitle,
+                            '*Course Code:* ' + (code || 'N/A'),
+                            '*Programme:* ' + programme,
+                            '*Issue Type:* ' + reasonText,
+                            note ? ('*Note:* ' + note) : null,
+                            '*URL:* ' + docUrl,
+                            '----------------------------------------',
+                            '_Reported via SGOU Academic Database_'
+                        ].filter(Boolean).join('\n');
+
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage), '_blank', 'noopener,noreferrer');
                         showT('Opening WhatsApp to send report...');
-                    } else if (channel === 'email') {
-                        var subject = 'SGOU Document Issue: ' + (code || '') + ' ' + (name || '');
-                        window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(reportText);
-                        showT('Opening email client...');
-                    } else if (channel === 'github') {
-                        var ghTitle = '[Issue] Document Mismatch: ' + (code || '') + ' - ' + (name || '');
-                        var ghUrl = 'https://github.com/researchertizar/sgou-slm-database/issues/new?title=' + encodeURIComponent(ghTitle) + '&body=' + encodeURIComponent(reportText);
-                        window.open(ghUrl, '_blank');
-                        showT('Opening GitHub Issues...');
-                    } else if (channel === 'copy') {
-                        navigator.clipboard.writeText(reportText).then(function () {
-                            showT('Report details copied to clipboard!');
+                        closeReportDialog();
+                        return;
+                    }
+
+                    if (channel === 'copy') {
+                        var copyText = [
+                            '[SGOU Document Issue Report]',
+                            '----------------------------------------',
+                            'Document:    ' + courseTitle,
+                            'Course Code: ' + (code || 'N/A'),
+                            'Programme:   ' + programme,
+                            'Issue Type:  ' + reasonText,
+                            note ? ('Note:        ' + note) : null,
+                            'URL:         ' + docUrl,
+                            'Timestamp:   ' + new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+                            '----------------------------------------'
+                        ].filter(Boolean).join('\n');
+
+                        navigator.clipboard.writeText(copyText).then(function () {
+                            showT('Report details copied to clipboard');
                         }).catch(function () {
                             showT('Please copy report manually');
                         });
+                        closeReportDialog();
+                        return;
                     }
-                    closeReportDialog();
                 }
 
                 if (reportBtn) reportBtn.onclick = openReportDialog;
@@ -2323,15 +2524,15 @@
                     mismatchBanner.onclick = openReportDialog;
                 }
                 if (reportCloseBtn) reportCloseBtn.onclick = closeReportDialog;
+                if (reportCancelBtn) reportCancelBtn.onclick = closeReportDialog;
                 if (reportModal) {
                     reportModal.addEventListener('click', function (e) {
                         if (e.target === reportModal) closeReportDialog();
                     });
                 }
+                document.getElementById('reportSubmitForm')?.addEventListener('click', function () { submitReportChannel('form'); });
                 document.getElementById('reportSendWhatsApp')?.addEventListener('click', function () { submitReportChannel('whatsapp'); });
-                document.getElementById('reportSendEmail')?.addEventListener('click', function () { submitReportChannel('email'); });
                 document.getElementById('reportCopyDetails')?.addEventListener('click', function () { submitReportChannel('copy'); });
-                document.getElementById('reportOpenGithub')?.addEventListener('click', function () { submitReportChannel('github'); });
 
                 // Keyboard Shortcuts for Standalone Viewer
                 document.addEventListener('keydown', function (e) {

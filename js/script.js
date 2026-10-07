@@ -216,6 +216,24 @@ const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
 const IS_ANDROID = /Android/i.test(navigator.userAgent);
 const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname) || location.protocol === 'file:';
 
+/**
+ * Headless Google Form Backend Configuration (Hybrid Model)
+ * To log document issue reports directly to your Google Sheet,
+ * paste your Google Form formResponse endpoint and entry IDs here.
+ */
+window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
+  supportPhone: '919876543210', // Demo / placeholder support phone number
+  formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_DEMO_FORM_ID_REPLACE_ME/formResponse',
+  entries: {
+    course: 'entry.1000001',
+    programme: 'entry.1000002',
+    materialType: 'entry.1000003',
+    category: 'entry.1000004',
+    notes: 'entry.1000005',
+    url: 'entry.1000006'
+  }
+};
+
 // ============================================================================
 //  2. STORAGE SERVICE (S.O.L.I.D: Single Responsibility)
 // ============================================================================
@@ -1690,11 +1708,11 @@ class UIController {
     }
     const ogImg = document.querySelector('meta[property="og:image"]');
     if (ogImg) {
-      ogImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06');
+      ogImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07');
     }
     const twitterImg = document.querySelector('meta[name="twitter:image"]');
     if (twitterImg) {
-      twitterImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_06');
+      twitterImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07');
     }
   }
 
@@ -2954,7 +2972,7 @@ class UIController {
     }
   }
 
-  // --- Document Issue Reporting Flow ---
+  // --- Document Issue Reporting Flow (Hybrid Model) ---
 
   openReportModal(item = {}) {
     const modal = $('reportModal');
@@ -2965,6 +2983,7 @@ class UIController {
     const metaEl = $('reportModalDocMeta');
     const urlEl = $('reportModalDocUrl');
     const noteEl = $('reportNoteInput');
+    const selectEl = $('reportReasonSelect');
 
     if (titleEl) titleEl.textContent = item.name ? `${item.name} (${item.code || 'No Code'})` : (item.code || 'Course Material');
     if (metaEl) metaEl.textContent = `${item.prog || 'SGOU'} • ${item.examDate || item.type || 'Academic Material'}${item.batch ? ' • ' + item.batch : ''}`;
@@ -2973,60 +2992,131 @@ class UIController {
       urlEl.title = item.url || '';
     }
     if (noteEl) noteEl.value = '';
+    if (selectEl) selectEl.selectedIndex = 0;
 
     modal.classList.add('visible');
-    setTimeout(() => $('reportModalCloseBtn')?.focus(), 60);
+    setTimeout(() => $('reportReasonSelect')?.focus(), 60);
   }
 
   closeReportModal() {
     $('reportModal')?.classList.remove('visible');
   }
 
-  submitReport(channel = 'whatsapp') {
+  async submitReport(channel = 'form') {
     const item = this._reportData || {};
     const note = ($('reportNoteInput')?.value || '').trim();
-    const reasonRadio = document.querySelector('input[name="reportReason"]:checked');
+    const selectEl = $('reportReasonSelect');
+    const radioEl = document.querySelector('input[name="reportReason"]:checked');
+    const reasonVal = selectEl ? selectEl.value : (radioEl ? radioEl.value : 'mismatch');
+
     const reasonMap = {
-      mismatch: 'Subject Mismatch / Wrong Paper',
-      corrupted: 'Blank / Unreadable Scan',
-      metadata: 'Wrong Date / Course Code',
+      mismatch: 'Wrong Document / Syllabus Mismatch',
+      corrupted: 'Blank or Corrupt PDF',
+      metadata: 'Incorrect Date or Subject Code',
       other: 'Other Issue'
     };
-    const reasonText = (reasonRadio && reasonMap[reasonRadio.value]) || (reasonRadio ? reasonRadio.parentElement.textContent.trim() : 'Content Mismatch');
+    const reasonText = reasonMap[reasonVal] || 'General Issue';
 
-    const text =
-      `*SGOU Academic Database — Document Issue Report*\n\n` +
-      `• *Course:* ${item.name || 'N/A'} (${item.code || 'N/A'})\n` +
-      `• *Programme:* ${item.prog || 'N/A'}\n` +
-      `• *Material Type:* ${item.type || 'PYQ'}\n` +
-      (item.examDate ? `• *Exam Date:* ${item.examDate}\n` : '') +
-      (item.batch ? `• *Batch:* ${item.batch}\n` : '') +
-      `• *Report Category:* ${reasonText}\n` +
-      (note ? `• *User Notes:* ${note}\n` : '') +
-      `• *Document URL:* ${item.url || 'N/A'}\n\n` +
-      `_Reported via SGOU Academic Database v3.0.0_`;
+    const courseTitle = item.name ? `${item.name} (${item.code || 'No Code'})` : (item.code || 'Course Material');
+    const programme = item.prog || 'SGOU Academic Material';
+    const docUrl = item.url || (item.code ? `https://sgou-slm-database.vercel.app/view.html?code=${item.code}` : window.location.href);
+
+    if (channel === 'form') {
+      const submitBtn = $('reportSubmitForm');
+      const submitText = $('reportSubmitBtnText');
+      const originalText = submitText ? submitText.textContent : 'Submit';
+
+      if (submitBtn) {
+        submitBtn.classList.add('submitting');
+        submitBtn.disabled = true;
+      }
+      if (submitText) submitText.textContent = 'Submitting...';
+
+      // Silent Headless Google Form Submission if configured
+      if (window.SGOU_REPORT_FORM?.formUrl) {
+        try {
+          const cfg = window.SGOU_REPORT_FORM;
+          const formData = new FormData();
+          if (cfg.entries?.course) formData.append(cfg.entries.course, courseTitle);
+          if (cfg.entries?.programme) formData.append(cfg.entries.programme, programme);
+          if (cfg.entries?.materialType) formData.append(cfg.entries.materialType, item.type || 'Material');
+          if (cfg.entries?.category) formData.append(cfg.entries.category, reasonText);
+          if (cfg.entries?.notes) formData.append(cfg.entries.notes, note || 'None');
+          if (cfg.entries?.url) formData.append(cfg.entries.url, docUrl);
+
+          await fetch(cfg.formUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: formData
+          });
+        } catch (err) {
+          console.warn('[SGOU Report] Form submission dispatch:', err);
+        }
+      } else {
+        await new Promise(r => setTimeout(r, 400));
+      }
+
+      if (submitBtn) {
+        submitBtn.classList.remove('submitting');
+        submitBtn.classList.add('success');
+      }
+      if (submitText) submitText.textContent = 'Report Submitted';
+      this.showToast('Thank you! Document issue reported for inspection.', 3200);
+
+      setTimeout(() => {
+        this.closeReportModal();
+        if (submitBtn) {
+          submitBtn.classList.remove('success');
+          submitBtn.disabled = false;
+        }
+        if (submitText) submitText.textContent = originalText;
+      }, 1000);
+      return;
+    }
 
     if (channel === 'whatsapp') {
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+      const phone = window.SGOU_REPORT_FORM?.supportPhone || '919876543210';
+      const waMessage = [
+        '*SGOU Document Issue Report*',
+        '----------------------------------------',
+        `*Document:* ${courseTitle}`,
+        `*Course Code:* ${item.code || 'N/A'}`,
+        `*Programme:* ${programme}`,
+        `*Issue Type:* ${reasonText}`,
+        note ? `*Note:* ${note}` : null,
+        `*URL:* ${docUrl}`,
+        '----------------------------------------',
+        '_Reported via SGOU Academic Database_'
+      ].filter(Boolean).join('\n');
+
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`, '_blank', 'noopener,noreferrer');
       this.showToast('Opening WhatsApp to send report...', 3000);
-    } else if (channel === 'email') {
-      const subject = `SGOU Document Issue: ${item.code || ''} ${item.name || ''}`;
-      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
-      this.showToast('Opening email client...', 3000);
-    } else if (channel === 'github') {
-      const title = `[Issue] Document Mismatch: ${item.code || ''} - ${item.name || ''}`;
-      const ghUrl = `https://github.com/researchertizar/sgou-slm-database/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(text)}`;
-      window.open(ghUrl, '_blank');
-      this.showToast('Opening GitHub Issues...', 3000);
-    } else if (channel === 'copy') {
-      navigator.clipboard.writeText(text).then(() => {
-        this.showToast('Report details copied to clipboard!', 3000);
+      this.closeReportModal();
+      return;
+    }
+
+    if (channel === 'copy') {
+      const copyText = [
+        '[SGOU Document Issue Report]',
+        '----------------------------------------',
+        `Document:    ${courseTitle}`,
+        `Course Code: ${item.code || 'N/A'}`,
+        `Programme:   ${programme}`,
+        `Issue Type:  ${reasonText}`,
+        note ? `Note:        ${note}` : null,
+        `URL:         ${docUrl}`,
+        `Timestamp:   ${new Date().toISOString().replace('T', ' ').substring(0, 19)} UTC`,
+        '----------------------------------------'
+      ].filter(Boolean).join('\n');
+
+      navigator.clipboard.writeText(copyText).then(() => {
+        this.showToast('Report details copied to clipboard', 3000);
       }).catch(() => {
         this.showToast('Please copy report manually', 3000);
       });
+      this.closeReportModal();
+      return;
     }
-
-    this.closeReportModal();
   }
 
   setMaterialType(type) {
@@ -3712,25 +3802,21 @@ class UIController {
         return;
       }
 
-      if (e.target.closest('#reportModalCloseBtn') || (e.target === $('reportModal'))) {
+      if (e.target.closest('#reportModalCloseBtn') || e.target.closest('#reportCancelBtn') || (e.target === $('reportModal'))) {
         this.closeReportModal();
         return;
       }
 
+      if (e.target.closest('#reportSubmitForm')) {
+        this.submitReport('form');
+        return;
+      }
       if (e.target.closest('#reportSendWhatsApp')) {
         this.submitReport('whatsapp');
         return;
       }
-      if (e.target.closest('#reportSendEmail')) {
-        this.submitReport('email');
-        return;
-      }
       if (e.target.closest('#reportCopyDetails')) {
         this.submitReport('copy');
-        return;
-      }
-      if (e.target.closest('#reportOpenGithub')) {
-        this.submitReport('github');
         return;
       }
 
@@ -4212,7 +4298,7 @@ const UI = new UIController();
 
 const PWAService = {
   APP_VERSION: 'v2026.10.07',
-  BUILD_ID: '20261007_06',
+  BUILD_ID: '20261007_07',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,

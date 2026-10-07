@@ -4870,38 +4870,95 @@ kbd {
   color: #fcd34d;
 }
 
-/* Issue Reporting Modal — Minimal, Zero-Scroll Dialog */
+/* Issue Reporting Modal — Professional Standard Minimal Dialog */
 .report-modal-card {
-  max-width: 410px;
-  border-radius: 14px;
+  max-width: 440px;
+  width: 92vw;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
 }
 
+[data-theme="dark"] .report-modal-card {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6);
+}
+
+/* Header */
 .report-modal-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 13px 16px 10px;
+  gap: 12px;
+  padding: 13px 16px 11px;
   border-bottom: 1px solid var(--border-light);
+  background: var(--surface-subtle);
+}
+
+[data-theme="dark"] .report-modal-header {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.report-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
 }
 
 .report-header-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   font-family: var(--font-sans);
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--ink);
   letter-spacing: -0.01em;
 }
 
 .report-header-title svg {
-  color: #ef4444;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
-.modal-close-icon {
+.report-header-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-header-subtitle .report-doc-title {
+  font-weight: 500;
+  color: var(--ink-soft);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-header-subtitle .report-doc-sep {
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.report-header-subtitle .report-doc-meta {
+  color: var(--ink-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.report-close-btn {
   background: transparent;
   border: none;
   color: var(--ink-muted);
@@ -4912,133 +4969,211 @@ kbd {
   align-items: center;
   justify-content: center;
   transition: all .15s ease;
+  flex-shrink: 0;
 }
 
-.modal-close-icon:hover {
+.report-close-btn:hover {
   background: var(--surface-hover);
   color: var(--ink);
 }
 
+.report-close-btn:focus {
+  outline: none;
+}
+
+.report-close-btn:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+/* Body */
 .report-modal-body {
-  padding: 13px 16px 15px;
+  padding: 13px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
 }
 
-/* Compact Document Summary */
-.report-doc-preview {
-  background: var(--bg-deep);
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  padding: 7px 11px;
-  margin-bottom: 11px;
+.report-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
-.report-doc-title {
+.report-field-label {
   font-family: var(--font-sans);
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.report-doc-meta {
-  font-family: var(--font-sans);
-  font-size: 11px;
+.report-label-opt {
+  font-weight: 400;
   color: var(--ink-muted);
-  margin-top: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 11px;
 }
 
-/* Minimal 2x2 Reason Chips */
-.report-reasons-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.report-chip {
+.report-select-wrap {
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 7px 8px;
-  min-height: 33px;
+}
+
+.report-select {
+  width: 100%;
+  height: 35px;
+  padding: 0 30px 0 10px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink);
   background: var(--surface);
   border: 1px solid var(--border-light);
   border-radius: 7px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+[data-theme="dark"] .report-select {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.report-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.15);
+}
+
+.report-select-arrow {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: var(--ink-muted);
+}
+
+.report-input {
+  width: 100%;
+  height: 35px;
+  padding: 0 10px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border-light);
+  border-radius: 7px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+[data-theme="dark"] .report-input {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.report-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.15);
+}
+
+.report-input::placeholder {
+  color: var(--ink-muted);
+  opacity: 0.7;
+}
+
+/* Footer */
+.report-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border-light);
+  background: var(--surface-subtle);
+}
+
+[data-theme="dark"] .report-modal-footer {
+  background: rgba(255, 255, 255, 0.02);
+  border-top-color: rgba(255, 255, 255, 0.07);
+}
+
+.report-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.report-tool-btn {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  padding: 5px 9px;
+  border-radius: 6px;
   font-family: var(--font-sans);
   font-size: 11.5px;
   font-weight: 500;
-  color: var(--ink-soft);
+  color: var(--ink-muted);
   cursor: pointer;
-  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   transition: all .14s ease;
-  text-align: center;
 }
 
-.report-chip input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  margin: 0;
-  pointer-events: none;
+[data-theme="dark"] .report-tool-btn {
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-.report-chip:hover {
+.report-tool-btn:hover {
   background: var(--surface-hover);
+  color: var(--ink);
   border-color: var(--border);
-  color: var(--ink);
 }
 
-.report-chip:has(input:checked) {
-  background: rgba(180, 61, 40, 0.08);
-  border-color: var(--accent);
-  color: var(--accent);
-  font-weight: 600;
+.report-tool-btn.whatsapp-tool-btn {
+  color: #16a34a;
 }
 
-[data-theme="dark"] .report-chip:has(input:checked) {
-  background: rgba(229, 114, 90, 0.12);
-  border-color: var(--accent);
-  color: var(--accent);
+[data-theme="dark"] .report-tool-btn.whatsapp-tool-btn {
+  color: #22c55e;
 }
 
-/* Single-Line Quick Note Input */
-.report-quick-input {
-  width: 100%;
-  height: 35px;
-  padding: 0 11px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  border-radius: 7px;
-  border: 1px solid var(--border-light);
-  background: var(--surface);
-  color: var(--ink);
-  box-sizing: border-box;
-  margin-bottom: 11px;
-  transition: border-color .14s ease, box-shadow .14s ease;
+.report-tool-btn.whatsapp-tool-btn:hover {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
 }
 
-.report-quick-input:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(180, 61, 40, 0.12);
-}
-
-/* Primary WhatsApp Action */
-.report-primary-btn {
-  width: 100%;
-  height: 36px;
+.report-footer-right {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  background: #25d366;
+  gap: 8px;
+}
+
+.report-cancel-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: all .14s ease;
+}
+
+.report-cancel-btn:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+
+.report-submit-btn {
+  height: 33px;
+  padding: 0 14px;
+  background: var(--accent);
   color: #ffffff;
   border: none;
   border-radius: 7px;
@@ -5046,49 +5181,29 @@ kbd {
   font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: all .15s ease;
+  box-shadow: 0 1px 4px rgba(180, 61, 40, 0.2);
 }
 
-.report-primary-btn:hover {
-  background: #20bd5a;
+.report-submit-btn:hover {
+  filter: brightness(1.08);
   transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(180, 61, 40, 0.28);
 }
 
-.report-primary-btn:active {
+.report-submit-btn:active {
   transform: translateY(0);
 }
 
-/* Secondary Actions Row */
-.report-secondary-row {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
+.report-submit-btn.submitting {
+  opacity: 0.85;
+  cursor: wait;
 }
 
-.report-sub-btn {
-  flex: 1;
-  height: 29px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  font-family: var(--font-sans);
-  font-size: 11px;
-  font-weight: 500;
-  background: var(--bg-deep);
-  border: 1px solid var(--border-light);
-  border-radius: 6px;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition: all .14s ease;
-}
-
-.report-sub-btn:hover {
-  background: var(--surface);
-  border-color: var(--border);
-  color: var(--ink);
-}
-
-.report-sub-btn:active {
-  transform: translateY(0.5px);
+.report-submit-btn.success {
+  background: #10b981 !important;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
 }
