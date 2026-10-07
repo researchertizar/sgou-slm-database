@@ -1148,7 +1148,7 @@
               try { activeRenderTasks[num].cancel(); } catch (_) {}
             }
 
-            var ctx = canvas.getContext('2d', { alpha: false });
+            var ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
             var renderTask = page.render({
               canvasContext: ctx,
               viewport: viewport,
@@ -1170,7 +1170,7 @@
               try { activeRenderTasks[num].cancel(); } catch (_) {}
             }
 
-            var ctx = newCanvas.getContext('2d', { alpha: false });
+            var ctx = newCanvas.getContext('2d', { alpha: false, willReadFrequently: true });
             var renderTask = page.render({
               canvasContext: ctx,
               viewport: viewport,

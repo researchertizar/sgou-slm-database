@@ -1,10 +1,10 @@
-const CACHE = 'sgou-v139';
+const CACHE = 'sgou-v140';
 const SHELL = [
     './',
     './index.html',
-    './css/style.css?v=20261007_03',
-    './js/script.js?v=20261007_03',
-    './manifest.json?v=20261007_03',
+    './css/style.css?v=20261007_04',
+    './js/script.js?v=20261007_04',
+    './manifest.json?v=20261007_04',
     './assets/icons/icon.svg?v=20260904_10',
     './assets/icons/icon-192.png?v=20260904_10',
     './assets/icons/icon-512.png?v=20260904_10',

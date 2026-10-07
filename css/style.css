@@ -3004,7 +3004,6 @@ body.viewer-panel-open {
 /* Mobile Decongestion for In-App PDF Viewer (Eliminate Cognitive Load) */
 @media (max-width: 680px) {
 
-  #viewerThemeToggle,
   #viewerPanelFilter {
     display: none !important;
   }
