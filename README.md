@@ -4,8 +4,9 @@
 > Engineered with pure vanilla web standards, S.O.L.I.D architecture, sub-100ms startup hydration, zero-cost edge streaming, and 60fps FLIP animations.  
 > **Developed by Ahayas**
 
+[![Version](https://img.shields.io/badge/version-v3.0.0-emerald.svg)](#overview)
 [![Test Suite](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](#automated-verification-suite)
-[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v139)-blue.svg)](#offline-pwa--service-worker-lifecycle)
+[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v141)-blue.svg)](#offline-pwa--service-worker-lifecycle)
 [![Architecture](https://img.shields.io/badge/architecture-S.O.L.I.D-purple.svg)](#solid-system-architecture)
 [![Edge CDN](https://img.shields.io/badge/bandwidth-zero--cost%20CloudFront-orange.svg)](#zero-cost-edge-architecture--bandwidth-protection)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license--acknowledgments)
@@ -189,7 +190,7 @@ Students can "star" or "pin" their degree programmes to keep them anchored at th
 The platform operates as a standalone Progressive Web App with zero external runtime dependencies.
 
 ### Cache Strategy
-- **Service Worker Version**: `sgou-v139` with asset versioning query parameters (`v=20261007_03`).
+- **Service Worker Version**: `sgou-v141` with asset versioning query parameters (`v=20261007_05`).
 - **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `view.html`, `reader.html`, `pdfjs/pdf.min.js`, `pdfjs/pdf.worker.min.js`, `manifest.json`, `opensearch.xml`, and touch icons are served instantaneously from CacheStorage.
 - **Academic Datasets (Network-First with Cache Fallback)**: `data/sgou_slm_data.json` and `data/sgou_questions_cleaned.json` fetch latest updates from the network with instant fallback to local cached versions if offline.
 - **Google Fonts (Stale-While-Revalidate)**: Font stylesheets and `.woff2` files are cached with strict Content Security Policy (`connect-src https://fonts.googleapis.com https://fonts.gstatic.com`).
