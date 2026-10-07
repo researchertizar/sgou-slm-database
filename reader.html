@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net;">
   <title>Academic Reader — SGOU</title>
   <style>
@@ -57,6 +57,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       transition: background 0.2s ease, color 0.2s ease;
       -webkit-font-smoothing: antialiased;
+      touch-action: none;
     }
 
     #readerWrap {
@@ -99,7 +100,13 @@
       padding: 16px 10px calc(80px + env(safe-area-inset-bottom, 0px)) 10px;
       gap: 16px;
       scroll-behavior: auto;
-      touch-action: pan-x pan-y pinch-zoom;
+      touch-action: pan-x pan-y;
+    }
+
+    #viewerContainer.is-zooming-interactive {
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     /* Page Canvas Wrappers */
@@ -785,27 +792,48 @@
         errorBox.style.display = 'none';
 
         var targetUrl = resolveFileUrl(rawFile);
+        var pdfData = null;
 
-        // Check device CacheStorage for instant offline retrieval
-        if (!rawFile.startsWith('blob:') && 'caches' in window) {
+        // 1. Check device CacheStorage for instant offline retrieval
+        if ('caches' in window) {
           try {
             var cache = await caches.open('sgou-offline-docs');
             var match = await cache.match(rawFile);
-            if (match) {
-              var blob = await match.blob();
-              targetUrl = URL.createObjectURL(blob);
-              loadingMsg.textContent = 'Reading from device storage\u2026';
+            if (!match) {
+              match = await cache.match(decodeURIComponent(rawFile));
             }
-          } catch (_) {}
+            if (match) {
+              loadingMsg.textContent = 'Reading from device storage\u2026';
+              var arrayBuf = await match.arrayBuffer();
+              pdfData = new Uint8Array(arrayBuf);
+            }
+          } catch (cErr) {
+            console.warn('[CacheStorage]', cErr);
+          }
+        }
+
+        // 2. If targetUrl is already a blob URL or data URL, read into ArrayBuffer directly
+        if (!pdfData && (targetUrl.startsWith('blob:') || targetUrl.startsWith('data:'))) {
+          try {
+            var bResp = await fetch(targetUrl);
+            var bBuf = await bResp.arrayBuffer();
+            pdfData = new Uint8Array(bBuf);
+          } catch (bErr) {
+            console.warn('[Blob Fetch]', bErr);
+          }
         }
 
         try {
-          var loadingTask = pdfjsLib.getDocument({
-            url: targetUrl,
-            rangeChunkSize: 65536,
-            disableAutoFetch: false,
-            disableStream: false
-          });
+          var docConfig = pdfData
+            ? { data: pdfData }
+            : {
+                url: targetUrl,
+                rangeChunkSize: 65536,
+                disableAutoFetch: false,
+                disableStream: false
+              };
+
+          var loadingTask = pdfjsLib.getDocument(docConfig);
 
           loadingTask.onProgress = function (p) {
             if (p.total > 0) {
@@ -1305,6 +1333,7 @@
 
       container.addEventListener('touchstart', function (e) {
         if (e.touches.length === 2) {
+          e.preventDefault(); // Intercept browser-level viewport zoom immediately
           isPinching = true;
           initialPinchDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
@@ -1314,7 +1343,7 @@
           pinchFocalX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
           pinchFocalY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
         }
-      }, { passive: true });
+      }, { passive: false });
 
       container.addEventListener('touchmove', function (e) {
         if (e.touches.length === 2 && initialPinchDist > 0) {
@@ -1351,6 +1380,19 @@
       document.addEventListener('gesturestart', function (e) { e.preventDefault(); }, { passive: false });
       document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
       document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
+
+      // When embedded in parent iframe, coordinate Android system Back gesture to close reader panel safely
+      if (window.parent && window.parent !== window) {
+        try {
+          history.replaceState({ readerInFrame: true, depth: 0 }, '', window.location.href);
+          history.pushState({ readerInFrame: true, depth: 1 }, '', window.location.href);
+          window.addEventListener('popstate', function () {
+            try {
+              window.parent.postMessage({ type: 'READER_BACK' }, '*');
+            } catch (_) {}
+          });
+        } catch (_) {}
+      }
 
       // Toolbar Controls
       document.getElementById('prevBtn').addEventListener('click', function () { scrollToPage(currentPage - 1); });
@@ -1435,6 +1477,15 @@
       // Keyboard navigation
       window.addEventListener('keydown', function (e) {
         if (jumpModal.classList.contains('active')) return;
+
+        if (e.key === 'Escape' || e.key === 'Backspace') {
+          e.preventDefault();
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'READER_BACK' }, '*');
+          }
+          return;
+        }
+
         var key = e.key.toLowerCase();
 
         if (e.key === 'ArrowLeft' || e.key === 'PageUp') {

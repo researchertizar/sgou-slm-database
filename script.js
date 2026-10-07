@@ -2671,46 +2671,22 @@ class UIController {
       };
       frame.onload = onReady;
 
-      // Check CacheStorage first: If previously downloaded, stream instantly from device storage
-      Storage.getOfflineDoc(pdfUrl).then(cachedBlob => {
-        let streamSource = '';
-        if (cachedBlob) {
-          this._activeBlobUrl = URL.createObjectURL(cachedBlob);
-          streamSource = this._activeBlobUrl;
-          if (ld) ld.innerHTML = '<div class="loading-spinner"></div><span>Reading from device storage&hellip;</span>';
-        }
+      // Universal in-app HTML5 canvas reader (reader.html) across all devices for consistent themes, high-DPI, and offline caching.
+      const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      let fullUrl = '';
+      if (pdfUrl) {
+        fullUrl = './reader.html?file=' + encodeURIComponent(pdfUrl) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme);
+      }
 
-        // Universal in-app HTML5 canvas reader (reader.html) across all devices for consistent themes, high-DPI, and offline caching.
-        const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
-        let fullUrl = '';
-        if (pdfUrl || streamSource) {
-          const docSource = streamSource || ('/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1');
-          fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme);
-        }
-
-        try {
-          if (frame.contentWindow) {
-            frame.contentWindow.location.replace(fullUrl || 'about:blank');
-          } else {
-            frame.src = fullUrl || 'about:blank';
-          }
-        } catch (e) {
+      try {
+        if (frame.contentWindow) {
+          frame.contentWindow.location.replace(fullUrl || 'about:blank');
+        } else {
           frame.src = fullUrl || 'about:blank';
         }
-      }).catch(() => {
-        const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
-        let fullUrl = '';
-        if (pdfUrl) {
-          const docSource = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&inline=1';
-          fullUrl = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme);
-        }
-        try {
-          if (frame.contentWindow) frame.contentWindow.location.replace(fullUrl || 'about:blank');
-          else frame.src = fullUrl || 'about:blank';
-        } catch (_) {
-          frame.src = fullUrl || 'about:blank';
-        }
-      });
+      } catch (e) {
+        frame.src = fullUrl || 'about:blank';
+      }
 
       // If document loading takes longer than 5 seconds (e.g. slow network), provide an inline fallback helper
       this._fallbackTimeout = setTimeout(() => {
@@ -2868,7 +2844,7 @@ class UIController {
     }
   }
 
-  setMaterialType(type) {
+  setMaterialType(type, push = true) {
     const targetType = (type || 'SLM').toUpperCase();
     if (this.activeType === targetType) return;
     this.activeType = targetType;
@@ -2883,7 +2859,7 @@ class UIController {
     });
     Analytics.trackFilter('type_' + this.activeType);
     this.executeSearch();
-    this.syncUrlFromState();
+    this.syncUrlFromState(push);
   }
 
   renderMyDownloads() {
@@ -3936,12 +3912,24 @@ class UIController {
           e.preventDefault();
         }
       }, { passive: false });
+      viewerPanel.addEventListener('touchstart', e => {
+        if (e.touches && e.touches.length > 1) {
+          e.preventDefault();
+        }
+      }, { passive: false });
       viewerPanel.addEventListener('touchmove', e => {
         if (e.touches && e.touches.length > 1) {
           e.preventDefault();
         }
       }, { passive: false });
     }
+
+    // Coordinate safe reader back navigation from embedded iframe
+    window.addEventListener('message', e => {
+      if (e.data && e.data.type === 'READER_BACK') {
+        this.hideViewerPanel(true);
+      }
+    });
   }
 }
 
@@ -3952,8 +3940,8 @@ const UI = new UIController();
 // ============================================================================
 
 const PWAService = {
-  APP_VERSION: 'v2026.10.06',
-  BUILD_ID: '20261006_03',
+  APP_VERSION: 'v2026.10.07',
+  BUILD_ID: '20261007_01',
   registration: null,
   isRefreshing: false,
   _checkingUpdate: false,
