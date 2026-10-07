@@ -273,43 +273,54 @@ The platform is optimized for both traditional search engines (Google, Bing) and
 sgou-database/
 ├── api/
 │   └── download.js                     # Edge streaming proxy fallback with SSRF allowlisting
+├── assets/
+│   ├── icons/                          # PWA and browser favicons & application icons
+│   │   ├── apple-touch-icon.png        # iOS Safari homescreen bookmark icon (180x180)
+│   │   ├── favicon-16x16.png           # Browser tab icon (16x16)
+│   │   ├── favicon-32x32.png           # Google search snippet & desktop tab icon (32x32)
+│   │   ├── favicon.ico                 # Multi-frame legacy desktop favicon
+│   │   ├── icon-192.png                # Android PWA launcher icon (192x192)
+│   │   ├── icon-512.png                # PWA splash screen & high-res asset (512x512)
+│   │   └── icon.svg                    # Minimal vector emblem & maskable PWA icon
+│   └── images/                         # Social sharing OpenGraph preview cards
+│       ├── og-image.png                # Warm parchment social card (1200x630)
+│       └── og-image-dark.png           # Dark theme social card (1200x630)
+├── css/
+│   └── style.css                       # Design system (8px grid, dark mode, FLIP animations)
 ├── data/
 │   ├── sgou_slm_data.json              # Complete SGOU SLM textbook repository dataset (37 progs)
-│   └── sgou_questions_cleaned.json   # Cleaned PYQs and assignments dataset
+│   └── sgou_questions_cleaned.json     # Cleaned PYQs and assignments dataset
+├── js/
+│   └── script.js                       # S.O.L.I.D client architecture, search & UI controller
+├── pdfjs/                              # Vendored standalone PDF.js engine for in-app reader
+│   ├── pdf.min.js                      # PDF.js main runtime
+│   └── pdf.worker.min.js               # PDF.js web worker
+├── sitemaps/                           # Granular SEO XML sitemaps
+│   ├── sitemap-courses.xml             # XML sitemap for 1,200+ course endpoints
+│   ├── sitemap-main.xml                # XML sitemap for main routes & category views
+│   └── sitemap-programmes.xml          # XML sitemap for all 37 degree programmes
 ├── scripts/
 │   ├── generate_assets.py              # Generates touch icons & 1200x630 OG social cards
 │   ├── generate_sitemaps.py            # Generates 4-tier XML sitemaps covering all courses
 │   ├── ping_indexnow.py                # Automated IndexNow ping for Bing/Yandex search engines
 │   ├── sgou_enhanced_pyq_scraper.py    # Scraping pipeline for previous question papers
-│   └── sgou_scrape.py                  # Scraping pipeline for SLM textbook repository
+│   ├── sgou_scrape.py                  # Scraping pipeline for SLM textbook repository
+│   ├── sync_to_github.cmd              # Production sync batch script
+│   └── sync_to_github.py               # Production mirror synchronizer & cleaner
 ├── .gitignore                          # Production git ignore configuration
 ├── 4a8f9c1d2e3b4a5f60718293a4b5c6d7.txt # IndexNow search engine verification key
-├── apple-touch-icon.png                # iOS Safari homescreen bookmark icon (180x180)
 ├── dev_server.js                       # Local zero-dependency development server with proxying
-├── favicon-16x16.png                   # Browser tab icon (16x16)
-├── favicon-32x32.png                   # Google search snippet & desktop tab icon (32x32)
-├── favicon.ico                         # Multi-frame legacy desktop favicon
-├── icon-192.png                        # Android PWA launcher icon
-├── icon-512.png                        # PWA splash screen & high-res asset
-├── icon.svg                            # Minimal vector emblem & maskable PWA icon
 ├── index.html                          # Main application, Schema.org Graph & Open Graph
 ├── llms.txt                            # Standard LLM crawler specification (ChatGPT, Claude)
 ├── llms-full.txt                       # Machine-readable university syllabus catalog
 ├── manifest.json                       # PWA web application manifest (Root-scoped)
-├── og-image-dark.png                   # Dark theme social card (1200x630)
-├── og-image.png                        # Warm parchment social card (1200x630)
 ├── opensearch.xml                      # OpenSearch 1.1 description for browser address bars
+├── reader.html                         # Full-screen zero-download in-app PDF reader
 ├── README.md                           # System documentation & deployment guide
 ├── robots.txt                          # Search engine & AI bot crawler directives
-├── script.js                           # S.O.L.I.D client architecture, search & UI controller
-├── sitemap-courses.xml                 # XML sitemap for 1,200+ course endpoints
-├── sitemap-main.xml                    # XML sitemap for main routes & category views
-├── sitemap-programmes.xml              # XML sitemap for all 37 degree programmes
 ├── sitemap.xml                         # Root XML sitemap index
-├── style.css                           # Design system (8px grid, dark mode, FLIP animations)
 ├── sw.js                               # Service Worker (offline shell precache & background sync)
-├── sync_to_github.cmd                  # 1-Click Windows batch script to sync to production repo
-├── sync_to_github.py                   # Production file synchronizer and cleaner
+├── sync_to_github.cmd                  # Root 1-click launcher for sync script
 ├── vercel.json                         # Vercel production edge headers, rewrites & cache control
 └── view.html                           # Standalone PDF preview & deep-link reader
 ```
@@ -362,7 +373,7 @@ sync_to_github.cmd
 
 ### Option B: via Terminal
 ```bash
-python sync_to_github.py
+python scripts/sync_to_github.py
 ```
 
 ### How It Works

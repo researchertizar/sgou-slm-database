@@ -70,9 +70,9 @@ Allow: /
 # Sitemaps & Machine-Readable AI Indices
 # ============================================================================
 Sitemap: https://sgou-slm-database.vercel.app/sitemap.xml
-Sitemap: https://sgou-slm-database.vercel.app/sitemap-main.xml
-Sitemap: https://sgou-slm-database.vercel.app/sitemap-programmes.xml
-Sitemap: https://sgou-slm-database.vercel.app/sitemap-courses.xml
+Sitemap: https://sgou-slm-database.vercel.app/sitemaps/sitemap-main.xml
+Sitemap: https://sgou-slm-database.vercel.app/sitemaps/sitemap-programmes.xml
+Sitemap: https://sgou-slm-database.vercel.app/sitemaps/sitemap-courses.xml
 
 # LLM Context Specification (llms.txt standard)
 # https://sgou-slm-database.vercel.app/llms.txt

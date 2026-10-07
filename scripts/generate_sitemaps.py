@@ -65,7 +65,7 @@ def generate_sitemaps():
             ET.SubElement(img_el, "image:loc").text = f"{BASE_URL}/og-image.png"
             ET.SubElement(img_el, "image:title").text = item["title"]
 
-    main_xml_path = os.path.join(REPO_ROOT, "sitemap-main.xml")
+    main_xml_path = os.path.join(REPO_ROOT, "sitemaps", "sitemap-main.xml")
     with open(main_xml_path, "w", encoding="utf-8") as f:
         f.write(prettify_xml(urlset_main))
     print(f"  [+] Wrote sitemap-main.xml ({len(main_urls)} URLs)")
@@ -93,7 +93,7 @@ def generate_sitemaps():
         ET.SubElement(url_el, "changefreq").text = "weekly"
         ET.SubElement(url_el, "priority").text = "0.85"
 
-    prog_xml_path = os.path.join(REPO_ROOT, "sitemap-programmes.xml")
+    prog_xml_path = os.path.join(REPO_ROOT, "sitemaps", "sitemap-programmes.xml")
     with open(prog_xml_path, "w", encoding="utf-8") as f:
         f.write(prettify_xml(urlset_prog))
     print(f"  [+] Wrote sitemap-programmes.xml ({prog_count} URLs)")
@@ -128,7 +128,7 @@ def generate_sitemaps():
                 ET.SubElement(url_el2, "changefreq").text = "weekly"
                 ET.SubElement(url_el2, "priority").text = "0.70"
 
-    courses_xml_path = os.path.join(REPO_ROOT, "sitemap-courses.xml")
+    courses_xml_path = os.path.join(REPO_ROOT, "sitemaps", "sitemap-courses.xml")
     with open(courses_xml_path, "w", encoding="utf-8") as f:
         f.write(prettify_xml(urlset_courses))
     print(f"  [+] Wrote sitemap-courses.xml ({course_count * 2} URLs)")
@@ -139,9 +139,9 @@ def generate_sitemaps():
     sitemapindex = ET.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
 
     sitemaps = [
-        f"{BASE_URL}/sitemap-main.xml",
-        f"{BASE_URL}/sitemap-programmes.xml",
-        f"{BASE_URL}/sitemap-courses.xml"
+        f"{BASE_URL}/sitemaps/sitemap-main.xml",
+        f"{BASE_URL}/sitemaps/sitemap-programmes.xml",
+        f"{BASE_URL}/sitemaps/sitemap-courses.xml"
     ]
 
     for sm_url in sitemaps:
