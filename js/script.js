@@ -1624,10 +1624,21 @@ class UIController {
     this.syncMeta();
     Analytics.trackTheme(next);
 
+    // Sync active reader filter to match the new theme seamlessly
+    const curFilter = localStorage.getItem('sgou-pdf-filter') || 'normal';
+    let targetFilter = curFilter;
+    if (next === 'dark' && curFilter === 'normal') {
+      targetFilter = 'dark';
+    } else if (next === 'light' && curFilter === 'dark') {
+      targetFilter = 'normal';
+    }
+    try { localStorage.setItem('sgou-pdf-filter', targetFilter); } catch (_) {}
+    this.applyReaderFilter(targetFilter, false);
+
     const frame = $('viewerPanelFrame');
     if (frame && frame.contentWindow) {
       try {
-        frame.contentWindow.postMessage({ type: 'sgou-theme-change', theme: next }, '*');
+        frame.contentWindow.postMessage({ type: 'sgou-theme-change', theme: next, filter: targetFilter }, '*');
       } catch (_) {}
     }
 
@@ -1656,15 +1667,11 @@ class UIController {
     }
     const ogImg = document.querySelector('meta[property="og:image"]');
     if (ogImg) {
-      ogImg.setAttribute('content', isDark
-        ? 'https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909'
-        : 'https://sgou-slm-database.vercel.app/og-image.png?v=20260909');
+      ogImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_04');
     }
     const twitterImg = document.querySelector('meta[name="twitter:image"]');
     if (twitterImg) {
-      twitterImg.setAttribute('content', isDark
-        ? 'https://sgou-slm-database.vercel.app/og-image-dark.png?v=20260909'
-        : 'https://sgou-slm-database.vercel.app/og-image.png?v=20260909');
+      twitterImg.setAttribute('content', 'https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_04');
     }
   }
 
@@ -2612,6 +2619,11 @@ class UIController {
     document.documentElement.classList.add('viewer-panel-open');
     document.body.classList.add('viewer-panel-open');
     // Silently apply eye-comfort filter mode on document load without popping toast notifications
+    const activeTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const savedFilter = localStorage.getItem('sgou-pdf-filter');
+    if (!savedFilter || (activeTheme === 'dark' && savedFilter === 'normal') || (activeTheme === 'light' && savedFilter === 'dark')) {
+      try { localStorage.setItem('sgou-pdf-filter', activeTheme === 'dark' ? 'dark' : 'normal'); } catch (_) {}
+    }
     this.applyReaderFilter(localStorage.getItem('sgou-pdf-filter') || 'normal', false);
 
     // Sync clean course URL on current history frame without duplicate pushState

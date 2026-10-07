@@ -62,7 +62,7 @@ def generate_sitemaps():
         ET.SubElement(url_el, "priority").text = item["priority"]
         if "title" in item:
             img_el = ET.SubElement(url_el, "image:image")
-            ET.SubElement(img_el, "image:loc").text = f"{BASE_URL}/og-image.png"
+            ET.SubElement(img_el, "image:loc").text = f"{BASE_URL}/assets/images/og-image.png"
             ET.SubElement(img_el, "image:title").text = item["title"]
 
     main_xml_path = os.path.join(REPO_ROOT, "sitemaps", "sitemap-main.xml")

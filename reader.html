@@ -118,9 +118,14 @@
       overflow: hidden;
       margin: 0 auto;
       flex-shrink: 0;
-      transition: box-shadow 0.2s ease, width 0.15s cubic-bezier(0.16, 1, 0.3, 1), height 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: box-shadow 0.2s ease, width 0.15s cubic-bezier(0.16, 1, 0.3, 1), height 0.15s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
       transform-origin: center top;
       will-change: width, height;
+    }
+
+    html[data-theme="dark"] .pdf-page-wrap,
+    #viewerContainer.filter-dark .pdf-page-wrap {
+      background: #141210;
     }
 
     /* Instant 60fps tracking during live touch pinch or wheel zoom gestures (no transition lag) */
@@ -474,6 +479,7 @@
     }
     #viewerContainer.filter-dark canvas {
       filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
+      background: #141210;
     }
   </style>
 </head>
@@ -583,10 +589,10 @@
     (function () {
       'use strict';
 
-      // --- Theme Synchronization ---
-      function applyTheme() {
+      // --- Theme Synchronization & Adaptive Reading Mode ---
+      function applyTheme(themeOverride, filterOverride) {
         var params = new URLSearchParams(window.location.search);
-        var requestedTheme = params.get('theme');
+        var requestedTheme = themeOverride || params.get('theme');
         var theme = 'light';
 
         if (requestedTheme === 'dark' || requestedTheme === 'light') {
@@ -599,12 +605,24 @@
           }
         }
         document.documentElement.setAttribute('data-theme', theme);
+
+        // Dynamically synchronize the reading page with the theme
+        var targetFilter = filterOverride;
+        if (!targetFilter) {
+          try { targetFilter = localStorage.getItem('sgou-pdf-filter'); } catch (_) {}
+          // If no custom preference or if switching between standard modes, sync directly with theme
+          if (!targetFilter || targetFilter === 'normal' || targetFilter === 'dark') {
+            targetFilter = theme === 'dark' ? 'dark' : 'normal';
+          }
+        }
+        try { localStorage.setItem('sgou-pdf-filter', targetFilter); } catch (_) {}
+        updateFilterUI(targetFilter);
       }
       applyTheme();
-      window.addEventListener('storage', applyTheme);
+      window.addEventListener('storage', function () { applyTheme(); });
       window.addEventListener('message', function (e) {
         if (e.data && e.data.type === 'sgou-theme-change') {
-          document.documentElement.setAttribute('data-theme', e.data.theme);
+          applyTheme(e.data.theme, e.data.filter);
         }
       });
 

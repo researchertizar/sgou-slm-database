@@ -96,28 +96,30 @@ def create_base_icon(size=512):
     return im
 
 def generate_icons():
-    """Generates all standard PWA and touch icon formats directly into REPO_ROOT."""
+    """Generates all standard PWA and touch icon formats directly into assets/icons/."""
+    icons_dir = os.path.join(REPO_ROOT, "assets", "icons")
+    os.makedirs(icons_dir, exist_ok=True)
     print("Generating minimal touch icons...")
     base_icon = create_base_icon(512)
-    base_icon.save(os.path.join(REPO_ROOT, "icon-512.png"), "PNG", optimize=True)
+    base_icon.save(os.path.join(icons_dir, "icon-512.png"), "PNG", optimize=True)
 
     # 192x192
     icon_192 = base_icon.resize((192, 192), Image.Resampling.LANCZOS)
-    icon_192.save(os.path.join(REPO_ROOT, "icon-192.png"), "PNG", optimize=True)
+    icon_192.save(os.path.join(icons_dir, "icon-192.png"), "PNG", optimize=True)
 
     # Apple touch icon (180x180)
     icon_180 = base_icon.resize((180, 180), Image.Resampling.LANCZOS)
-    icon_180.save(os.path.join(REPO_ROOT, "apple-touch-icon.png"), "PNG", optimize=True)
+    icon_180.save(os.path.join(icons_dir, "apple-touch-icon.png"), "PNG", optimize=True)
 
     # Favicon 32x32 & 16x16
     icon_32 = base_icon.resize((32, 32), Image.Resampling.LANCZOS)
-    icon_32.save(os.path.join(REPO_ROOT, "favicon-32x32.png"), "PNG", optimize=True)
+    icon_32.save(os.path.join(icons_dir, "favicon-32x32.png"), "PNG", optimize=True)
 
     icon_16 = base_icon.resize((16, 16), Image.Resampling.LANCZOS)
-    icon_16.save(os.path.join(REPO_ROOT, "favicon-16x16.png"), "PNG", optimize=True)
+    icon_16.save(os.path.join(icons_dir, "favicon-16x16.png"), "PNG", optimize=True)
 
     # Multi-frame favicon.ico
-    base_icon.save(os.path.join(REPO_ROOT, "favicon.ico"), format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
+    base_icon.save(os.path.join(icons_dir, "favicon.ico"), format="ICO", sizes=[(16, 16), (32, 32), (48, 48)])
     print("  -> icon-512.png, icon-192.png, apple-touch-icon.png, favicon-32x32.png, favicon.ico generated.")
 
 def generate_og_image(base_url="http://localhost:3030"):
@@ -286,9 +288,11 @@ def generate_og_image(base_url="http://localhost:3030"):
     # 5. Composite window onto studio canvas
     canvas.alpha_composite(win_final, (win_x, win_y))
 
-    # 6. Save final og-image.png cleanly
-    output_path = os.path.join(REPO_ROOT, "og-image.png")
-    temp_output_path = os.path.join(REPO_ROOT, "og-image-temp.png")
+    # 6. Save final og-image.png cleanly into assets/images/
+    images_dir = os.path.join(REPO_ROOT, "assets", "images")
+    os.makedirs(images_dir, exist_ok=True)
+    output_path = os.path.join(images_dir, "og-image.png")
+    temp_output_path = os.path.join(images_dir, "og-image-temp.png")
     canvas.convert("RGB").save(temp_output_path, "PNG", optimize=True)
     if os.path.exists(output_path):
         try:
@@ -469,9 +473,11 @@ def generate_og_image_dark(base_url="http://localhost:3030"):
     # 5. Composite onto dark canvas
     canvas.alpha_composite(win_final, (win_x, win_y))
 
-    # 6. Save final og-image-dark.png cleanly
-    output_path = os.path.join(REPO_ROOT, "og-image-dark.png")
-    temp_output_path = os.path.join(REPO_ROOT, "og-image-dark-temp.png")
+    # 6. Save final og-image-dark.png cleanly into assets/images/
+    images_dir = os.path.join(REPO_ROOT, "assets", "images")
+    os.makedirs(images_dir, exist_ok=True)
+    output_path = os.path.join(images_dir, "og-image-dark.png")
+    temp_output_path = os.path.join(images_dir, "og-image-dark-temp.png")
     canvas.convert("RGB").save(temp_output_path, "PNG", optimize=True)
     if os.path.exists(output_path):
         try:
