@@ -3065,16 +3065,10 @@ body.viewer-panel-open {
   touch-action: none;
 }
 
-/* Reader Eye-Comfort Filter Classes for PDF Iframes */
-#viewerPanelFrame.filter-sepia,
-#pdfFrame.filter-sepia {
-  filter: sepia(0.35) contrast(0.96) brightness(0.96);
-}
-
-#viewerPanelFrame.filter-dark,
-#pdfFrame.filter-dark {
-  filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
-  background: #121110;
+/* Reader Eye-Comfort Classes for PDF Iframes (Canvas filtered internally in reader.html) */
+#viewerPanelFrame,
+#pdfFrame {
+  background: transparent;
 }
 
 .vp-btn.filter-active,

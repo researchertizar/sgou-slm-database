@@ -2802,26 +2802,25 @@ class UIController {
   applyReaderFilter(mode, showFeedback = false) {
     const frame = $('viewerPanelFrame');
     const btn = $('viewerPanelFilter');
-    if (!frame) return;
-    frame.classList.remove('filter-sepia', 'filter-dark');
-    if (btn) btn.classList.remove('filter-active');
-    if (mode === 'sepia') {
-      frame.classList.add('filter-sepia');
-      if (btn) {
+    if (btn) {
+      btn.classList.remove('filter-active');
+      if (mode === 'sepia') {
         btn.classList.add('filter-active');
         btn.setAttribute('title', 'Eye Comfort: Warm Sepia (Click to change)');
-      }
-      if (showFeedback) this.showToast('Reader Mode: Warm Sepia');
-    } else if (mode === 'dark') {
-      frame.classList.add('filter-dark');
-      if (btn) {
+        if (showFeedback) this.showToast('Reader Mode: Warm Sepia');
+      } else if (mode === 'dark') {
         btn.classList.add('filter-active');
         btn.setAttribute('title', 'Eye Comfort: Dark Invert (Click to change)');
+        if (showFeedback) this.showToast('Reader Mode: Dark Invert');
+      } else {
+        btn.setAttribute('title', 'Eye Comfort: Normal (Click to change)');
+        if (showFeedback) this.showToast('Reader Mode: Standard');
       }
-      if (showFeedback) this.showToast('Reader Mode: Dark Invert');
-    } else {
-      if (btn) btn.setAttribute('title', 'Eye Comfort: Normal (Click to change)');
-      if (showFeedback) this.showToast('Reader Mode: Standard');
+    }
+    if (frame && frame.contentWindow) {
+      try {
+        frame.contentWindow.postMessage({ type: 'sgou-filter-change', filter: mode }, '*');
+      } catch (_) {}
     }
   }
 
@@ -3962,10 +3961,18 @@ class UIController {
       }, { passive: false });
     }
 
-    // Coordinate safe reader back navigation from embedded iframe
+    // Coordinate safe reader back navigation and filter sync from embedded iframe
     window.addEventListener('message', e => {
-      if (e.data && e.data.type === 'READER_BACK') {
+      if (!e.data) return;
+      if (e.data.type === 'READER_BACK') {
         this.hideViewerPanel(true);
+      } else if (e.data.type === 'sgou-reader-filter-sync') {
+        const mode = e.data.filter;
+        const btn = $('viewerPanelFilter');
+        if (btn) {
+          btn.classList.remove('filter-active');
+          if (mode === 'sepia' || mode === 'dark') btn.classList.add('filter-active');
+        }
       }
     });
   }

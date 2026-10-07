@@ -166,13 +166,8 @@
             font-feature-settings: "zero" 1, "tnum" 1;
         }
 
-        #pdfFrame.filter-sepia {
-            filter: sepia(0.35) contrast(0.96) brightness(0.96);
-        }
-
-        #pdfFrame.filter-dark {
-            filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
-            background: #121110;
+        #pdfFrame {
+            background: transparent;
         }
 
         .topbar-btn.filter-active {
@@ -1730,18 +1725,20 @@
 
                 var modes = ['normal', 'sepia', 'dark'];
                 function applyMode(m) {
-                    frame.classList.remove('filter-sepia', 'filter-dark');
                     filterBtn.classList.remove('filter-active');
                     if (m === 'sepia') {
-                        frame.classList.add('filter-sepia');
                         filterBtn.classList.add('filter-active');
                         filterBtn.setAttribute('title', 'Eye Comfort: Warm Sepia (Click to change)');
                     } else if (m === 'dark') {
-                        frame.classList.add('filter-dark');
                         filterBtn.classList.add('filter-active');
                         filterBtn.setAttribute('title', 'Eye Comfort: Dark Invert (Click to change)');
                     } else {
                         filterBtn.setAttribute('title', 'Eye Comfort: Standard (Click to change)');
+                    }
+                    if (frame && frame.contentWindow) {
+                        try {
+                            frame.contentWindow.postMessage({ type: 'sgou-filter-change', filter: m }, '*');
+                        } catch (_) {}
                     }
                 }
 
@@ -1756,6 +1753,16 @@
                     var next = modes[nextIdx];
                     try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
                     applyMode(next);
+                });
+
+                window.addEventListener('message', function (e) {
+                    if (e.data && e.data.type === 'sgou-reader-filter-sync') {
+                        var m = e.data.filter;
+                        filterBtn.classList.remove('filter-active');
+                        if (m === 'sepia' || m === 'dark') {
+                            filterBtn.classList.add('filter-active');
+                        }
+                    }
                 });
 
                 // Topbar Theme Toggle

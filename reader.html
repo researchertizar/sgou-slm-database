@@ -659,6 +659,11 @@
         try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
         updateFilterUI(next);
         showToast(FILTER_LABELS[next]);
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'sgou-reader-filter-sync', filter: next }, '*');
+          }
+        } catch (_) {}
       }
       if (filterBtn) filterBtn.addEventListener('click', cycleFilterMode);
 
@@ -683,8 +688,7 @@
         var targetFilter = filterOverride;
         if (!targetFilter) {
           try { targetFilter = localStorage.getItem('sgou-pdf-filter'); } catch (_) {}
-          // If no custom preference or if switching between standard modes, sync directly with theme
-          if (!targetFilter || targetFilter === 'normal' || targetFilter === 'dark') {
+          if (!targetFilter) {
             targetFilter = theme === 'dark' ? 'dark' : 'normal';
           }
         }
@@ -694,8 +698,14 @@
       applyTheme();
       window.addEventListener('storage', function () { applyTheme(); });
       window.addEventListener('message', function (e) {
-        if (e.data && e.data.type === 'sgou-theme-change') {
+        if (!e.data) return;
+        if (e.data.type === 'sgou-theme-change') {
           applyTheme(e.data.theme, e.data.filter);
+        } else if (e.data.type === 'sgou-filter-change') {
+          if (e.data.filter) {
+            try { localStorage.setItem('sgou-pdf-filter', e.data.filter); } catch (_) {}
+            updateFilterUI(e.data.filter);
+          }
         }
       });
 
