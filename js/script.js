@@ -222,7 +222,7 @@ const IS_LOCAL = ['localhost', '127.0.0.1'].includes(location.hostname) || locat
  * paste your Google Form formResponse endpoint and entry IDs here.
  */
 window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
-  supportPhone: '919876543210', // Demo / placeholder support phone number
+  supportPhone: '919544572262', // Demo / placeholder support phone number
   formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_DEMO_FORM_ID_REPLACE_ME/formResponse',
   entries: {
     course: 'entry.1000001',
@@ -2994,15 +2994,75 @@ class UIController {
     if (noteEl) noteEl.value = '';
     if (selectEl) selectEl.selectedIndex = 0;
 
+    this.syncReportModalMode();
     modal.classList.add('visible');
     setTimeout(() => $('reportReasonSelect')?.focus(), 60);
   }
 
-  closeReportModal() {
-    $('reportModal')?.classList.remove('visible');
+  isGFormConfigured() {
+    const cfg = window.SGOU_REPORT_FORM;
+    if (!cfg || !cfg.formUrl) return false;
+    const url = String(cfg.formUrl).trim();
+    if (!url.startsWith('https://docs.google.com/forms/')) return false;
+    if (/DEMO|REPLACE_ME|SAMPLE|TEST_FORM/i.test(url)) return false;
+    return true;
   }
 
-  async submitReport(channel = 'form') {
+  syncReportModalMode() {
+    const isGForm = this.isGFormConfigured();
+    const submitBtn = $('reportSubmitForm');
+    const waToolBtn = $('reportSendWhatsApp');
+
+    if (!isGForm) {
+      if (submitBtn) {
+        submitBtn.classList.add('whatsapp-primary');
+        submitBtn.setAttribute('data-channel', 'whatsapp');
+        submitBtn.title = 'Send report directly on WhatsApp';
+        submitBtn.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+          </svg>
+          <span id="reportSubmitBtnText">Report on WhatsApp</span>
+        `;
+      }
+      if (waToolBtn) waToolBtn.style.display = 'none';
+    } else {
+      if (submitBtn) {
+        submitBtn.classList.remove('whatsapp-primary');
+        submitBtn.setAttribute('data-channel', 'form');
+        submitBtn.title = 'Submit report';
+        submitBtn.innerHTML = `
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+          <span id="reportSubmitBtnText">Submit</span>
+        `;
+      }
+      if (waToolBtn) waToolBtn.style.display = 'inline-flex';
+    }
+  }
+
+  closeReportModal() {
+    $('reportModal')?.classList.remove('visible');
+    const submitBtn = $('reportSubmitForm');
+    if (submitBtn) {
+      submitBtn.classList.remove('submitting', 'success');
+      submitBtn.disabled = false;
+    }
+  }
+
+  async submitReport(channel = 'auto') {
+    if (channel === 'auto') {
+      const btn = $('reportSubmitForm');
+      channel = (btn && btn.getAttribute('data-channel')) || (this.isGFormConfigured() ? 'form' : 'whatsapp');
+    }
+
+    // Dynamic Priority: Fallback to WhatsApp if GForm is not yet configured with a valid link
+    if (channel === 'form' && !this.isGFormConfigured()) {
+      return this.submitReport('whatsapp');
+    }
+
     const item = this._reportData || {};
     const note = ($('reportNoteInput')?.value || '').trim();
     const selectEl = $('reportReasonSelect');
@@ -3022,6 +3082,11 @@ class UIController {
     const docUrl = item.url || (item.code ? `https://sgou-slm-database.vercel.app/view.html?code=${item.code}` : window.location.href);
 
     if (channel === 'form') {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        this.showToast('Network offline. Switching to WhatsApp...', 3000);
+        return this.submitReport('whatsapp');
+      }
+
       const submitBtn = $('reportSubmitForm');
       const submitText = $('reportSubmitBtnText');
       const originalText = submitText ? submitText.textContent : 'Submit';
@@ -3032,28 +3097,40 @@ class UIController {
       }
       if (submitText) submitText.textContent = 'Submitting...';
 
-      // Silent Headless Google Form Submission if configured
-      if (window.SGOU_REPORT_FORM?.formUrl) {
-        try {
-          const cfg = window.SGOU_REPORT_FORM;
-          const formData = new FormData();
-          if (cfg.entries?.course) formData.append(cfg.entries.course, courseTitle);
-          if (cfg.entries?.programme) formData.append(cfg.entries.programme, programme);
-          if (cfg.entries?.materialType) formData.append(cfg.entries.materialType, item.type || 'Material');
-          if (cfg.entries?.category) formData.append(cfg.entries.category, reasonText);
-          if (cfg.entries?.notes) formData.append(cfg.entries.notes, note || 'None');
-          if (cfg.entries?.url) formData.append(cfg.entries.url, docUrl);
+      let formFailed = false;
+      try {
+        const cfg = window.SGOU_REPORT_FORM;
+        const formData = new FormData();
+        if (cfg.entries?.course) formData.append(cfg.entries.course, courseTitle);
+        if (cfg.entries?.programme) formData.append(cfg.entries.programme, programme);
+        if (cfg.entries?.materialType) formData.append(cfg.entries.materialType, item.type || 'Material');
+        if (cfg.entries?.category) formData.append(cfg.entries.category, reasonText);
+        if (cfg.entries?.notes) formData.append(cfg.entries.notes, note || 'None');
+        if (cfg.entries?.url) formData.append(cfg.entries.url, docUrl);
 
-          await fetch(cfg.formUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: formData
-          });
-        } catch (err) {
-          console.warn('[SGOU Report] Form submission dispatch:', err);
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 4500);
+
+        await fetch(cfg.formUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: formData,
+          signal: ctrl.signal
+        });
+        clearTimeout(timer);
+      } catch (err) {
+        console.warn('[SGOU Report] Form unreachable or failed:', err);
+        formFailed = true;
+      }
+
+      if (formFailed) {
+        if (submitBtn) {
+          submitBtn.classList.remove('submitting');
+          submitBtn.disabled = false;
         }
-      } else {
-        await new Promise(r => setTimeout(r, 400));
+        if (submitText) submitText.textContent = originalText;
+        this.showToast('Form unreachable. Switching to WhatsApp...', 3000);
+        return this.submitReport('whatsapp');
       }
 
       if (submitBtn) {
@@ -3075,7 +3152,8 @@ class UIController {
     }
 
     if (channel === 'whatsapp') {
-      const phone = window.SGOU_REPORT_FORM?.supportPhone || '919876543210';
+      const rawPhone = window.SGOU_REPORT_FORM?.supportPhone || '919544572262';
+      const phone = String(rawPhone).replace(/[^0-9]/g, '');
       const waMessage = [
         '*SGOU Document Issue Report*',
         '----------------------------------------',
@@ -3089,7 +3167,11 @@ class UIController {
         '_Reported via SGOU Academic Database_'
       ].filter(Boolean).join('\n');
 
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`, '_blank', 'noopener,noreferrer');
+      const waUrl = phone
+        ? `https://wa.me/${phone}?text=${encodeURIComponent(waMessage)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(waMessage)}`;
+
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
       this.showToast('Opening WhatsApp to send report...', 3000);
       this.closeReportModal();
       return;
@@ -3808,7 +3890,7 @@ class UIController {
       }
 
       if (e.target.closest('#reportSubmitForm')) {
-        this.submitReport('form');
+        this.submitReport('auto');
         return;
       }
       if (e.target.closest('#reportSendWhatsApp')) {

@@ -31,8 +31,8 @@
         content="Preview, read, and download official SGOU SLM course textbooks, question papers, and assignments offline.">
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/view.html">
     <meta property="og:type" content="article">
-    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_08">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_08">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt" content="Document Viewer — SGOU Academic Database">
@@ -42,7 +42,7 @@
     <meta name="twitter:title" content="Document Viewer — SGOU Academic Database">
     <meta name="twitter:description"
         content="Preview and download SGOU distance education textbooks, question papers, and assignment booklets.">
-    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_07">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_08">
     <meta name="twitter:creator" content="@researchertizar">
 
     <!-- Geographic & Local Knowledge Meta Tags (GEO SEO) -->
@@ -107,7 +107,7 @@
     </script>
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20261007_07">
+    <link rel="manifest" href="/manifest.json?v=20261007_08">
     <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png?v=20260904_10">
@@ -1452,6 +1452,22 @@
             background: #10b981 !important;
             box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
         }
+        .report-submit-btn.whatsapp-primary {
+            background: #16a34a !important;
+            box-shadow: 0 1px 4px rgba(22, 163, 74, 0.25) !important;
+        }
+        .report-submit-btn.whatsapp-primary:hover {
+            background: #15803d !important;
+            box-shadow: 0 3px 8px rgba(22, 163, 74, 0.35) !important;
+        }
+        [data-theme="dark"] .report-submit-btn.whatsapp-primary {
+            background: #15803d !important;
+            box-shadow: 0 1px 4px rgba(21, 128, 61, 0.3) !important;
+        }
+        [data-theme="dark"] .report-submit-btn.whatsapp-primary:hover {
+            background: #16a34a !important;
+            box-shadow: 0 3px 8px rgba(22, 163, 74, 0.4) !important;
+        }
     </style>
 
     <!-- Google Analytics 4 (GA4) -->
@@ -1715,7 +1731,7 @@
 
             <div class="report-modal-footer">
                 <div class="report-footer-left">
-                    <button type="button" class="report-tool-btn whatsapp-tool-btn" id="reportSendWhatsApp" title="Send structured report directly on WhatsApp">
+                    <button type="button" class="report-tool-btn whatsapp-tool-btn" id="reportSendWhatsApp" title="Send structured report directly on WhatsApp" style="display: none;">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
                         </svg>
@@ -1731,12 +1747,11 @@
                 </div>
                 <div class="report-footer-right">
                     <button type="button" class="report-cancel-btn" id="reportCancelBtn">Cancel</button>
-                    <button type="button" class="report-submit-btn" id="reportSubmitForm">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="22" y1="2" x2="11" y2="13"></line>
-                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                    <button type="button" class="report-submit-btn whatsapp-primary" id="reportSubmitForm" data-channel="whatsapp" title="Send report directly on WhatsApp">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
                         </svg>
-                        <span id="reportSubmitBtnText">Submit</span>
+                        <span id="reportSubmitBtnText">Report on WhatsApp</span>
                     </button>
                 </div>
             </div>
@@ -2355,7 +2370,7 @@
 
                 // Document Issue Reporting Modal Wiring
                 window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
-                    supportPhone: '919876543210',
+                    supportPhone: '919544572262',
                     formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_DEMO_FORM_ID_REPLACE_ME/formResponse',
                     entries: {
                         course: 'entry.1000001',
@@ -2372,6 +2387,39 @@
                 var reportCancelBtn = document.getElementById('reportCancelBtn');
                 var mismatchBanner = document.getElementById('mismatchBanner');
 
+                function isGFormConfigured() {
+                    var cfg = window.SGOU_REPORT_FORM;
+                    if (!cfg || !cfg.formUrl) return false;
+                    var url = String(cfg.formUrl).trim();
+                    if (!url.startsWith('https://docs.google.com/forms/')) return false;
+                    if (/DEMO|REPLACE_ME|SAMPLE|TEST_FORM/i.test(url)) return false;
+                    return true;
+                }
+
+                function syncReportModalMode() {
+                    var isGForm = isGFormConfigured();
+                    var submitBtn = document.getElementById('reportSubmitForm');
+                    var waToolBtn = document.getElementById('reportSendWhatsApp');
+
+                    if (!isGForm) {
+                        if (submitBtn) {
+                            submitBtn.classList.add('whatsapp-primary');
+                            submitBtn.setAttribute('data-channel', 'whatsapp');
+                            submitBtn.title = 'Send report directly on WhatsApp';
+                            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/></svg><span id="reportSubmitBtnText">Report on WhatsApp</span>';
+                        }
+                        if (waToolBtn) waToolBtn.style.display = 'none';
+                    } else {
+                        if (submitBtn) {
+                            submitBtn.classList.remove('whatsapp-primary');
+                            submitBtn.setAttribute('data-channel', 'form');
+                            submitBtn.title = 'Submit report';
+                            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span id="reportSubmitBtnText">Submit</span>';
+                        }
+                        if (waToolBtn) waToolBtn.style.display = 'inline-flex';
+                    }
+                }
+
                 function openReportDialog() {
                     if (!reportModal) return;
                     var titleEl = document.getElementById('reportModalDocTitle');
@@ -2384,6 +2432,7 @@
                     if (noteEl) noteEl.value = '';
                     if (selectEl) selectEl.selectedIndex = 0;
 
+                    syncReportModalMode();
                     reportModal.classList.add('visible');
                     setTimeout(function () {
                         if (selectEl) selectEl.focus();
@@ -2392,9 +2441,23 @@
 
                 function closeReportDialog() {
                     if (reportModal) reportModal.classList.remove('visible');
+                    var submitBtn = document.getElementById('reportSubmitForm');
+                    if (submitBtn) {
+                        submitBtn.classList.remove('submitting', 'success');
+                        submitBtn.disabled = false;
+                    }
                 }
 
                 function submitReportChannel(channel) {
+                    if (!channel || channel === 'auto') {
+                        var btn = document.getElementById('reportSubmitForm');
+                        channel = (btn && btn.getAttribute('data-channel')) || (isGFormConfigured() ? 'form' : 'whatsapp');
+                    }
+
+                    if (channel === 'form' && !isGFormConfigured()) {
+                        return submitReportChannel('whatsapp');
+                    }
+
                     var note = (document.getElementById('reportNoteInput')?.value || '').trim();
                     var selectEl = document.getElementById('reportReasonSelect');
                     var radioEl = document.querySelector('input[name="reportReason"]:checked');
@@ -2421,6 +2484,11 @@
                     }
 
                     if (channel === 'form') {
+                        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+                            showT('Network offline. Switching to WhatsApp...');
+                            return submitReportChannel('whatsapp');
+                        }
+
                         var submitBtn = document.getElementById('reportSubmitForm');
                         var submitText = document.getElementById('reportSubmitBtnText');
                         var origText = submitText ? submitText.textContent : 'Submit';
@@ -2449,31 +2517,47 @@
                             }, 1000);
                         };
 
-                        if (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.formUrl) {
-                            try {
-                                var cfg = window.SGOU_REPORT_FORM;
-                                var formData = new FormData();
-                                if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, courseTitle);
-                                if (cfg.entries && cfg.entries.programme) formData.append(cfg.entries.programme, programme);
-                                if (cfg.entries && cfg.entries.materialType) formData.append(cfg.entries.materialType, matType || 'Material');
-                                if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
-                                if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, note || 'None');
-                                if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
-
-                                fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData })
-                                    .then(doFinish)
-                                    .catch(doFinish);
-                            } catch (_) {
-                                doFinish();
+                        var doFallback = function () {
+                            if (submitBtn) {
+                                submitBtn.classList.remove('submitting');
+                                submitBtn.disabled = false;
                             }
-                        } else {
-                            setTimeout(doFinish, 400);
+                            if (submitText) submitText.textContent = origText;
+                            showT('Form unreachable. Switching to WhatsApp...');
+                            submitReportChannel('whatsapp');
+                        };
+
+                        try {
+                            var cfg = window.SGOU_REPORT_FORM;
+                            var formData = new FormData();
+                            if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, courseTitle);
+                            if (cfg.entries && cfg.entries.programme) formData.append(cfg.entries.programme, programme);
+                            if (cfg.entries && cfg.entries.materialType) formData.append(cfg.entries.materialType, matType || 'Material');
+                            if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
+                            if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, note || 'None');
+                            if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
+
+                            var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 4500) : null;
+
+                            fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData, signal: ctrl ? ctrl.signal : undefined })
+                                .then(function () {
+                                    if (timer) clearTimeout(timer);
+                                    doFinish();
+                                })
+                                .catch(function () {
+                                    if (timer) clearTimeout(timer);
+                                    doFallback();
+                                });
+                        } catch (_) {
+                            doFallback();
                         }
                         return;
                     }
 
                     if (channel === 'whatsapp') {
-                        var phone = (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.supportPhone) || '919876543210';
+                        var rawPhone = (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.supportPhone) || '919544572262';
+                        var phone = String(rawPhone).replace(/[^0-9]/g, '');
                         var waMessage = [
                             '*SGOU Document Issue Report*',
                             '----------------------------------------',
@@ -2487,7 +2571,11 @@
                             '_Reported via SGOU Academic Database_'
                         ].filter(Boolean).join('\n');
 
-                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage), '_blank', 'noopener,noreferrer');
+                        var waUrl = phone
+                            ? ('https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage))
+                            : ('https://api.whatsapp.com/send?text=' + encodeURIComponent(waMessage));
+
+                        window.open(waUrl, '_blank', 'noopener,noreferrer');
                         showT('Opening WhatsApp to send report...');
                         closeReportDialog();
                         return;
@@ -2530,7 +2618,7 @@
                         if (e.target === reportModal) closeReportDialog();
                     });
                 }
-                document.getElementById('reportSubmitForm')?.addEventListener('click', function () { submitReportChannel('form'); });
+                document.getElementById('reportSubmitForm')?.addEventListener('click', function () { submitReportChannel('auto'); });
                 document.getElementById('reportSendWhatsApp')?.addEventListener('click', function () { submitReportChannel('whatsapp'); });
                 document.getElementById('reportCopyDetails')?.addEventListener('click', function () { submitReportChannel('copy'); });
 

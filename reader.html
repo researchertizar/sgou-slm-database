@@ -860,6 +860,22 @@
       background: #10b981 !important;
       box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
     }
+    .report-submit-btn.whatsapp-primary {
+      background: #16a34a !important;
+      box-shadow: 0 1px 4px rgba(22, 163, 74, 0.25) !important;
+    }
+    .report-submit-btn.whatsapp-primary:hover {
+      background: #15803d !important;
+      box-shadow: 0 3px 8px rgba(22, 163, 74, 0.35) !important;
+    }
+    [data-theme="dark"] .report-submit-btn.whatsapp-primary {
+      background: #15803d !important;
+      box-shadow: 0 1px 4px rgba(21, 128, 61, 0.3) !important;
+    }
+    [data-theme="dark"] .report-submit-btn.whatsapp-primary:hover {
+      background: #16a34a !important;
+      box-shadow: 0 3px 8px rgba(22, 163, 74, 0.4) !important;
+    }
   </style>
 </head>
 <body>
@@ -1036,7 +1052,7 @@
 
         <div class="report-modal-footer">
           <div class="report-footer-left">
-            <button type="button" class="report-tool-btn whatsapp-tool-btn" id="readerReportWhatsApp" title="Send structured report directly on WhatsApp">
+            <button type="button" class="report-tool-btn whatsapp-tool-btn" id="readerReportWhatsApp" title="Send structured report directly on WhatsApp" style="display: none;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
               </svg>
@@ -1052,12 +1068,11 @@
           </div>
           <div class="report-footer-right">
             <button type="button" class="report-cancel-btn" id="readerReportCancelBtn">Cancel</button>
-            <button type="button" class="report-submit-btn" id="readerReportSubmit">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"></line>
-                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            <button type="button" class="report-submit-btn whatsapp-primary" id="readerReportSubmit" data-channel="whatsapp" title="Send report directly on WhatsApp">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
               </svg>
-              <span id="readerReportSubmitBtnText">Submit</span>
+              <span id="readerReportSubmitBtnText">Report on WhatsApp</span>
             </button>
           </div>
         </div>
@@ -2100,7 +2115,7 @@
 
       // --- Document Issue Report & Mismatch Warning System ---
       window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
-        supportPhone: '919876543210',
+        supportPhone: '919544572262',
         formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLSc_DEMO_FORM_ID_REPLACE_ME/formResponse',
         entries: {
           course: 'entry.1000001',
@@ -2152,6 +2167,39 @@
         tryLoad(0);
       }
 
+      function isGFormConfigured() {
+        var cfg = window.SGOU_REPORT_FORM;
+        if (!cfg || !cfg.formUrl) return false;
+        var url = String(cfg.formUrl).trim();
+        if (!url.startsWith('https://docs.google.com/forms/')) return false;
+        if (/DEMO|REPLACE_ME|SAMPLE|TEST_FORM/i.test(url)) return false;
+        return true;
+      }
+
+      function syncReaderReportModalMode() {
+        var isGForm = isGFormConfigured();
+        var submitBtn = document.getElementById('readerReportSubmit');
+        var waToolBtn = document.getElementById('readerReportWhatsApp');
+
+        if (!isGForm) {
+          if (submitBtn) {
+            submitBtn.classList.add('whatsapp-primary');
+            submitBtn.setAttribute('data-channel', 'whatsapp');
+            submitBtn.title = 'Send report directly on WhatsApp';
+            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/></svg><span id="readerReportSubmitBtnText">Report on WhatsApp</span>';
+          }
+          if (waToolBtn) waToolBtn.style.display = 'none';
+        } else {
+          if (submitBtn) {
+            submitBtn.classList.remove('whatsapp-primary');
+            submitBtn.setAttribute('data-channel', 'form');
+            submitBtn.title = 'Submit report';
+            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span id="readerReportSubmitBtnText">Submit</span>';
+          }
+          if (waToolBtn) waToolBtn.style.display = 'inline-flex';
+        }
+      }
+
       function openReaderReport() {
         if (!reportModal) return;
         var t = document.getElementById('readerReportDocTitle');
@@ -2162,6 +2210,8 @@
         var selectEl = document.getElementById('readerReportReasonSelect');
         if (note) note.value = '';
         if (selectEl) selectEl.selectedIndex = 0;
+
+        syncReaderReportModalMode();
         reportModal.classList.add('active');
         setTimeout(function () {
           if (selectEl) selectEl.focus();
@@ -2170,9 +2220,23 @@
 
       function closeReaderReport() {
         if (reportModal) reportModal.classList.remove('active');
+        var submitBtn = document.getElementById('readerReportSubmit');
+        if (submitBtn) {
+          submitBtn.classList.remove('submitting', 'success');
+          submitBtn.disabled = false;
+        }
       }
 
       function submitReaderReport(channel) {
+        if (!channel || channel === 'auto') {
+          var btn = document.getElementById('readerReportSubmit');
+          channel = (btn && btn.getAttribute('data-channel')) || (isGFormConfigured() ? 'form' : 'whatsapp');
+        }
+
+        if (channel === 'form' && !isGFormConfigured()) {
+          return submitReaderReport('whatsapp');
+        }
+
         var note = (document.getElementById('readerReportNote')?.value || '').trim();
         var selectEl = document.getElementById('readerReportReasonSelect');
         var reasonVal = selectEl ? selectEl.value : 'mismatch';
@@ -2187,6 +2251,11 @@
         var docUrl = rawFile || window.location.href;
 
         if (channel === 'form') {
+          if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showToast('Network offline. Switching to WhatsApp...');
+            return submitReaderReport('whatsapp');
+          }
+
           var submitBtn = document.getElementById('readerReportSubmit');
           var submitText = document.getElementById('readerReportSubmitBtnText');
           var origText = submitText ? submitText.textContent : 'Submit';
@@ -2215,29 +2284,45 @@
             }, 1000);
           };
 
-          if (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.formUrl) {
-            try {
-              var cfg = window.SGOU_REPORT_FORM;
-              var formData = new FormData();
-              if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, docTitle);
-              if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
-              if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, (note ? note + ' [Page ' + currentPage + ']' : '[Page ' + currentPage + ']'));
-              if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
-
-              fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData })
-                .then(doFinish)
-                .catch(doFinish);
-            } catch (_) {
-              doFinish();
+          var doFallback = function () {
+            if (submitBtn) {
+              submitBtn.classList.remove('submitting');
+              submitBtn.disabled = false;
             }
-          } else {
-            setTimeout(doFinish, 400);
+            if (submitText) submitText.textContent = origText;
+            showToast('Form unreachable. Switching to WhatsApp...');
+            submitReaderReport('whatsapp');
+          };
+
+          try {
+            var cfg = window.SGOU_REPORT_FORM;
+            var formData = new FormData();
+            if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, docTitle);
+            if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
+            if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, (note ? note + ' [Page ' + currentPage + ']' : '[Page ' + currentPage + ']'));
+            if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
+
+            var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 4500) : null;
+
+            fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData, signal: ctrl ? ctrl.signal : undefined })
+              .then(function () {
+                if (timer) clearTimeout(timer);
+                doFinish();
+              })
+              .catch(function () {
+                if (timer) clearTimeout(timer);
+                doFallback();
+              });
+          } catch (_) {
+            doFallback();
           }
           return;
         }
 
         if (channel === 'whatsapp') {
-          var phone = (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.supportPhone) || '919876543210';
+          var rawPhone = (window.SGOU_REPORT_FORM && window.SGOU_REPORT_FORM.supportPhone) || '919544572262';
+          var phone = String(rawPhone).replace(/[^0-9]/g, '');
           var waMessage = [
             '*SGOU Document Issue Report*',
             '----------------------------------------',
@@ -2251,7 +2336,11 @@
             '_Reported via SGOU Academic Reader v3.0.0_'
           ].filter(Boolean).join('\n');
 
-          window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage), '_blank', 'noopener,noreferrer');
+          var waUrl = phone
+            ? ('https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage))
+            : ('https://api.whatsapp.com/send?text=' + encodeURIComponent(waMessage));
+
+          window.open(waUrl, '_blank', 'noopener,noreferrer');
           showToast('Opening WhatsApp to send report...');
           closeReaderReport();
           return;
@@ -2297,7 +2386,7 @@
           if (e.target === reportModal) closeReaderReport();
         });
       }
-      document.getElementById('readerReportSubmit')?.addEventListener('click', function () { submitReaderReport('form'); });
+      document.getElementById('readerReportSubmit')?.addEventListener('click', function () { submitReaderReport('auto'); });
       document.getElementById('readerReportWhatsApp')?.addEventListener('click', function () { submitReaderReport('whatsapp'); });
       document.getElementById('readerReportCopy')?.addEventListener('click', function () { submitReaderReport('copy'); });
 
