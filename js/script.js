@@ -3020,38 +3020,22 @@ class UIController {
   }
 
   syncReportModalMode() {
-    const isGForm = this.isGFormConfigured();
     const submitBtn = $('reportSubmitForm');
     const waToolBtn = $('reportSendWhatsApp');
 
-    if (!isGForm) {
-      if (submitBtn) {
-        submitBtn.classList.add('whatsapp-primary');
-        submitBtn.setAttribute('data-channel', 'whatsapp');
-        submitBtn.title = 'Send report directly on WhatsApp';
-        submitBtn.innerHTML = `
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
-          </svg>
-          <span id="reportSubmitBtnText">Report on WhatsApp</span>
-        `;
-      }
-      if (waToolBtn) waToolBtn.style.display = 'none';
-    } else {
-      if (submitBtn) {
-        submitBtn.classList.remove('whatsapp-primary');
-        submitBtn.setAttribute('data-channel', 'form');
-        submitBtn.title = 'Submit report';
-        submitBtn.innerHTML = `
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-          <span id="reportSubmitBtnText">Submit</span>
-        `;
-      }
-      if (waToolBtn) waToolBtn.style.display = 'inline-flex';
+    if (submitBtn) {
+      submitBtn.classList.remove('whatsapp-primary');
+      submitBtn.setAttribute('data-channel', 'form');
+      submitBtn.title = 'Submit report directly';
+      submitBtn.innerHTML = `
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        <span id="reportSubmitBtnText">Submit</span>
+      `;
     }
+    if (waToolBtn) waToolBtn.style.display = 'inline-flex';
   }
 
   closeReportModal() {
@@ -3066,12 +3050,12 @@ class UIController {
   async submitReport(channel = 'auto') {
     if (channel === 'auto') {
       const btn = $('reportSubmitForm');
-      channel = (btn && btn.getAttribute('data-channel')) || (this.isGFormConfigured() ? 'form' : 'whatsapp');
+      channel = (btn && btn.getAttribute('data-channel')) || 'form';
     }
 
-    // Dynamic Priority: Fallback to WhatsApp if GForm is not yet configured with a valid link
     if (channel === 'form' && !this.isGFormConfigured()) {
-      return this.submitReport('whatsapp');
+      this.showToast('Online form service is temporarily unavailable. Please use WhatsApp below.', 3500);
+      return;
     }
 
     const item = this._reportData || {};
@@ -3094,8 +3078,8 @@ class UIController {
 
     if (channel === 'form') {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        this.showToast('Network offline. Switching to WhatsApp...', 3000);
-        return this.submitReport('whatsapp');
+        this.showToast('You are currently offline. Please reconnect or use WhatsApp below.', 3500);
+        return;
       }
 
       const submitBtn = $('reportSubmitForm');
@@ -3108,57 +3092,106 @@ class UIController {
       }
       if (submitText) submitText.textContent = 'Submitting...';
 
-      let formFailed = false;
-      try {
-        const cfg = window.SGOU_REPORT_FORM;
-        const formData = new FormData();
-        if (cfg.entries?.course) formData.append(cfg.entries.course, courseTitle);
-        if (cfg.entries?.programme) formData.append(cfg.entries.programme, programme);
-        if (cfg.entries?.materialType) formData.append(cfg.entries.materialType, item.type || 'Material');
-        if (cfg.entries?.category) formData.append(cfg.entries.category, reasonText);
-        if (cfg.entries?.notes) formData.append(cfg.entries.notes, note || 'None');
-        if (cfg.entries?.url) formData.append(cfg.entries.url, docUrl);
+      const doFinish = () => {
+        if (submitBtn) {
+          submitBtn.classList.remove('submitting');
+          submitBtn.classList.add('success');
+        }
+        if (submitText) submitText.textContent = 'Report Submitted \u2713';
+        this.showToast('Thank you! Document issue reported for inspection.', 3200);
 
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 4500);
+        setTimeout(() => {
+          this.closeReportModal();
+          if (submitBtn) {
+            submitBtn.classList.remove('success');
+            submitBtn.disabled = false;
+          }
+          if (submitText) submitText.textContent = originalText;
+        }, 1200);
+      };
 
-        await fetch(cfg.formUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          body: formData,
-          signal: ctrl.signal
-        });
-        clearTimeout(timer);
-      } catch (err) {
-        console.warn('[SGOU Report] Form unreachable or failed:', err);
-        formFailed = true;
-      }
-
-      if (formFailed) {
+      const doFail = () => {
         if (submitBtn) {
           submitBtn.classList.remove('submitting');
           submitBtn.disabled = false;
         }
         if (submitText) submitText.textContent = originalText;
-        this.showToast('Form unreachable. Switching to WhatsApp...', 3000);
-        return this.submitReport('whatsapp');
-      }
+        this.showToast('Could not submit report online. Please try again or use WhatsApp below.', 3500);
+      };
 
-      if (submitBtn) {
-        submitBtn.classList.remove('submitting');
-        submitBtn.classList.add('success');
-      }
-      if (submitText) submitText.textContent = 'Report Submitted';
-      this.showToast('Thank you! Document issue reported for inspection.', 3200);
+      try {
+        const cfg = window.SGOU_REPORT_FORM || {};
+        const params = new URLSearchParams();
+        if (cfg.entries?.course) params.append(cfg.entries.course, courseTitle);
+        if (cfg.entries?.programme) params.append(cfg.entries.programme, programme);
+        if (cfg.entries?.materialType) params.append(cfg.entries.materialType, item.type || 'Material');
+        if (cfg.entries?.category) params.append(cfg.entries.category, reasonText);
+        if (cfg.entries?.notes) params.append(cfg.entries.notes, note || 'None');
+        if (cfg.entries?.url) params.append(cfg.entries.url, docUrl);
 
-      setTimeout(() => {
-        this.closeReportModal();
-        if (submitBtn) {
-          submitBtn.classList.remove('success');
-          submitBtn.disabled = false;
+        const formUrl = cfg.formUrl || 'https://docs.google.com/forms/d/e/1FAIpQLSelryRvL0B93bWMePwpA2ElZNcbVJTXERAgxOza0Iy6TSVJUA/formResponse';
+        const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timer = ctrl ? setTimeout(() => ctrl.abort(), 5000) : null;
+
+        let ok = false;
+        try {
+          await fetch(formUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: params.toString(),
+            signal: ctrl ? ctrl.signal : undefined
+          });
+          ok = true;
+        } catch (_) {
+          // Resilient fallback: hidden iframe submission
+          try {
+            const iframeName = 'gform_sink_' + Date.now();
+            const iframe = document.createElement('iframe');
+            iframe.name = iframeName;
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            const form = document.createElement('form');
+            form.target = iframeName;
+            form.action = formUrl;
+            form.method = 'POST';
+            form.style.display = 'none';
+
+            for (const key in cfg.entries) {
+              if (Object.prototype.hasOwnProperty.call(cfg.entries, key)) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = cfg.entries[key];
+                input.value = params.get(cfg.entries[key]) || '';
+                form.appendChild(input);
+              }
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+
+            setTimeout(() => {
+              try { document.body.removeChild(form); } catch (_) {}
+              try { document.body.removeChild(iframe); } catch (_) {}
+            }, 3000);
+
+            ok = true;
+          } catch (_) {
+            ok = false;
+          }
+        } finally {
+          if (timer) clearTimeout(timer);
         }
-        if (submitText) submitText.textContent = originalText;
-      }, 1000);
+
+        if (ok) {
+          doFinish();
+        } else {
+          doFail();
+        }
+      } catch (_) {
+        doFail();
+      }
       return;
     }
 

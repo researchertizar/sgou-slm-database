@@ -5772,7 +5772,16 @@ kbd {
   transition: all .18s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
-.header-action-btn.support-action-btn svg,
+/* Home page topbar heart: Outlined icon (No solid fill) */
+.header-action-btn.support-action-btn svg {
+  fill: none !important;
+  stroke: var(--heart-red) !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .topbar-btn.support-action-btn svg,
 .vp-btn.support-action-btn svg {
   fill: var(--heart-red);

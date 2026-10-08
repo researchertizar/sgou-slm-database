@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com https://docs.google.com; frame-src 'self' https://docs.google.com; form-action 'self' https://docs.google.com;">
   <title>Academic Reader — SGOU</title>
   <!-- Typography & Modular CSS Components -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261008_04">
-  <link rel="stylesheet" href="./css/components/toast.css?v=20261008_04">
+  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261008_05">
+  <link rel="stylesheet" href="./css/components/toast.css?v=20261008_05">
   <style>
     /* ============================================================
        THEME SYSTEM — Synchronized with SGOU Academic Design Tokens
@@ -503,14 +503,11 @@
       cursor: pointer;
     }
 
-    /* Eye-Comfort Filter Classes */
-    #viewerContainer.filter-sepia canvas {
-      filter: sepia(0.38) contrast(0.96) brightness(0.96);
-    }
-    #viewerContainer.filter-dark canvas {
-      filter: invert(0.88) hue-rotate(180deg) brightness(0.95) contrast(1.05);
-      background: #141210;
-    }
+    /* Standard Platform Theme Sun / Moon Icon Toggling */
+    html[data-theme="light"] .icon-sun { display: none; }
+    html[data-theme="light"] .icon-moon { display: block; }
+    html[data-theme="dark"] .icon-sun { display: block; }
+    html[data-theme="dark"] .icon-moon { display: none; }
 
     /* Upstream Mismatch Notice Banner */
     #readerMismatchBanner {
@@ -980,18 +977,21 @@
 
       <div class="bar-divider"></div>
 
-      <!-- Eye-Comfort Reading Mode Toggle (Normal -> Sepia -> Dark) -->
-      <button type="button" class="bar-btn" id="filterBtn" title="Eye-Comfort Reading Mode (T)" aria-label="Eye-comfort mode">
-        <svg id="filterIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      <!-- Platform Theme Toggle (Dark / Light) -->
+      <button type="button" class="bar-btn" id="themeToggle" title="Toggle theme (T)" aria-label="Toggle theme">
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
         </svg>
-      </button>
-
-      <!-- Document Issue Report Button -->
-      <button type="button" class="bar-btn" id="reportBtn" title="Report Issue with Document (R)" aria-label="Report issue">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
-          <line x1="4" y1="22" x2="4" y2="15"/>
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
       </button>
 
@@ -1228,95 +1228,19 @@
   </div>
 
   <script src="./pdfjs/pdf.min.js"></script>
-  <script src="./js/utils/clipboard.js?v=20261008_04"></script>
-  <script src="./js/components/toast.js?v=20261008_04"></script>
-  <script src="./js/components/theme.js?v=20261008_04"></script>
-  <script src="./js/qrcode.min.js?v=20261008_04"></script>
-  <script src="./js/components/support-modal.js?v=20261008_04"></script>
+  <script src="./js/utils/clipboard.js?v=20261008_05"></script>
+  <script src="./js/components/toast.js?v=20261008_05"></script>
+  <script src="./js/components/theme.js?v=20261008_05"></script>
+  <script src="./js/qrcode.min.js?v=20261008_05"></script>
+  <script src="./js/components/support-modal.js?v=20261008_05"></script>
   <script>
     (function () {
       'use strict';
 
-      // --- Eye-Comfort Filter Synchronization & Cycling ---
-      var container = document.getElementById('viewerContainer');
-      var filterBtn = document.getElementById('filterBtn');
-      var filterIcon = document.getElementById('filterIcon');
-      var toastEl = document.getElementById('readerToast');
-      var toastTimer = null;
+      // --- Platform Theme Management ---
+      var themeToggleBtn = document.getElementById('themeToggle');
 
-      var FILTER_MODES = ['normal', 'sepia', 'dark'];
-      var FILTER_LABELS = {
-        normal: 'Natural Document',
-        sepia: 'Warm Sepia (Eye Comfort)',
-        dark: 'Night Invert (Dark Mode)'
-      };
-
-      function showToast(msg) {
-        if (!toastEl) return;
-        toastEl.textContent = msg;
-        toastEl.classList.add('show');
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          toastEl.classList.remove('show');
-        }, 1800);
-      }
-
-      function updateFilterUI(mode) {
-        if (!container) container = document.getElementById('viewerContainer');
-        if (!filterBtn) filterBtn = document.getElementById('filterBtn');
-        if (!filterIcon) filterIcon = document.getElementById('filterIcon');
-        if (container) {
-          container.classList.remove('filter-sepia', 'filter-dark');
-          if (mode === 'sepia') {
-            container.classList.add('filter-sepia');
-          } else if (mode === 'dark') {
-            container.classList.add('filter-dark');
-          }
-        }
-        if (filterIcon) {
-          if (mode === 'sepia') {
-            filterIcon.innerHTML = '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10M6 14h6"/>';
-          } else if (mode === 'dark') {
-            filterIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-          } else {
-            filterIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>';
-          }
-        }
-        if (filterBtn) {
-          if (mode === 'sepia') {
-            filterBtn.title = 'Warm Sepia Mode (T)';
-          } else if (mode === 'dark') {
-            filterBtn.title = 'Night Invert Mode (T)';
-          } else {
-            filterBtn.title = 'Natural Document Mode (T)';
-          }
-        }
-      }
-
-      function applySavedFilter() {
-        var mode = 'normal';
-        try { mode = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-        updateFilterUI(mode);
-      }
-
-      function cycleFilterMode() {
-        var cur = 'normal';
-        try { cur = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-        var nextIdx = (FILTER_MODES.indexOf(cur) + 1) % FILTER_MODES.length;
-        var next = FILTER_MODES[nextIdx];
-        try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
-        updateFilterUI(next);
-        showToast(FILTER_LABELS[next]);
-        try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'sgou-reader-filter-sync', filter: next }, '*');
-          }
-        } catch (_) {}
-      }
-      if (filterBtn) filterBtn.addEventListener('click', cycleFilterMode);
-
-      // --- Theme Synchronization & Adaptive Reading Mode ---
-      function applyTheme(themeOverride, filterOverride) {
+      function applyTheme(themeOverride) {
         var params = new URLSearchParams(window.location.search);
         var requestedTheme = themeOverride || params.get('theme');
         var theme = 'light';
@@ -1331,30 +1255,33 @@
           }
         }
         document.documentElement.setAttribute('data-theme', theme);
-
-        // Dynamically synchronize the reading page with the theme
-        var targetFilter = filterOverride;
-        if (!targetFilter) {
-          try { targetFilter = localStorage.getItem('sgou-pdf-filter'); } catch (_) {}
-          if (!targetFilter) {
-            targetFilter = theme === 'dark' ? 'dark' : 'normal';
-          }
+        if (themeToggleBtn) {
+          themeToggleBtn.title = theme === 'dark' ? 'Switch to light mode (T)' : 'Switch to dark mode (T)';
+          themeToggleBtn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
         }
-        try { localStorage.setItem('sgou-pdf-filter', targetFilter); } catch (_) {}
-        updateFilterUI(targetFilter);
       }
+
+      function togglePlatformTheme() {
+        var current = document.documentElement.getAttribute('data-theme') || 'light';
+        var next = current === 'dark' ? 'light' : 'dark';
+        try { localStorage.setItem('sgou-theme-v2', next); } catch (_) {}
+        applyTheme(next);
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'sgou-theme-change', theme: next }, '*');
+          }
+        } catch (_) {}
+      }
+
+      if (themeToggleBtn) themeToggleBtn.addEventListener('click', togglePlatformTheme);
       applyTheme();
       window.addEventListener('storage', function () { applyTheme(); });
       window.addEventListener('message', function (e) {
         if (!e.data) return;
         if (e.data.type === 'sgou-theme-change') {
-          applyTheme(e.data.theme, e.data.filter);
-        } else if (e.data.type === 'sgou-filter-change') {
-          if (e.data.filter) {
-            try { localStorage.setItem('sgou-pdf-filter', e.data.filter); } catch (_) {}
-            updateFilterUI(e.data.filter);
-          }
+          applyTheme(e.data.theme);
         }
+      });
       });
 
       // --- Fullscreen Dynamic Management ---
@@ -2331,27 +2258,15 @@
       }
 
       function syncReaderReportModalMode() {
-        var isGForm = isGFormConfigured();
         var submitBtn = document.getElementById('readerReportSubmit');
         var waToolBtn = document.getElementById('readerReportWhatsApp');
-
-        if (!isGForm) {
-          if (submitBtn) {
-            submitBtn.classList.add('whatsapp-primary');
-            submitBtn.setAttribute('data-channel', 'whatsapp');
-            submitBtn.title = 'Send report directly on WhatsApp';
-            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/></svg><span id="readerReportSubmitBtnText">Report on WhatsApp</span>';
-          }
-          if (waToolBtn) waToolBtn.style.display = 'none';
-        } else {
-          if (submitBtn) {
-            submitBtn.classList.remove('whatsapp-primary');
-            submitBtn.setAttribute('data-channel', 'form');
-            submitBtn.title = 'Submit report';
-            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span id="readerReportSubmitBtnText">Submit</span>';
-          }
-          if (waToolBtn) waToolBtn.style.display = 'inline-flex';
+        if (submitBtn) {
+          submitBtn.classList.remove('whatsapp-primary');
+          submitBtn.setAttribute('data-channel', 'form');
+          submitBtn.title = 'Submit report directly';
+          submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span id="readerReportSubmitBtnText">Submit</span>';
         }
+        if (waToolBtn) waToolBtn.style.display = 'inline-flex';
       }
 
       function openReaderReport() {
@@ -2384,11 +2299,12 @@
       function submitReaderReport(channel) {
         if (!channel || channel === 'auto') {
           var btn = document.getElementById('readerReportSubmit');
-          channel = (btn && btn.getAttribute('data-channel')) || (isGFormConfigured() ? 'form' : 'whatsapp');
+          channel = (btn && btn.getAttribute('data-channel')) || 'form';
         }
 
         if (channel === 'form' && !isGFormConfigured()) {
-          return submitReaderReport('whatsapp');
+          showToast('Online form service is temporarily unavailable. Please use WhatsApp below.');
+          return;
         }
 
         var note = (document.getElementById('readerReportNote')?.value || '').trim();
@@ -2406,8 +2322,8 @@
 
         if (channel === 'form') {
           if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            showToast('Network offline. Switching to WhatsApp...');
-            return submitReaderReport('whatsapp');
+            showToast('You are currently offline. Please reconnect or use WhatsApp below.');
+            return;
           }
 
           var submitBtn = document.getElementById('readerReportSubmit');
@@ -2425,7 +2341,7 @@
               submitBtn.classList.remove('submitting');
               submitBtn.classList.add('success');
             }
-            if (submitText) submitText.textContent = 'Report Submitted';
+            if (submitText) submitText.textContent = 'Report Submitted ✓';
             showToast('Thank you! Document issue reported for inspection.');
 
             setTimeout(function () {
@@ -2435,43 +2351,84 @@
                 submitBtn.disabled = false;
               }
               if (submitText) submitText.textContent = origText;
-            }, 1000);
+            }, 1200);
           };
 
-          var doFallback = function () {
+          var doFail = function () {
             if (submitBtn) {
               submitBtn.classList.remove('submitting');
               submitBtn.disabled = false;
             }
             if (submitText) submitText.textContent = origText;
-            showToast('Form unreachable. Switching to WhatsApp...');
-            submitReaderReport('whatsapp');
+            showToast('Could not submit report online. Please try again or use WhatsApp below.');
           };
 
           try {
-            var cfg = window.SGOU_REPORT_FORM;
-            var formData = new FormData();
-            if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, docTitle);
-            if (cfg.entries && cfg.entries.programme) formData.append(cfg.entries.programme, 'SGOU Academic Paper');
-            if (cfg.entries && cfg.entries.materialType) formData.append(cfg.entries.materialType, 'PYQ / Paper');
-            if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
-            if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, (note ? note + ' [Page ' + currentPage + ']' : '[Page ' + currentPage + ']'));
-            if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
+            var cfg = window.SGOU_REPORT_FORM || {};
+            var params = new URLSearchParams();
+            if (cfg.entries && cfg.entries.course) params.append(cfg.entries.course, docTitle);
+            if (cfg.entries && cfg.entries.programme) params.append(cfg.entries.programme, 'SGOU Academic Paper');
+            if (cfg.entries && cfg.entries.materialType) params.append(cfg.entries.materialType, 'PYQ / Paper');
+            if (cfg.entries && cfg.entries.category) params.append(cfg.entries.category, reasonText);
+            if (cfg.entries && cfg.entries.notes) params.append(cfg.entries.notes, (note ? note + ' [Page ' + currentPage + ']' : '[Page ' + currentPage + ']'));
+            if (cfg.entries && cfg.entries.url) params.append(cfg.entries.url, docUrl);
 
+            var formUrl = (cfg && cfg.formUrl) || 'https://docs.google.com/forms/d/e/1FAIpQLSelryRvL0B93bWMePwpA2ElZNcbVJTXERAgxOza0Iy6TSVJUA/formResponse';
             var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 4500) : null;
+            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 5000) : null;
 
-            fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData, signal: ctrl ? ctrl.signal : undefined })
+            fetch(formUrl, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: params.toString(),
+              signal: ctrl ? ctrl.signal : undefined
+            })
               .then(function () {
                 if (timer) clearTimeout(timer);
                 doFinish();
               })
               .catch(function () {
                 if (timer) clearTimeout(timer);
-                doFallback();
+                // Resilient fallback: hidden iframe submission
+                try {
+                  var iframeName = 'gform_sink_' + Date.now();
+                  var iframe = document.createElement('iframe');
+                  iframe.name = iframeName;
+                  iframe.style.display = 'none';
+                  document.body.appendChild(iframe);
+
+                  var form = document.createElement('form');
+                  form.target = iframeName;
+                  form.action = formUrl;
+                  form.method = 'POST';
+                  form.style.display = 'none';
+
+                  for (var key in cfg.entries) {
+                    if (cfg.entries.hasOwnProperty(key)) {
+                      var input = document.createElement('input');
+                      input.type = 'hidden';
+                      input.name = cfg.entries[key];
+                      input.value = params.get(cfg.entries[key]) || '';
+                      form.appendChild(input);
+                    }
+                  }
+
+                  document.body.appendChild(form);
+                  form.submit();
+
+                  setTimeout(function () {
+                    try { document.body.removeChild(form); } catch (_) {}
+                    try { document.body.removeChild(iframe); } catch (_) {}
+                  }, 3000);
+
+                  doFinish();
+                } catch (_) {
+                  doFail();
+                }
               });
           } catch (_) {
-            doFallback();
+            doFail();
           }
           return;
         }
@@ -2620,7 +2577,7 @@
           }
         } else if (key === 't' || key === 'e') {
           e.preventDefault();
-          cycleFilterMode();
+          togglePlatformTheme();
         } else if (e.key === 'Home') {
           e.preventDefault();
           scrollToPage(1, true);
@@ -2645,7 +2602,6 @@
 
       loadDocument();
       checkAndDisplayMismatch();
-    })();
   </script>
 </body>
 </html>

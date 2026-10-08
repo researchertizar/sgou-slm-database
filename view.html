@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://drive.google.com blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self';">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://drive.google.com blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self' https://docs.google.com;">
     <meta name="description"
         content="Document Viewer — Preview, read, and download Sree Narayana Guru Open University (SGOU / SNGOU) SLM textbooks, previous year question papers (PYQs), and assignment booklets.">
     <meta name="keywords"
@@ -119,8 +119,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261008_04">
-    <link rel="stylesheet" href="/css/components/toast.css?v=20261008_04">
+    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261008_05">
+    <link rel="stylesheet" href="/css/components/toast.css?v=20261008_05">
     <style>
         @view-transition {
             navigation: auto;
@@ -1572,22 +1572,6 @@
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                     </svg>
                 </button>
-                <button class="topbar-btn icon-only" id="topbarFilter" aria-label="Toggle eye comfort filter"
-                    title="Eye Comfort Filter (F)" type="button">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                        <circle cx="12" cy="12" r="3" />
-                    </svg>
-                </button>
-                <button class="topbar-btn icon-only" id="topbarReport" aria-label="Report issue with document"
-                    title="Report document issue (R)" type="button">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                        <line x1="4" y1="22" x2="4" y2="15" />
-                    </svg>
-                </button>
                 <button class="topbar-btn icon-only support-action-btn" id="topbarSupport" aria-label="Support Project"
                     title="Support SGOU Database (UPI)" type="button">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none">
@@ -1932,11 +1916,11 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="/js/utils/clipboard.js?v=20261008_04"></script>
-    <script src="/js/components/toast.js?v=20261008_04"></script>
-    <script src="/js/components/theme.js?v=20261008_04"></script>
-    <script src="/js/qrcode.min.js?v=20261008_04"></script>
-    <script src="/js/components/support-modal.js?v=20261008_04"></script>
+    <script src="/js/utils/clipboard.js?v=20261008_05"></script>
+    <script src="/js/components/toast.js?v=20261008_05"></script>
+    <script src="/js/components/theme.js?v=20261008_05"></script>
+    <script src="/js/qrcode.min.js?v=20261008_05"></script>
+    <script src="/js/components/support-modal.js?v=20261008_05"></script>
     <script>
         (function () {
             var params = new URLSearchParams(window.location.search);
@@ -2461,55 +2445,9 @@
             function escH(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
             function escA(s) { return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-            // Reader Eye-Comfort Filter (Normal / Warm Sepia / Dark Invert)
-            (function initReaderFilter() {
-                var filterBtn = document.getElementById('topbarFilter');
-                var frame = document.getElementById('pdfFrame');
-                if (!filterBtn || !frame) return;
-
-                var modes = ['normal', 'sepia', 'dark'];
-                function applyMode(m) {
-                    filterBtn.classList.remove('filter-active');
-                    if (m === 'sepia') {
-                        filterBtn.classList.add('filter-active');
-                        filterBtn.setAttribute('title', 'Eye Comfort: Warm Sepia (Click to change)');
-                    } else if (m === 'dark') {
-                        filterBtn.classList.add('filter-active');
-                        filterBtn.setAttribute('title', 'Eye Comfort: Dark Invert (Click to change)');
-                    } else {
-                        filterBtn.setAttribute('title', 'Eye Comfort: Standard (Click to change)');
-                    }
-                    if (frame && frame.contentWindow) {
-                        try {
-                            frame.contentWindow.postMessage({ type: 'sgou-filter-change', filter: m }, '*');
-                        } catch (_) {}
-                    }
-                }
-
-                var saved = 'normal';
-                try { saved = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-                applyMode(saved);
-
-                filterBtn.addEventListener('click', function () {
-                    var cur = 'normal';
-                    try { cur = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-                    var nextIdx = (modes.indexOf(cur) + 1) % modes.length;
-                    var next = modes[nextIdx];
-                    try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
-                    applyMode(next);
-                });
-
-                window.addEventListener('message', function (e) {
-                    if (e.data && e.data.type === 'sgou-reader-filter-sync') {
-                        var m = e.data.filter;
-                        filterBtn.classList.remove('filter-active');
-                        if (m === 'sepia' || m === 'dark') {
-                            filterBtn.classList.add('filter-active');
-                        }
-                    }
-                });
-
-                // Topbar Theme Toggle
+            // Standalone Viewer Page Controller
+            (function initViewerPage() {
+                // Topbar Theme Toggle (Standard Platform Theme Only)
                 var themeBtn = document.getElementById('topbarThemeToggle');
                 if (themeBtn) {
                     function syncThemeMeta() {
@@ -2527,19 +2465,9 @@
                         try { localStorage.setItem('sgou-theme-v2', next); } catch (_) {}
                         syncThemeMeta();
 
-                        var curFilter = localStorage.getItem('sgou-pdf-filter') || 'normal';
-                        var targetFilter = curFilter;
-                        if (next === 'dark' && curFilter === 'normal') {
-                            targetFilter = 'dark';
-                        } else if (next === 'light' && curFilter === 'dark') {
-                            targetFilter = 'normal';
-                        }
-                        try { localStorage.setItem('sgou-pdf-filter', targetFilter); } catch (_) {}
-                        applyMode(targetFilter);
-
                         var f = document.getElementById('pdfFrame');
                         if (f && f.contentWindow) {
-                            try { f.contentWindow.postMessage({ type: 'sgou-theme-change', theme: next, filter: targetFilter }, '*'); } catch (_) {}
+                            try { f.contentWindow.postMessage({ type: 'sgou-theme-change', theme: next }, '*'); } catch (_) {}
                         }
                     });
                 }
@@ -2573,27 +2501,15 @@
                 }
 
                 function syncReportModalMode() {
-                    var isGForm = isGFormConfigured();
                     var submitBtn = document.getElementById('reportSubmitForm');
                     var waToolBtn = document.getElementById('reportSendWhatsApp');
-
-                    if (!isGForm) {
-                        if (submitBtn) {
-                            submitBtn.classList.add('whatsapp-primary');
-                            submitBtn.setAttribute('data-channel', 'whatsapp');
-                            submitBtn.title = 'Send report directly on WhatsApp';
-                            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/></svg><span id="reportSubmitBtnText">Report on WhatsApp</span>';
-                        }
-                        if (waToolBtn) waToolBtn.style.display = 'none';
-                    } else {
-                        if (submitBtn) {
-                            submitBtn.classList.remove('whatsapp-primary');
-                            submitBtn.setAttribute('data-channel', 'form');
-                            submitBtn.title = 'Submit report';
-                            submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span id="reportSubmitBtnText">Submit</span>';
-                        }
-                        if (waToolBtn) waToolBtn.style.display = 'inline-flex';
+                    if (submitBtn) {
+                        submitBtn.classList.remove('whatsapp-primary');
+                        submitBtn.setAttribute('data-channel', 'form');
+                        submitBtn.title = 'Submit report directly';
+                        submitBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg><span id="reportSubmitBtnText">Submit</span>';
                     }
+                    if (waToolBtn) waToolBtn.style.display = 'inline-flex';
                 }
 
                 function openReportDialog() {
@@ -2627,11 +2543,25 @@
                 function submitReportChannel(channel) {
                     if (!channel || channel === 'auto') {
                         var btn = document.getElementById('reportSubmitForm');
-                        channel = (btn && btn.getAttribute('data-channel')) || (isGFormConfigured() ? 'form' : 'whatsapp');
+                        channel = (btn && btn.getAttribute('data-channel')) || 'form';
+                    }
+
+                    var t = document.getElementById('toast');
+                    function showT(msg) {
+                        if (window.Toast) {
+                            window.Toast.show(msg);
+                            return;
+                        }
+                        if (t) {
+                            t.textContent = msg;
+                            t.classList.add('visible');
+                            setTimeout(function () { t.classList.remove('visible'); }, 3000);
+                        }
                     }
 
                     if (channel === 'form' && !isGFormConfigured()) {
-                        return submitReportChannel('whatsapp');
+                        showT('Online form service is temporarily unavailable. Please use WhatsApp below.');
+                        return;
                     }
 
                     var note = (document.getElementById('reportNoteInput')?.value || '').trim();
@@ -2650,23 +2580,10 @@
                     var programme = prog || 'SGOU Academic Material';
                     var docUrl = pdfUrl || (code ? ('https://sgou-slm-database.vercel.app/view.html?code=' + code) : window.location.href);
 
-                    var t = document.getElementById('toast');
-                    function showT(msg) {
-                        if (window.Toast) {
-                            window.Toast.show(msg);
-                            return;
-                        }
-                        if (t) {
-                            t.textContent = msg;
-                            t.classList.add('visible');
-                            setTimeout(function () { t.classList.remove('visible'); }, 3000);
-                        }
-                    }
-
                     if (channel === 'form') {
                         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-                            showT('Network offline. Switching to WhatsApp...');
-                            return submitReportChannel('whatsapp');
+                            showT('You are currently offline. Please reconnect or use WhatsApp below.');
+                            return;
                         }
 
                         var submitBtn = document.getElementById('reportSubmitForm');
@@ -2684,7 +2601,7 @@
                                 submitBtn.classList.remove('submitting');
                                 submitBtn.classList.add('success');
                             }
-                            if (submitText) submitText.textContent = 'Report Submitted';
+                            if (submitText) submitText.textContent = 'Report Submitted \u2713';
                             showT('Thank you! Document issue reported for inspection.');
 
                             setTimeout(function () {
@@ -2694,43 +2611,84 @@
                                     submitBtn.disabled = false;
                                 }
                                 if (submitText) submitText.textContent = origText;
-                            }, 1000);
+                            }, 1200);
                         };
 
-                        var doFallback = function () {
+                        var doFail = function () {
                             if (submitBtn) {
                                 submitBtn.classList.remove('submitting');
                                 submitBtn.disabled = false;
                             }
                             if (submitText) submitText.textContent = origText;
-                            showT('Form unreachable. Switching to WhatsApp...');
-                            submitReportChannel('whatsapp');
+                            showT('Could not submit report online. Please try again or use WhatsApp below.');
                         };
 
                         try {
-                            var cfg = window.SGOU_REPORT_FORM;
-                            var formData = new FormData();
-                            if (cfg.entries && cfg.entries.course) formData.append(cfg.entries.course, courseTitle);
-                            if (cfg.entries && cfg.entries.programme) formData.append(cfg.entries.programme, programme);
-                            if (cfg.entries && cfg.entries.materialType) formData.append(cfg.entries.materialType, matType || 'Material');
-                            if (cfg.entries && cfg.entries.category) formData.append(cfg.entries.category, reasonText);
-                            if (cfg.entries && cfg.entries.notes) formData.append(cfg.entries.notes, note || 'None');
-                            if (cfg.entries && cfg.entries.url) formData.append(cfg.entries.url, docUrl);
+                            var cfg = window.SGOU_REPORT_FORM || {};
+                            var params = new URLSearchParams();
+                            if (cfg.entries && cfg.entries.course) params.append(cfg.entries.course, courseTitle);
+                            if (cfg.entries && cfg.entries.programme) params.append(cfg.entries.programme, programme);
+                            if (cfg.entries && cfg.entries.materialType) params.append(cfg.entries.materialType, matType || 'Material');
+                            if (cfg.entries && cfg.entries.category) params.append(cfg.entries.category, reasonText);
+                            if (cfg.entries && cfg.entries.notes) params.append(cfg.entries.notes, note || 'None');
+                            if (cfg.entries && cfg.entries.url) params.append(cfg.entries.url, docUrl);
 
+                            var formUrl = (cfg && cfg.formUrl) || 'https://docs.google.com/forms/d/e/1FAIpQLSelryRvL0B93bWMePwpA2ElZNcbVJTXERAgxOza0Iy6TSVJUA/formResponse';
                             var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-                            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 4500) : null;
+                            var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 5000) : null;
 
-                            fetch(cfg.formUrl, { method: 'POST', mode: 'no-cors', body: formData, signal: ctrl ? ctrl.signal : undefined })
+                            fetch(formUrl, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                                body: params.toString(),
+                                signal: ctrl ? ctrl.signal : undefined
+                            })
                                 .then(function () {
                                     if (timer) clearTimeout(timer);
                                     doFinish();
                                 })
                                 .catch(function () {
                                     if (timer) clearTimeout(timer);
-                                    doFallback();
+                                    // Resilient fallback: hidden iframe submission
+                                    try {
+                                        var iframeName = 'gform_sink_' + Date.now();
+                                        var iframe = document.createElement('iframe');
+                                        iframe.name = iframeName;
+                                        iframe.style.display = 'none';
+                                        document.body.appendChild(iframe);
+
+                                        var form = document.createElement('form');
+                                        form.target = iframeName;
+                                        form.action = formUrl;
+                                        form.method = 'POST';
+                                        form.style.display = 'none';
+
+                                        for (var key in cfg.entries) {
+                                            if (cfg.entries.hasOwnProperty(key)) {
+                                                var input = document.createElement('input');
+                                                input.type = 'hidden';
+                                                input.name = cfg.entries[key];
+                                                input.value = params.get(cfg.entries[key]) || '';
+                                                form.appendChild(input);
+                                            }
+                                        }
+
+                                        document.body.appendChild(form);
+                                        form.submit();
+
+                                        setTimeout(function () {
+                                            try { document.body.removeChild(form); } catch (_) {}
+                                            try { document.body.removeChild(iframe); } catch (_) {}
+                                        }, 3000);
+
+                                        doFinish();
+                                    } catch (_) {
+                                        doFail();
+                                    }
                                 });
                         } catch (_) {
-                            doFallback();
+                            doFail();
                         }
                         return;
                     }
@@ -2860,11 +2818,6 @@
                         document.getElementById('topbarThemeToggle')?.click();
                         return;
                     }
-                    if (k === 'f' || k === 'c') {
-                        e.preventDefault();
-                        document.getElementById('topbarFilter')?.click();
-                        return;
-                    }
                     if (k === 'd') {
                         e.preventDefault();
                         document.getElementById('topbarDownload')?.click();
@@ -2894,7 +2847,7 @@
                         e.preventDefault();
                         var t = document.getElementById('toast');
                         if (t) {
-                            t.textContent = 'Shortcuts: [Esc] Back \u00B7 [T] Theme \u00B7 [F] Comfort \u00B7 [D] Download \u00B7 [R] Report \u00B7 [S] Share \u00B7 [O] Open \u00B7 [I] Details';
+                            t.textContent = 'Shortcuts: [Esc] Back \u00B7 [T] Theme \u00B7 [D] Download \u00B7 [R] Report \u00B7 [S] Share \u00B7 [O] Open \u00B7 [I] Details';
                             t.classList.add('visible');
                             setTimeout(function () { t.classList.remove('visible'); }, 4000);
                         }
