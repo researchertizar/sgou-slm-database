@@ -234,6 +234,17 @@ window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
   }
 };
 
+/**
+ * Direct Voluntary Peer-to-Peer UPI Configuration
+ * Used for the Support & Tip Jar modal.
+ */
+window.SGOU_SUPPORT_CONFIG = window.SGOU_SUPPORT_CONFIG || {
+  vpa: 'ahayas.info@oksbi',
+  name: 'Ahayas',
+  defaultAmount: 25,
+  note: 'Support SGOU Database'
+};
+
 // ============================================================================
 //  2. STORAGE SERVICE (S.O.L.I.D: Single Responsibility)
 // ============================================================================
@@ -3201,6 +3212,116 @@ class UIController {
     }
   }
 
+  // ============================================================================
+  //  VOLUNTARY SUPPORT & UPI MODAL SYSTEM
+  // ============================================================================
+  buildSupportUpiUri(amount = 25) {
+    const cfg = window.SGOU_SUPPORT_CONFIG || { vpa: 'ahayas.info@oksbi', name: 'Ahayas' };
+    const vpa = encodeURIComponent(cfg.vpa || 'ahayas.info@oksbi');
+    const name = encodeURIComponent(cfg.name || 'Ahayas');
+    const note = encodeURIComponent(cfg.note || 'Support SGOU Database');
+    let uri = `upi://pay?pa=${vpa}&pn=${name}&cu=INR&tn=${note}`;
+    if (amount && Number(amount) > 0) {
+      uri += `&am=${encodeURIComponent(amount)}`;
+    }
+    return uri;
+  }
+
+  renderSupportQr(amount = 25) {
+    const uri = this.buildSupportUpiUri(amount);
+    const container = $('supportQrContainer');
+    if (container && typeof qrcode === 'function') {
+      try {
+        const qr = qrcode(0, 'M');
+        qr.addData(uri);
+        qr.make();
+        container.innerHTML = qr.createSvgTag(5, 2);
+      } catch (err) {
+        console.warn('[SGOU Support] QR render failed:', err);
+      }
+    }
+
+    const payBtn = $('supportDirectPayBtn');
+    const payBtnText = $('supportDirectPayBtnText');
+    if (payBtn) payBtn.href = uri;
+    if (payBtnText) {
+      if (amount && Number(amount) > 0) {
+        payBtnText.textContent = `Pay ₹${amount} via UPI App`;
+      } else {
+        payBtnText.textContent = 'Pay via UPI App (Any Amount)';
+      }
+    }
+  }
+
+  openSupportModal(initialAmount = 25) {
+    const modal = $('supportModal');
+    if (!modal) return;
+    this._supportActiveAmount = initialAmount;
+
+    // Reset amount chips
+    const chips = modal.querySelectorAll('.amount-chip');
+    chips.forEach(chip => {
+      const a = chip.getAttribute('data-amount');
+      const isActive = (a === String(initialAmount)) || (initialAmount === null && a === 'custom');
+      chip.classList.toggle('active', isActive);
+    });
+
+    this.renderSupportQr(initialAmount);
+
+    // Reset QR toggle on mobile
+    const qrSection = $('supportQrSection');
+    const qrToggleText = $('supportToggleQrText');
+    if (qrSection) qrSection.classList.remove('show');
+    if (qrToggleText) qrToggleText.textContent = 'Show QR Code to Scan';
+
+    modal.classList.add('visible');
+  }
+
+  closeSupportModal() {
+    $('supportModal')?.classList.remove('visible');
+  }
+
+  copySupportVpa() {
+    const cfg = window.SGOU_SUPPORT_CONFIG || { vpa: 'ahayas.info@oksbi' };
+    const vpa = cfg.vpa || 'ahayas.info@oksbi';
+    const copyBtn = $('supportCopyVpaBtn');
+    const copyText = $('supportCopyBtnText');
+
+    const onSuccess = () => {
+      if (copyBtn) copyBtn.classList.add('copied');
+      if (copyText) copyText.textContent = 'Copied! ✓';
+      this.showToast(`UPI ID copied: ${vpa}`, 2800);
+      setTimeout(() => {
+        if (copyBtn) copyBtn.classList.remove('copied');
+        if (copyText) copyText.textContent = 'Copy';
+      }, 2500);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(vpa).then(onSuccess).catch(() => {
+        this._fallbackCopyText(vpa, onSuccess);
+      });
+    } else {
+      this._fallbackCopyText(vpa, onSuccess);
+    }
+  }
+
+  _fallbackCopyText(text, callback) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (callback) callback();
+    } catch (_) {
+      this.showToast('Please copy: ' + text, 3000);
+    }
+  }
+
   setMaterialType(type) {
     const targetType = (type || 'SLM').toUpperCase();
     if (this.activeType === targetType) return;
@@ -3625,6 +3746,7 @@ class UIController {
       const isUpdateOpen = $('updateModal')?.classList.contains('visible');
       const isDownloadModalOpen = $('downloadModal')?.classList.contains('visible');
       const isReportOpen = $('reportModal')?.classList.contains('visible');
+      const isSupportOpen = $('supportModal')?.classList.contains('visible');
 
       // 1. GLOBAL SHORTCUT: Search Focus (/ or Ctrl+K / Cmd+K)
       if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !isInput)) {
@@ -3646,8 +3768,23 @@ class UIController {
         return;
       }
 
+      // 2B. GLOBAL SHORTCUT: Support & Tip Jar Dialog (U)
+      if (e.key.toLowerCase() === 'u' && !isInput && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        if (isSupportOpen) {
+          this.closeSupportModal();
+        } else {
+          this.openSupportModal();
+        }
+        return;
+      }
+
       // 3. ESCAPE HANDLING (Top-priority dismissal in reverse stack order)
       if (e.key === 'Escape') {
+        if (isSupportOpen) {
+          this.closeSupportModal();
+          return;
+        }
         if (isReportOpen) {
           this.closeReportModal();
           return;
@@ -3899,6 +4036,39 @@ class UIController {
       }
       if (e.target.closest('#reportCopyDetails')) {
         this.submitReport('copy');
+        return;
+      }
+
+      // Voluntary Support & Tip Jar Dialog
+      if (e.target.closest('#headerSupportBtn') || e.target.closest('#footerSupportBtn') || e.target.closest('#drawerSupportBtn') || e.target.closest('#viewerPanelSupport')) {
+        this.openSupportModal();
+        return;
+      }
+      if (e.target.closest('#supportModalCloseBtn') || e.target.closest('#supportDoneBtn') || (e.target === $('supportModal'))) {
+        this.closeSupportModal();
+        return;
+      }
+      const supportChip = e.target.closest('.amount-chip');
+      if (supportChip && supportChip.closest('#supportModal')) {
+        const modal = $('supportModal');
+        modal?.querySelectorAll('.amount-chip').forEach(c => c.classList.remove('active'));
+        supportChip.classList.add('active');
+        const rawAmt = supportChip.getAttribute('data-amount');
+        this._supportActiveAmount = (rawAmt === 'custom') ? null : Number(rawAmt);
+        this.renderSupportQr(this._supportActiveAmount);
+        return;
+      }
+      if (e.target.closest('#supportToggleQrBtn')) {
+        const qrSec = $('supportQrSection');
+        const toggleTxt = $('supportToggleQrText');
+        if (qrSec) {
+          const isShown = qrSec.classList.toggle('show');
+          if (toggleTxt) toggleTxt.textContent = isShown ? 'Hide QR Code' : 'Show QR Code to Scan';
+        }
+        return;
+      }
+      if (e.target.closest('#supportCopyVpaBtn')) {
+        this.copySupportVpa();
         return;
       }
 

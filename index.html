@@ -38,8 +38,8 @@
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_IN">
-    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_09">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_09">
+    <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261008_01">
+    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261008_01">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -50,7 +50,7 @@
     <meta name="twitter:title" content="SGOU Academic Database — By Ahayas">
     <meta name="twitter:description"
         content="Free academic portal for Sree Narayana Guru Open University (SNGOU): 1,200+ SLM books, 950+ PYQs, and 75+ assignments with offline PWA support.">
-    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_09">
+    <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261008_01">
     <meta name="twitter:image:alt" content="SGOU Academic Database — Preview Card">
     <meta name="twitter:creator" content="@researchertizar">
 
@@ -61,7 +61,7 @@
     <meta name="ICBM" content="8.8932, 76.6141">
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="manifest.json?v=20261007_09">
+    <link rel="manifest" href="manifest.json?v=20261008_01">
     <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png?v=20260904_10">
@@ -74,7 +74,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=20261007_09">
+    <link rel="stylesheet" href="css/style.css?v=20261008_01">
 
     <!-- Schema.org Knowledge Graph (JSON-LD) for Search Engines & AI Crawlers -->
     <!-- Search Engine Webmaster Verification Hooks -->
@@ -386,6 +386,13 @@
                             </svg>
                             <span class="downloads-badge" id="downloadsBadge" style="display:none">0</span>
                         </button>
+                        <button class="header-action-btn support-action-btn" id="headerSupportBtn" aria-label="Support Project"
+                            title="Support SGOU Database (UPI)">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
                         <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme (T)">
                             <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -582,6 +589,8 @@
         <div class="footer-minimal">
             <span>Built by <strong>Ahayas</strong></span>
             <span class="footer-sep">&middot;</span>
+            <button class="footer-support-link" id="footerSupportBtn" type="button" title="Support SGOU Database via UPI">Support Project (UPI)</button>
+            <span class="footer-sep">&middot;</span>
             <a href="https://sgou-slm-database.vercel.app/" target="_blank" rel="noopener">SGOU Academic Database</a>
         </div>
     </footer>
@@ -650,6 +659,12 @@
                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
                             <line x1="4" y1="22" x2="4" y2="15" />
+                        </svg>
+                    </button>
+                    <button class="vp-btn" id="viewerPanelSupport" aria-label="Support platform" title="Support SGOU Database (UPI)" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                         </svg>
                     </button>
                 </div>
@@ -755,6 +770,114 @@
                         <span id="reportSubmitBtnText">Submit</span>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ VOLUNTARY SUPPORT & TIP JAR MODAL ============ -->
+    <div class="modal-backdrop" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle">
+        <div class="modal-card support-modal-card">
+            <div class="support-modal-header">
+                <div class="support-header-info">
+                    <div class="support-header-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 id="supportModalTitle" class="support-title">Support SGOU Database</h3>
+                        <p class="support-subtitle">Keep this community academic portal free &amp; active</p>
+                    </div>
+                </div>
+                <button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="support-modal-body">
+                <p class="support-intro">
+                    This platform is maintained by <strong>Ahayas</strong> as a free service for all SGOU students. Your voluntary contributions directly fund server hosting, domain renewals, and syllabus updates.
+                </p>
+
+                <!-- Amount Selection Chips -->
+                <div class="support-section-label">Select Contribution Amount</div>
+                <div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">
+                    <button type="button" class="amount-chip" data-amount="15">₹15</button>
+                    <button type="button" class="amount-chip active" data-amount="25">₹25 <span class="chip-badge">Popular</span></button>
+                    <button type="button" class="amount-chip" data-amount="50">₹50</button>
+                    <button type="button" class="amount-chip" data-amount="100">₹100</button>
+                    <button type="button" class="amount-chip" data-amount="custom">Custom</button>
+                </div>
+
+                <!-- Mobile 1-Tap Action Section (Primary on Mobile) -->
+                <div class="support-mobile-section">
+                    <a href="upi://pay?pa=ahayas.info@oksbi&pn=Ahayas&am=25&cu=INR&tn=Support%20SGOU%20Database" 
+                       id="supportDirectPayBtn" class="support-pay-primary-btn" target="_blank" rel="noopener">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                        <span id="supportDirectPayBtnText">Pay ₹25 via UPI App</span>
+                    </a>
+                    <div class="support-apps-hint">
+                        <span>Works with</span>
+                        <span class="upi-app-pill">GPay</span>
+                        <span class="upi-app-pill">PhonePe</span>
+                        <span class="upi-app-pill">Paytm</span>
+                        <span class="upi-app-pill">BHIM</span>
+                    </div>
+
+                    <button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        <span id="supportToggleQrText">Show QR Code to Scan</span>
+                    </button>
+                </div>
+
+                <!-- QR Code Display Box (Primary on Desktop, Toggled on Mobile) -->
+                <div class="support-qr-section" id="supportQrSection">
+                    <div class="support-qr-card">
+                        <div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">
+                            <!-- SVG QR code rendered dynamically -->
+                        </div>
+                        <div class="support-qr-caption">
+                            <span>Scan with GPay, PhonePe, Paytm, or BHIM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- UPI ID Copy Section -->
+                <div class="support-vpa-box">
+                    <div class="support-vpa-details">
+                        <span class="support-vpa-label">UPI ID (VPA)</span>
+                        <code class="support-vpa-text" id="supportVpaText">ahayas.info@oksbi</code>
+                        <span class="support-payee-tag">Payee: Ahayas</span>
+                    </div>
+                    <button type="button" class="support-copy-btn" id="supportCopyVpaBtn" title="Copy UPI ID to clipboard">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span id="supportCopyBtnText">Copy</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="support-modal-footer">
+                <span class="support-security-note">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    Direct UPI &middot; 0% platform fee
+                </span>
+                <button type="button" class="support-done-btn" id="supportDoneBtn">Done</button>
             </div>
         </div>
     </div>
@@ -923,6 +1046,12 @@
                 <!-- Dynamically populated -->
             </div>
             <div class="drawer-footer">
+                <button class="drawer-support-btn" id="drawerSupportBtn" type="button" title="Support this free academic project">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                    </svg>
+                    <span>Support</span>
+                </button>
                 <button class="drawer-update-link" id="drawerUpdateBtn" type="button" title="Check for app updates">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
@@ -1160,7 +1289,8 @@
     <!-- Toast & Update Notification Container -->
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/script.js?v=20261007_09" defer></script>
+    <script src="js/qrcode.min.js?v=20261008_01" defer></script>
+    <script src="js/script.js?v=20261008_01" defer></script>
 </body>
 
 </html>

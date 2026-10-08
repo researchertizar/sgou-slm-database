@@ -6,7 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-v3.0.0-emerald.svg)](#overview)
 [![Test Suite](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](#automated-verification-suite)
-[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v141)-blue.svg)](#offline-pwa--service-worker-lifecycle)
+[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v146)-blue.svg)](#offline-pwa--service-worker-lifecycle)
 [![Architecture](https://img.shields.io/badge/architecture-S.O.L.I.D-purple.svg)](#solid-system-architecture)
 [![Edge CDN](https://img.shields.io/badge/bandwidth-zero--cost%20CloudFront-orange.svg)](#zero-cost-edge-architecture--bandwidth-protection)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license--acknowledgments)
@@ -190,8 +190,8 @@ Students can "star" or "pin" their degree programmes to keep them anchored at th
 The platform operates as a standalone Progressive Web App with zero external runtime dependencies.
 
 ### Cache Strategy
-- **Service Worker Version**: `sgou-v145` with asset versioning query parameters (`v=20261007_09`).
-- **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `view.html`, `reader.html`, `pdfjs/pdf.min.js`, `pdfjs/pdf.worker.min.js`, `manifest.json`, `opensearch.xml`, `data/pyq_overrides.json`, and touch icons are served instantaneously from CacheStorage.
+- **Service Worker Version**: `sgou-v146` with asset versioning query parameters (`v=20261008_01`).
+- **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `js/qrcode.min.js`, `view.html`, `reader.html`, `pdfjs/pdf.min.js`, `pdfjs/pdf.worker.min.js`, `manifest.json`, `opensearch.xml`, `data/pyq_overrides.json`, and touch icons are served instantaneously from CacheStorage.
 - **Academic Datasets (Network-First with Cache Fallback)**: `data/sgou_slm_data.json` and `data/sgou_questions_cleaned.json` fetch latest updates from the network with instant fallback to local cached versions if offline.
 - **Google Fonts (Stale-While-Revalidate)**: Font stylesheets and `.woff2` files are cached with strict Content Security Policy (`connect-src https://fonts.googleapis.com https://fonts.gstatic.com`).
 - **Safe Response Fallback**: Service Worker fetch listeners guarantee a valid `Response` object is returned under all network interruption scenarios, completely preventing unhandled browser fetch errors.
@@ -259,7 +259,8 @@ The platform is optimized for both traditional search engines (Google, Bing) and
 | Shortcut | Context | Action |
 | :--- | :--- | :--- |
 | `/` or `Ctrl + K` | Global | Focuses the main search input immediately |
-| `Escape` | Global | Clears active search query / Closes PDF viewer panel / Closes drawer |
+| `U` | Global / Viewer / Reader | Opens voluntary UPI Support & Tip Jar modal |
+| `Escape` | Global | Clears active search query / Closes PDF viewer panel / Closes drawer / Closes modals |
 | `Tab` / `Shift + Tab` | Global | Accessible linear focus navigation across all interactive elements |
 | `Enter` / `Space` | Cards & Buttons | Expands accordions, toggles filters, stars programmes |
 
@@ -292,6 +293,7 @@ sgou-database/
 │   ├── sgou_slm_data.json              # Complete SGOU SLM textbook repository dataset (37 progs)
 │   └── sgou_questions_cleaned.json     # Cleaned PYQs and assignments dataset
 ├── js/
+│   ├── qrcode.min.js                   # Zero-dependency offline vector QR code generator (20KB)
 │   └── script.js                       # S.O.L.I.D client architecture, search & UI controller
 ├── pdfjs/                              # Vendored standalone PDF.js engine for in-app reader
 │   ├── pdf.min.js                      # PDF.js main runtime
