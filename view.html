@@ -113,12 +113,14 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png?v=20260904_10">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=20260904_10">
 
-    <!-- Typography -->
+    <!-- Typography & Modular CSS Components -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261008_03">
+    <link rel="stylesheet" href="/css/components/toast.css?v=20261008_03">
     <style>
         @view-transition {
             navigation: auto;
@@ -1469,363 +1471,7 @@
             box-shadow: 0 3px 8px rgba(22, 163, 74, 0.4) !important;
         }
 
-        /* Voluntary Support & Tip Jar Modal (Minimal & Professional) */
-        .support-modal-card {
-            max-width: 375px;
-            width: 92vw;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
-        }
-        [data-theme="dark"] .support-modal-card {
-            background: #18181b;
-            border-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65);
-        }
-        .support-modal-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 11px 15px;
-            border-bottom: 1px solid var(--border-light);
-            background: var(--surface-subtle);
-        }
-        [data-theme="dark"] .support-modal-header {
-            background: rgba(255, 255, 255, 0.02);
-            border-bottom-color: rgba(255, 255, 255, 0.07);
-        }
-        .support-header-info {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            min-width: 0;
-        }
-        .support-header-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            background: rgba(180, 61, 40, 0.12);
-            color: var(--accent);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        [data-theme="dark"] .support-header-icon {
-            background: rgba(248, 113, 113, 0.14);
-            color: #f87171;
-        }
-        .support-title {
-            margin: 0;
-            font-family: var(--font-serif);
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--ink);
-            line-height: 1.2;
-        }
-        .support-subtitle {
-            margin: 1px 0 0;
-            font-size: 11px;
-            color: var(--ink-muted);
-        }
-        .support-close-btn {
-            background: transparent;
-            border: none;
-            color: var(--ink-muted);
-            cursor: pointer;
-            padding: 4px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all .15s ease;
-            flex-shrink: 0;
-        }
-        .support-close-btn:hover {
-            background: rgba(0, 0, 0, 0.06);
-            color: var(--ink);
-        }
-        [data-theme="dark"] .support-close-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-        .support-modal-body {
-            padding: 12px 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 9px;
-            max-height: none;
-            overflow: visible;
-        }
-        .support-micro-banner {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 8px;
-            border-radius: 6px;
-            background: rgba(180, 61, 40, 0.06);
-            border: 1px solid rgba(180, 61, 40, 0.12);
-            color: var(--ink-soft);
-            font-size: 11px;
-            line-height: 1.35;
-        }
-        .support-micro-banner svg {
-            color: var(--accent);
-            flex-shrink: 0;
-        }
-        [data-theme="dark"] .support-micro-banner {
-            background: rgba(248, 113, 113, 0.08);
-            border-color: rgba(248, 113, 113, 0.16);
-        }
-        [data-theme="dark"] .support-micro-banner svg {
-            color: #f87171;
-        }
-        .support-amount-chips {
-            display: flex;
-            gap: 4px;
-            width: 100%;
-        }
-        .amount-chip {
-            flex: 1 1 0;
-            min-width: 0;
-            padding: 5px 2px;
-            border-radius: 6px;
-            border: 1px solid var(--border-light);
-            background: var(--surface);
-            color: var(--ink-soft);
-            font-family: var(--font-sans);
-            font-size: 11.5px;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2px;
-            transition: all .15s ease;
-            white-space: nowrap;
-        }
-        [data-theme="dark"] .amount-chip {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.1);
-            color: #e4e4e7;
-        }
-        .amount-chip:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-        .amount-chip.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: #ffffff;
-            box-shadow: 0 2px 6px rgba(180, 61, 40, 0.25);
-        }
-        [data-theme="dark"] .amount-chip.active {
-            background: #cf5d46;
-            border-color: #cf5d46;
-            color: #ffffff;
-        }
-        .chip-star {
-            font-size: 9px;
-            line-height: 1;
-            opacity: 0.9;
-        }
-        .support-pay-primary-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            width: 100%;
-            padding: 9px 14px;
-            border-radius: 8px;
-            background: var(--accent);
-            color: #ffffff !important;
-            font-family: var(--font-sans);
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(180, 61, 40, 0.28);
-            transition: all .15s ease;
-        }
-        .support-pay-primary-btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-        }
-        .support-apps-hint {
-            text-align: center;
-            margin-top: 4px;
-            font-size: 10.5px;
-            color: var(--ink-muted);
-        }
-        .support-toggle-qr-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            width: 100%;
-            margin-top: 6px;
-            padding: 5px 10px;
-            background: transparent;
-            border: 1px dashed var(--border);
-            border-radius: 6px;
-            font-family: var(--font-sans);
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--ink-muted);
-            cursor: pointer;
-            transition: all .15s ease;
-        }
-        .support-toggle-qr-btn:hover {
-            background: var(--surface-subtle);
-            color: var(--ink);
-            border-color: var(--ink-muted);
-        }
-        .support-qr-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .support-qr-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 10px 6px;
-            background: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-            border: 1px solid rgba(0, 0, 0, 0.08);
-        }
-        .support-qr-frame {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 140px;
-            height: 140px;
-        }
-        .support-qr-frame svg {
-            width: 100% !important;
-            height: 100% !important;
-            display: block;
-        }
-        .support-qr-caption {
-            margin-top: 4px;
-            font-size: 10px;
-            font-weight: 600;
-            color: #52525b;
-        }
-        .support-vpa-box {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 6px 10px;
-            border-radius: 8px;
-            background: var(--surface-subtle);
-            border: 1px solid var(--border-light);
-        }
-        [data-theme="dark"] .support-vpa-box {
-            background: rgba(255, 255, 255, 0.03);
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-        .support-vpa-details {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            min-width: 0;
-        }
-        .support-vpa-label {
-            font-size: 9.5px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--ink-muted);
-            background: rgba(0, 0, 0, 0.05);
-            padding: 1px 4px;
-            border-radius: 3px;
-        }
-        [data-theme="dark"] .support-vpa-label {
-            background: rgba(255, 255, 255, 0.08);
-            color: #a1a1aa;
-        }
-        .support-vpa-text {
-            font-family: var(--font-mono);
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--ink);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .support-copy-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 4px 9px;
-            border-radius: 5px;
-            font-family: var(--font-sans);
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--ink);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            flex-shrink: 0;
-            transition: all .15s ease;
-        }
-        .support-copy-btn:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-        .support-copy-btn.copied {
-            background: #10b981;
-            border-color: #10b981;
-            color: #ffffff;
-        }
-        .support-modal-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 8px 15px 9px;
-            border-top: 1px solid var(--border-light);
-            background: var(--surface-subtle);
-        }
-        [data-theme="dark"] .support-modal-footer {
-            background: rgba(255, 255, 255, 0.02);
-            border-top-color: rgba(255, 255, 255, 0.07);
-        }
-        .support-security-note {
-            font-size: 10px;
-            color: var(--ink-muted);
-            display: inline-flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .support-done-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            padding: 4px 12px;
-            border-radius: 5px;
-            font-family: var(--font-sans);
-            font-size: 11.5px;
-            font-weight: 600;
-            color: var(--ink-soft);
-            cursor: pointer;
-            transition: all .14s ease;
-        }
-        .support-done-btn:hover {
-            background: var(--surface);
-            color: var(--ink);
-        }
-        @media (min-width: 641px) {
-            .support-mobile-section { display: none; }
-            .support-qr-section { display: flex !important; }
-        }
-        @media (max-width: 640px) {
-            .support-mobile-section { display: block; }
-            .support-qr-section { display: none; margin-top: 2px; }
-            .support-qr-section.show { display: flex !important; }
-        }
+        /* Voluntary Support & Tip Jar styles are modularized in /css/components/support-modal.css */
     </style>
 
     <!-- Google Analytics 4 (GA4) -->
@@ -2125,22 +1771,22 @@
     </div>
 
     <!-- ============ VOLUNTARY SUPPORT & TIP JAR MODAL ============ -->
-    <div class="modal-backdrop" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle">
-        <div class="modal-card support-modal-card">
+    <div class="support-modal-backdrop" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle">
+        <div class="support-modal">
             <div class="support-modal-header">
-                <div class="support-header-info">
-                    <div class="support-header-icon">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <div class="support-header-left">
+                    <div class="support-heart-badge" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h3 id="supportModalTitle" class="support-title">Support Project</h3>
-                        <p class="support-subtitle">Voluntary student contribution</p>
+                        <h3 id="supportModalTitle" class="support-title">Support SGOU Database</h3>
+                        <p class="support-subtitle">Keep this community academic portal free &amp; active</p>
                     </div>
                 </div>
                 <button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -2148,57 +1794,55 @@
             </div>
 
             <div class="support-modal-body">
-                <div class="support-micro-banner">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                    </svg>
-                    <span>Directly funds server hosting, domain &amp; syllabus updates</span>
+                <!-- High-Trust Platform Message -->
+                <div class="support-intro-card">
+                    <p class="support-intro-text">
+                        This platform is maintained by <strong>Ahayas</strong> as a free service for all SGOU students. Your voluntary contributions directly fund server hosting, domain renewals, and syllabus updates.
+                    </p>
                 </div>
 
-                <!-- Amount Selection Chips -->
+                <!-- Contribution Amount Selection -->
+                <div class="support-section-label">Choose Contribution</div>
                 <div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">
                     <button type="button" class="amount-chip" data-amount="15">₹15</button>
-                    <button type="button" class="amount-chip active" data-amount="25">₹25 <span class="chip-star" title="Popular">★</span></button>
+                    <button type="button" class="amount-chip active" data-amount="25">₹25 <span class="chip-popular-badge">Popular</span></button>
                     <button type="button" class="amount-chip" data-amount="50">₹50</button>
                     <button type="button" class="amount-chip" data-amount="100">₹100</button>
-                    <button type="button" class="amount-chip" data-amount="custom">Any</button>
+                    <button type="button" class="amount-chip" data-amount="custom">Custom</button>
                 </div>
 
                 <!-- Mobile 1-Tap Action Section (Primary on Mobile) -->
                 <div class="support-mobile-section">
                     <a href="upi://pay?pa=ahayas.info@oksbi&amp;pn=Ahayas&amp;am=25&amp;cu=INR&amp;tn=Support%20SGOU%20Database" 
                        id="supportDirectPayBtn" class="support-pay-primary-btn" target="_blank" rel="noopener">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                         </svg>
-                        <span id="supportDirectPayBtnText">Pay ₹25 via UPI</span>
+                        <span id="supportDirectPayBtnText">Support with ₹25 via UPI</span>
                     </a>
                     <div class="support-apps-hint">
-                        <span>Works with GPay, PhonePe, Paytm, BHIM</span>
+                        <span>Works with GPay, PhonePe, Paytm, BHIM &amp; all UPI apps</span>
                     </div>
 
                     <button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn" type="button">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg>
-                        <span id="supportToggleQrText">Show QR Code</span>
+                        <span id="supportToggleQrText">Show QR Code to Scan</span>
                     </button>
                 </div>
 
-                <!-- QR Code Display Box (Primary on Desktop, Toggled on Mobile) -->
+                <!-- Desktop QR Code Display Box (Primary on Desktop) -->
                 <div class="support-qr-section" id="supportQrSection">
                     <div class="support-qr-card">
                         <div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">
                             <!-- SVG QR code rendered dynamically -->
                         </div>
                         <div class="support-qr-caption">
-                            <span>Scan with any UPI app</span>
+                            <span>Scan with any UPI app (GPay, PhonePe, Paytm, BHIM)</span>
                         </div>
                     </div>
                 </div>
@@ -2206,11 +1850,12 @@
                 <!-- UPI ID Copy Section -->
                 <div class="support-vpa-box">
                     <div class="support-vpa-details">
-                        <span class="support-vpa-label">UPI ID</span>
+                        <span class="support-vpa-label">UPI ID (VPA)</span>
                         <code class="support-vpa-text" id="supportVpaText">ahayas.info@oksbi</code>
+                        <span class="support-payee-tag">Payee: Ahayas</span>
                     </div>
                     <button type="button" class="support-copy-btn" id="supportCopyVpaBtn" title="Copy UPI ID to clipboard">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
@@ -2221,11 +1866,11 @@
 
             <div class="support-modal-footer">
                 <span class="support-security-note">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
-                    Direct UPI &middot; 0% fee
+                    Direct voluntary contribution &middot; 0% fee
                 </span>
                 <button type="button" class="support-done-btn" id="supportDoneBtn">Done</button>
             </div>
@@ -2235,7 +1880,11 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="/js/qrcode.min.js?v=20261008_02"></script>
+    <script src="/js/utils/clipboard.js?v=20261008_03"></script>
+    <script src="/js/components/toast.js?v=20261008_03"></script>
+    <script src="/js/components/theme.js?v=20261008_03"></script>
+    <script src="/js/qrcode.min.js?v=20261008_03"></script>
+    <script src="/js/components/support-modal.js?v=20261008_03"></script>
     <script>
         (function () {
             var params = new URLSearchParams(window.location.search);
@@ -2951,6 +2600,10 @@
 
                     var t = document.getElementById('toast');
                     function showT(msg) {
+                        if (window.Toast) {
+                            window.Toast.show(msg);
+                            return;
+                        }
                         if (t) {
                             t.textContent = msg;
                             t.classList.add('visible');
@@ -3097,120 +2750,16 @@
                 document.getElementById('reportSendWhatsApp')?.addEventListener('click', function () { submitReportChannel('whatsapp'); });
                 document.getElementById('reportCopyDetails')?.addEventListener('click', function () { submitReportChannel('copy'); });
 
-                // Support & Voluntary UPI Modal System
-                var supportModal = document.getElementById('supportModal');
+                // Support & Voluntary UPI Modal System (Shared Component)
                 var supportBtn = document.getElementById('topbarSupport');
-                var supportCloseBtn = document.getElementById('supportModalCloseBtn');
-                var supportDoneBtn = document.getElementById('supportDoneBtn');
-                var supportToggleQrBtn = document.getElementById('supportToggleQrBtn');
-                var supportCopyVpaBtn = document.getElementById('supportCopyVpaBtn');
-                var supportActiveAmount = 25;
-
-                function buildSupportUpiUri(amount) {
-                    var vpa = encodeURIComponent('ahayas.info@oksbi');
-                    var payee = encodeURIComponent('Ahayas');
-                    var note = encodeURIComponent('Support SGOU Database');
-                    var uri = 'upi://pay?pa=' + vpa + '&pn=' + payee + '&cu=INR&tn=' + note;
-                    if (amount && Number(amount) > 0) {
-                        uri += '&am=' + encodeURIComponent(amount);
-                    }
-                    return uri;
-                }
-
-                function renderSupportQr(amount) {
-                    var uri = buildSupportUpiUri(amount);
-                    var container = document.getElementById('supportQrContainer');
-                    if (container && typeof qrcode === 'function') {
-                        try {
-                            var qr = qrcode(0, 'M');
-                            qr.addData(uri);
-                            qr.make();
-                            container.innerHTML = qr.createSvgTag(5, 2);
-                        } catch (err) {
-                            console.warn('[SGOU Support] QR render failed:', err);
-                        }
-                    }
-                    var payBtn = document.getElementById('supportDirectPayBtn');
-                    var payBtnText = document.getElementById('supportDirectPayBtnText');
-                    if (payBtn) payBtn.href = uri;
-                    if (payBtnText) {
-                        payBtnText.textContent = (amount && Number(amount) > 0) ? ('Pay ₹' + amount + ' via UPI') : 'Pay via UPI (Any Amount)';
-                    }
-                }
-
-                function openSupportModal(amount) {
-                    if (!supportModal) return;
-                    supportActiveAmount = typeof amount === 'number' ? amount : 25;
-                    var chips = supportModal.querySelectorAll('.amount-chip');
-                    for (var i = 0; i < chips.length; i++) {
-                        var a = chips[i].getAttribute('data-amount');
-                        var isAct = (a === String(supportActiveAmount)) || (supportActiveAmount === null && a === 'custom');
-                        chips[i].classList.toggle('active', isAct);
-                    }
-                    renderSupportQr(supportActiveAmount);
-                    var qrSec = document.getElementById('supportQrSection');
-                    var qrTxt = document.getElementById('supportToggleQrText');
-                    if (qrSec) qrSec.classList.remove('show');
-                    if (qrTxt) qrTxt.textContent = 'Show QR Code';
-                    supportModal.classList.add('visible');
-                }
-
-                function closeSupportModal() {
-                    if (supportModal) supportModal.classList.remove('visible');
-                }
-
-                if (supportBtn) supportBtn.onclick = function () { openSupportModal(25); };
-                if (supportCloseBtn) supportCloseBtn.onclick = closeSupportModal;
-                if (supportDoneBtn) supportDoneBtn.onclick = closeSupportModal;
-                if (supportModal) {
-                    supportModal.addEventListener('click', function (e) {
-                        if (e.target === supportModal) closeSupportModal();
-                    });
-                }
-                if (supportToggleQrBtn) {
-                    supportToggleQrBtn.addEventListener('click', function () {
-                        var qrSec = document.getElementById('supportQrSection');
-                        var qrTxt = document.getElementById('supportToggleQrText');
-                        if (qrSec) {
-                            var isShow = qrSec.classList.toggle('show');
-                            if (qrTxt) qrTxt.textContent = isShow ? 'Hide QR Code' : 'Show QR Code';
+                if (supportBtn) {
+                    supportBtn.addEventListener('click', function () {
+                        if (window.SupportModal) {
+                            window.SupportModal.open(25);
                         }
                     });
                 }
-                if (supportCopyVpaBtn) {
-                    supportCopyVpaBtn.addEventListener('click', function () {
-                        var vpa = 'ahayas.info@oksbi';
-                        var copyBtn = document.getElementById('supportCopyVpaBtn');
-                        var copyTxt = document.getElementById('supportCopyBtnText');
-                        var onCopied = function () {
-                            if (copyBtn) copyBtn.classList.add('copied');
-                            if (copyTxt) copyTxt.textContent = 'Copied! ✓';
-                            showT('UPI ID copied: ' + vpa);
-                            setTimeout(function () {
-                                if (copyBtn) copyBtn.classList.remove('copied');
-                                if (copyTxt) copyTxt.textContent = 'Copy';
-                            }, 2500);
-                        };
-                        if (navigator.clipboard && navigator.clipboard.writeText) {
-                            navigator.clipboard.writeText(vpa).then(onCopied).catch(onCopied);
-                        } else {
-                            onCopied();
-                        }
-                    });
-                }
-                if (supportModal) {
-                    supportModal.addEventListener('click', function (e) {
-                        var chip = e.target.closest('.amount-chip');
-                        if (chip) {
-                            var chips = supportModal.querySelectorAll('.amount-chip');
-                            for (var i = 0; i < chips.length; i++) chips[i].classList.remove('active');
-                            chip.classList.add('active');
-                            var raw = chip.getAttribute('data-amount');
-                            supportActiveAmount = raw === 'custom' ? null : Number(raw);
-                            renderSupportQr(supportActiveAmount);
-                        }
-                    });
-                }
+
 
                 // Keyboard Shortcuts for Standalone Viewer
                 document.addEventListener('keydown', function (e) {
@@ -3219,13 +2768,14 @@
                     if (isInput) return;
 
                     var isReportOpen = reportModal && reportModal.classList.contains('visible');
-                    var isSupportOpen = supportModal && supportModal.classList.contains('visible');
+                    var supportModalEl = document.getElementById('supportModal');
+                    var isSupportOpen = supportModalEl && (supportModalEl.classList.contains('visible') || supportModalEl.classList.contains('active'));
                     var k = e.key.toLowerCase();
 
                     if (e.key === 'Escape') {
                         if (isSupportOpen) {
                             e.preventDefault();
-                            closeSupportModal();
+                            if (window.SupportModal) window.SupportModal.close();
                             return;
                         }
                         if (isReportOpen) {
@@ -3239,8 +2789,11 @@
                     }
                     if (k === 'u') {
                         e.preventDefault();
-                        if (isSupportOpen) closeSupportModal();
-                        else openSupportModal();
+                        if (isSupportOpen) {
+                            if (window.SupportModal) window.SupportModal.close();
+                        } else {
+                            if (window.SupportModal) window.SupportModal.open(25);
+                        }
                         return;
                     }
                     if (e.key === 'Backspace' && !isReportOpen && !isSupportOpen) {

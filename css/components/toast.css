@@ -1,0 +1,54 @@
+/* ==========================================================================
+   SGOU Academic Database — Reusable Toast Notification Component
+   Unified across catalog (index.html), standalone viewer (view.html) & reader
+   ========================================================================== */
+
+.toast,
+#readerToast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--toast-bg, #1a1714);
+  color: var(--toast-text, #f5f0e8);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-family: var(--font-sans, -apple-system, sans-serif);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s cubic-bezier(0.16, 1, 0.3, 1), transform .2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10001;
+  white-space: nowrap;
+  max-width: 90vw;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .toast,
+[data-theme="dark"] #readerToast {
+  background: var(--toast-bg, #eee9e0);
+  color: var(--toast-text, #0d0c0b);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+}
+
+.toast.visible,
+.toast.show,
+#readerToast.show,
+#readerToast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+@media (max-width: 640px) {
+  .toast,
+  #readerToast {
+    bottom: 20px;
+    font-size: 12px;
+    padding: 9px 16px;
+  }
+}

@@ -3228,6 +3228,10 @@ class UIController {
   }
 
   renderSupportQr(amount = 25) {
+    if (window.SupportModal && typeof window.SupportModal.renderQr === 'function') {
+      window.SupportModal.renderQr(amount);
+      return;
+    }
     const uri = this.buildSupportUpiUri(amount);
     const container = $('supportQrContainer');
     if (container && typeof qrcode === 'function') {
@@ -3235,7 +3239,7 @@ class UIController {
         const qr = qrcode(0, 'M');
         qr.addData(uri);
         qr.make();
-        container.innerHTML = qr.createSvgTag(5, 2);
+        container.innerHTML = qr.createSvgTag(4.5, 2);
       } catch (err) {
         console.warn('[SGOU Support] QR render failed:', err);
       }
@@ -3246,14 +3250,18 @@ class UIController {
     if (payBtn) payBtn.href = uri;
     if (payBtnText) {
       if (amount && Number(amount) > 0) {
-        payBtnText.textContent = `Pay ₹${amount} via UPI`;
+        payBtnText.textContent = `Support with ₹${amount} via UPI`;
       } else {
-        payBtnText.textContent = 'Pay via UPI (Any Amount)';
+        payBtnText.textContent = 'Support via UPI (Any Amount)';
       }
     }
   }
 
   openSupportModal(initialAmount = 25) {
+    if (window.SupportModal && typeof window.SupportModal.open === 'function') {
+      window.SupportModal.open(initialAmount);
+      return;
+    }
     const modal = $('supportModal');
     if (!modal) return;
     this._supportActiveAmount = initialAmount;
@@ -3272,12 +3280,16 @@ class UIController {
     const qrSection = $('supportQrSection');
     const qrToggleText = $('supportToggleQrText');
     if (qrSection) qrSection.classList.remove('show');
-    if (qrToggleText) qrToggleText.textContent = 'Show QR Code';
+    if (qrToggleText) qrToggleText.textContent = 'Show QR Code to Scan';
 
     modal.classList.add('visible');
   }
 
   closeSupportModal() {
+    if (window.SupportModal && typeof window.SupportModal.close === 'function') {
+      window.SupportModal.close();
+      return;
+    }
     $('supportModal')?.classList.remove('visible');
   }
 

@@ -1,11 +1,17 @@
-const CACHE = 'sgou-v147';
+const CACHE = 'sgou-v148';
 const SHELL = [
     './',
     './index.html',
-    './css/style.css?v=20261008_02',
-    './js/script.js?v=20261008_02',
+    './css/style.css?v=20261008_03',
+    './css/components/support-modal.css?v=20261008_03',
+    './css/components/toast.css?v=20261008_03',
+    './js/utils/clipboard.js?v=20261008_03',
+    './js/components/toast.js?v=20261008_03',
+    './js/components/theme.js?v=20261008_03',
+    './js/components/support-modal.js?v=20261008_03',
+    './js/script.js?v=20261008_03',
     './js/qrcode.min.js',
-    './manifest.json?v=20261008_02',
+    './manifest.json?v=20261008_03',
     './assets/icons/icon.svg?v=20260904_10',
     './assets/icons/icon-192.png?v=20260904_10',
     './assets/icons/icon-512.png?v=20260904_10',
