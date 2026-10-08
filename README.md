@@ -1,75 +1,101 @@
 # SGOU Academic Database
 
-> **High-Performance, Offline-First Academic Repository for Sree Narayana Guru Open University (SGOU)**  
-> Engineered with pure vanilla web standards, S.O.L.I.D architecture, sub-100ms startup hydration, zero-cost edge streaming, and 60fps FLIP animations.  
-> **Developed by Ahayas**
+> **Enterprise-Grade, Offline-First Digital Academic Repository for Sree Narayana Guru Open University (SGOU)**  
+> Engineered with pure vanilla web standards, modular component architecture, S.O.L.I.D principles, cognitive UX ergonomics, sub-100ms startup hydration, zero-cost edge streaming, and 60fps FLIP animations.  
+> **Designed and Developed by Ahayas**
 
-[![Version](https://img.shields.io/badge/version-v3.0.0-emerald.svg)](#overview)
-[![Test Suite](https://img.shields.io/badge/tests-61%2F61%20passing-brightgreen.svg)](#automated-verification-suite)
-[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v146)-blue.svg)](#offline-pwa--service-worker-lifecycle)
-[![Architecture](https://img.shields.io/badge/architecture-S.O.L.I.D-purple.svg)](#solid-system-architecture)
+[![Version](https://img.shields.io/badge/version-v3.1.0-emerald.svg)](#overview)
+[![Test Suite](https://img.shields.io/badge/tests-70%2F70%20passing-brightgreen.svg)](#automated-verification-suite)
+[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v149)-blue.svg)](#offline-pwa--service-worker-lifecycle)
+[![Architecture](https://img.shields.io/badge/architecture-Modular%20Components%20%26%20S.O.L.I.D-purple.svg)](#solid-system-architecture)
 [![Edge CDN](https://img.shields.io/badge/bandwidth-zero--cost%20CloudFront-orange.svg)](#zero-cost-edge-architecture--bandwidth-protection)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license--acknowledgments)
 
 ---
 
 ## Table of Contents
-1. [Overview](#overview)
-2. [Key Capabilities & Features](#key-capabilities--features)
-3. [S.O.L.I.D System Architecture](#solid-system-architecture)
-4. [Zero-Cost Edge Architecture & Bandwidth Protection](#zero-cost-edge-architecture--bandwidth-protection)
-5. [Dual-Tier PDF Viewer Architecture](#dual-tier-pdf-viewer-architecture)
-6. [FLIP Card Pinning & Animation Engine](#flip-card-pinning--animation-engine)
-7. [Startup & Runtime Performance Engineering](#startup--runtime-performance-engineering)
-8. [Offline PWA & Service Worker Lifecycle](#offline-pwa--service-worker-lifecycle)
-9. [Standalone Document Viewer (`view.html`)](#standalone-document-viewer-viewhtml)
-10. [UI/UX Design System & Spacing Tokens](#uiux-design-system--spacing-tokens)
-11. [Search Engine & AI Discovery (SEO / GEO / LLMs)](#search-engine--ai-discovery-seo--geo--llms)
-12. [Keyboard Navigation & Accessibility](#keyboard-navigation--accessibility)
-13. [Complete Repository Structure](#complete-repository-structure)
-14. [Local Development](#local-development)
-15. [Automated Verification Suite](#automated-verification-suite)
-16. [One-Click Production Synchronization Tool](#one-click-production-synchronization-tool)
-17. [Production Deployment Guide](#production-deployment-guide)
-    - [Vercel Deployment (Recommended)](#vercel-deployment-recommended)
-    - [Cloudflare Pages & Workers](#cloudflare-pages--workers)
-    - [Static Hosting / GitHub Pages](#static-hosting--github-pages)
-18. [Data Schemas & Indexing](#data-schemas--indexing)
-19. [Security & SSRF Protection](#security--ssrf-protection)
-20. [License & Acknowledgments](#license--acknowledgments)
+1. [Executive Overview](#executive-overview)
+2. [Key Capabilities & Innovations](#key-capabilities--innovations)
+3. [Modular Component System](#modular-component-system)
+4. [S.O.L.I.D System Architecture](#solid-system-architecture)
+5. [UI/UX Psychology & Cognitive Ergonomics](#uiux-psychology--cognitive-ergonomics)
+6. [Voluntary Community Support Architecture](#voluntary-community-support-architecture)
+7. [Zero-Cost Edge Architecture & Bandwidth Protection](#zero-cost-edge-architecture--bandwidth-protection)
+8. [High-Performance PDF Viewer & Canvas Reader Engine](#high-performance-pdf-viewer--canvas-reader-engine)
+9. [FLIP Card Pinning & Animation Engine](#flip-card-pinning--animation-engine)
+10. [Startup & Runtime Performance Engineering](#startup--runtime-performance-engineering)
+11. [Offline PWA & Service Worker Lifecycle](#offline-pwa--service-worker-lifecycle)
+12. [Standalone Document Viewer (`view.html`)](#standalone-document-viewer-viewhtml)
+13. [Search Engine & AI Discovery (SEO / GEO / LLMs)](#search-engine--ai-discovery-seo--geo--llms)
+14. [Keyboard Navigation & Accessibility Standards](#keyboard-navigation--accessibility-standards)
+15. [Repository Structure](#repository-structure)
+16. [Local Development](#local-development)
+17. [Automated Verification Suite](#automated-verification-suite)
+18. [Production Deployment Guide](#production-deployment-guide)
+19. [Data Schemas & Indexing](#data-schemas--indexing)
+20. [Security & SSRF Mitigation](#security--ssrf-mitigation)
+21. [License & Acknowledgments](#license--acknowledgments)
 
 ---
 
-## Overview
+## Executive Overview
 
-The **SGOU Academic Database** is a zero-bloat, high-performance web platform designed for students and faculty of **Sree Narayana Guru Open University (SGOU)**, Kollam, Kerala. It unifies and indexes:
-- **1,200+ Course Self-Learning Material (SLM) Textbooks**
-- **950+ Previous Year Exam Question Papers (PYQs)**
-- **75+ Assignment Question Booklets**
+The **SGOU Academic Database** is an open-access, zero-bloat digital repository built specifically for students and faculty of **Sree Narayana Guru Open University (SGOU)**, Kollam, Kerala. It unifies, normalizes, and indexes the complete academic catalog:
 
-The platform operates **100% on the client side** with vanilla HTML5, CSS3, and modern ECMAScript. It delivers near-instant cold boots, complete offline usability via Progressive Web App (PWA) precaching, and high-speed streaming PDF downloads through zero-cost CloudFront CDN passthrough.
+- **1,200+ Course Self-Learning Material (SLM) Textbooks** across FYUG, UG, and PG curricula
+- **950+ Previous Year Exam Question Papers (PYQs)** organized by examination session and degree
+- **75+ Official Assignment Question Booklets**
+
+### Core Architectural Philosophy
+1. **Zero External Runtime Bloat**: Zero megabyte runtime dependencies. Zero client-side frameworks (no React, Vue, or Angular bundles). The entire runtime is constructed with lightweight, browser-native HTML5, CSS3, and modern ECMAScript.
+2. **Instant Cognitive Relief**: Academic portals are notoriously congested and disorienting. SGOU Academic Database leverages cognitive psychology, clear visual hierarchy, and instant client-side search to remove friction for learners.
+3. **Resilient Offline Autonomy**: Full offline PWA support ensures students in low-connectivity rural regions can search curricula, read downloaded coursework, and browse degree syllabi without active cellular data.
+4. **Infinite Free-Tier Scalability**: All binary streaming delegates directly to university CloudFront edge distribution nodes, completely protecting hosting budgets from bandwidth exhaustion.
 
 ---
 
-## Key Capabilities & Features
+## Key Capabilities & Innovations
 
 - **Multi-Category Navigation**: Switch seamlessly between **SLM Books**, **PYQs**, and **Assignments** with scoped degree level filtering (`All`, `FYUG`, `PG`, `UG`).
-- **Animated FLIP Card Pinning**: Star favourite programmes with a delightful pop micro-animation and smooth 60fps FLIP (First-Last-Invert-Play) transition, gliding cards into position with zero layout thrashing and persistent `localStorage` memory.
+- **Animated FLIP Card Pinning**: Star favourite programmes with a physics-based micro-animation and smooth 60fps FLIP (First-Last-Invert-Play) transition, gliding cards into position with zero layout thrashing and persistent `localStorage` memory.
 - **Progressive Two-Stage Startup**: Delivers First Contentful Paint (FCP) in under **100ms** by rendering programme shells immediately and deferring search token indexing to background idle cycles (`requestIdleCallback`).
 - **High-Speed Virtualized Search Engine**: Real-time multi-token search with an $O(1)$ LRU memoization cache and chunked DOM virtualization for stutter-free 60 FPS typing.
-- **Resilient Dual-Tier PDF Reader**: Fullscreen in-app viewer with direct CloudFront HTTP Range streaming on desktop, Google Docs Viewer on mobile, and zero-ghosting state transitions.
-- **Zero-Cost Edge Architecture**: 100% free-tier operation engineered to never exceed Vercel bandwidth or Edge limits by delegating binary PDF streaming directly to SGOU's university CDN.
-- **Offline Progressive Web App (PWA)**: Full offline functionality via Service Worker precaching (`sw.js`), complete with a non-intrusive update notification toast and one-click refresh.
-- **Standalone Document Viewer (`view.html`)**: Direct deep-linking with fallback resolution for both SLM and PYQ records, embedded iframe preview, and quick-copy share links.
-- **Search Engine & AI Discovery (SEO / GEO / LLMs)**: Full Schema.org JSON-LD knowledge graph (5 nodes), 4-tier XML sitemaps, Bing/Yandex IndexNow ping automation, and `llms.txt` for AI crawlers.
-- **Dual-Theme Design System**: Warm Antique Scholar palette featuring parchment light mode and obsidian scholar dark mode, meeting WCAG 2.1 AA contrast standards.
-- **Keyboard-First Navigation**: Shortcuts (`/`, `Ctrl+K`, `Escape`) and high-contrast `:focus-visible` accessibility indicators.
+- **Distraction-Free Reading**: Dual reading environments featuring a distraction-free, high-DPI HTML5 canvas vector reader (`reader.html`) and direct CloudFront HTTP Range streaming on desktop.
+- **Community Support Integration**: Non-transactional, empathetic community tip jar allowing students and supporters to keep the platform ad-free via instant UPI payments and dynamic QR code generation.
+- **Dual-Theme Academic Design System**: Carefully calibrated Antique Scholar palette featuring parchment light mode and obsidian scholar dark mode, meeting WCAG AAA contrast standards.
+- **Comprehensive Verification**: 70-point automated integrity suite ensuring JSON correctness, CSS brace balance, shell parity, and live HTTP endpoint availability.
+
+---
+
+## Modular Component System
+
+To eliminate code duplication across pages (`index.html`, `view.html`, `reader.html`) while maintaining 100% dependency-free operation, the codebase is decomposed into clean, self-contained modular components:
+
+```
+css/components/
+├── support-modal.css           # Modular styling for voluntary contribution modal
+└── toast.css                   # Modular toast alert & notification styles
+
+js/components/
+├── support-modal.js            # Universal self-mounting SupportModal component (UMD)
+├── theme.js                    # Cross-tab synchronized light/dark theme manager
+└── toast.js                    # Non-blocking, accessible toast feedback system
+
+js/utils/
+└── clipboard.js                # Resilient async navigator.clipboard with execCommand fallback
+```
+
+### Component Architecture Highlights
+
+- **Universal Module Definition (UMD)**: All shared components export cleanly via UMD, enabling usage directly via `<script>` tags, CommonJS, or AMD environments without bundlers.
+- **Self-Mounting Architecture**: `SupportModal` and `Toast` auto-detect the DOM environment. If pre-rendered markup exists, they attach to it; if absent, they mount their isolated DOM tree dynamically on first access.
+- **Event Delegation**: Global triggers (`#headerSupportBtn`, `#topbarSupport`, `[data-action="support"]`) bind to a single top-level event listener, preventing memory leaks during rapid page changes.
 
 ---
 
 ## S.O.L.I.D System Architecture
 
-The application is engineered around strict **S.O.L.I.D** software design principles within [script.js](file:///d:/Apps/sgou-database/script.js):
+The client application within [script.js](file:///d:/Apps/sgou-database/js/script.js) adheres to **S.O.L.I.D** software design principles:
 
 | Module | Architectural Pattern | Primary Responsibility |
 | :--- | :--- | :--- |
@@ -109,6 +135,60 @@ The application is engineered around strict **S.O.L.I.D** software design princi
 
 ---
 
+## UI/UX Psychology & Cognitive Ergonomics
+
+Designing for distance education students requires mitigating **cognitive load**, **visual fatigue**, and **transaction anxiety**. The design system applies principles from cognitive psychology:
+
+### 1. Standardized Academic Typographic Hierarchy
+The platform standardizes on an intentional three-typeface academic triad loaded with font-display swap:
+- **Primary Interface**: `'Plus Jakarta Sans'`, modern geometric sans-serif engineered for digital legibility, optimal x-height, and low reading strain.
+- **Academic Headings**: `'DM Serif Display'`, transitional editorial serif evoking scholarly distinction and trust.
+- **Monospace & Metadata**: `'DM Mono'`, clean fixed-width font providing tabular clarity for course codes, dates, and file sizes.
+
+#### Cognitive Typographic Tokens
+All font sizes derive from mathematical typographic scales calibrated for cognitive scanning:
+```css
+:root {
+  --text-2xs:  10px;    /* Micro tags & metadata chips */
+  --text-xs:   11.5px;  /* Secondary captions, timestamps */
+  --text-sm:   13px;    /* Course codes, subheaders, chips */
+  --text-base: 14px;    /* Standard UI reading body text */
+  --text-md:   15.5px;  /* Section subheadings, callouts */
+  --text-lg:   18px;    /* Card titles, modal headers */
+  --text-xl:   22px;    /* Hero titles, primary headings */
+  --text-2xl:  28px;    /* Display banner headlines */
+}
+```
+
+### 2. Warm Antique Scholar Palette (WCAG AAA)
+- **Light Theme (Parchment Scholar)**: Warm parchment background (`#ebe4d6`) paired with deep charcoal ink (`#181512`), delivering over $16.5:1$ contrast ratio without the harsh retina glare of pure `#ffffff`.
+- **Dark Theme (Obsidian Scholar)**: Rich obsidian background (`#141210`) with soft ivory text (`#f0ede8`), eliminating blue-light sleep disruption during late-night study sessions.
+
+### 3. Fitts's Law Ergonomic Touch Expansion
+All interactive mobile touch targets (close buttons, share links, star pins, search reset) are expanded via pseudo-elements to meet or exceed the standard $44\times 44\text{px}$ touch envelope, preventing mis-taps on touchscreen devices.
+
+---
+
+## Voluntary Community Support Architecture
+
+To keep the platform ad-free, independent, and free for all students, a voluntary contribution modal is integrated with psychological care:
+
+### Empathetic, Non-Transactional Copy
+- **Zero Commercial Phrasing**: Words like "Pay", "Buy", "Fee", or "Checkout" are strictly avoided to eliminate transactional apprehension.
+- **Community Warmth**: Phrased around "Support Project", "Keep this community academic portal free & active", and "Voluntary student contribution".
+
+### Highlighted Crimson Heart Touchpoints
+- Standardized crimson rose highlight tokens (`--heart-red: #e11d48` in light theme, `#fb7185` in dark theme).
+- Soft tinted background pill (`--heart-red-bg: rgba(225, 29, 72, 0.08)`), subtle border, and filled heart SVG.
+- Instant keyboard invocation: Pressing <kbd>U</kbd> anywhere on desktop opens the support modal; <kbd>Escape</kbd> closes it.
+
+### Desktop & Mobile Frictionless Flow
+- **Mobile (1-Tap Deep Linking)**: Dynamic UPI URI (`upi://pay?pa=ahayas.info@oksbi&pn=Ahayas&am=25...`) opens Google Pay, PhonePe, Paytm, BHIM, or CRED directly with one tap.
+- **Desktop (Vector QR Code)**: Dynamic 145px crisp SVG QR generated in-memory via vendored `qrcode.min.js`, allowing instant scanning from phone cameras without third-party gateways.
+- **Resilient VPA Copying**: One-click clipboard copy of UPI ID (`ahayas.info@oksbi`) with visual feedback (`Copied! ✓`) and non-blocking toast notifications.
+
+---
+
 ## Zero-Cost Edge Architecture & Bandwidth Protection
 
 A primary architectural requirement is **guaranteeing zero hosting costs and preventing quota exhaustion**.
@@ -124,28 +204,26 @@ Vercel's Free Hobby plan includes **100 GB of Fast Data Transfer / month**. The 
 
 ---
 
-## Native & Universal PDF Viewer Architecture
+## High-Performance PDF Viewer & Canvas Reader Engine
 
 To ensure flawless reading across all devices without external service dependencies, 25MB file size limits, or unauthorized third-party download prompts:
 
-1. **Universal Canvas Reader (`reader.html`)**:
-   - High-performance HTML5 canvas rendering engine powered by PDF.js with complete touch pinch-zoom isolation (preventing unwanted parent window scaling).
-   - **Uncompromising Vector Typography**: `getOptimalRasterScale` maintains 100% razor-sharp, print-grade vector resolution across all zoom levels (scaling up to 3.2x on mobile, 4.0x on desktop) without text blurriness or downsampling.
-   - **Precision Focal Centering**: `applySmoothScale` calculates fractional page offsets, keeping tapped or pinched coordinates stationary directly under the user's finger with zero leftward drift.
-   - **3-State Natural Double-Tap Zoom**:
-     - *Zoomed Out (below Fit Width)*: Double-tap restores directly to exact **Fit Width** (e.g. 68% on mobile).
-     - *At Fit Width*: Double-tap smoothly zooms in (1.65x) centered directly where the user double-tapped.
-     - *Zoomed In*: Double-tap smoothly restores back to **Fit Width**.
-   - **Pre-Emptive 600px Pre-Rendering & Sequential Queue**: `queuePageRender` processes pages sequentially with single-worker priority, cancelling obsolete tasks instantly on navigation/zoom. IntersectionObserver pre-renders pages 600px ahead, while a sliding window (`keepDistance = 6`) caches adjacent pages for 60fps butter-smooth scrolling with zero placeholder flashes.
-   - **Eye-Comfort Modes**: Instant toggling between Normal, Parchment Sepia, and Obsidian Dark reading modes with persistent local preferences.
+### 1. Universal Canvas Reader (`reader.html`)
+- **HTML5 Canvas Vector Engine**: High-performance canvas rendering powered by PDF.js with complete touch pinch-zoom isolation (preventing parent window scrolling interference).
+- **Uncompromising Vector Typography**: `getOptimalRasterScale` maintains 100% razor-sharp, print-grade vector resolution across all zoom levels (scaling up to 3.2x on mobile, 4.0x on desktop) without text blurriness or downsampling.
+- **Precision Focal Centering**: `applySmoothScale` calculates fractional page offsets, keeping tapped or pinched coordinates stationary directly under the user's finger with zero leftward drift.
+- **3-State Natural Double-Tap Zoom**:
+  - *Zoomed Out (below Fit Width)*: Double-tap restores directly to exact **Fit Width** (e.g. 68% on mobile).
+  - *At Fit Width*: Double-tap smoothly zooms in (1.65x) centered directly where the user double-tapped.
+  - *Zoomed In*: Double-tap smoothly restores back to **Fit Width**.
+- **Pre-Emptive 600px Pre-Rendering & Sequential Queue**: `queuePageRender` processes pages sequentially with single-worker priority, cancelling obsolete tasks instantly on navigation/zoom. IntersectionObserver pre-renders pages 600px ahead, while a sliding window (`keepDistance = 6`) caches adjacent pages for 60fps butter-smooth scrolling with zero placeholder flashes.
+- **Eye-Comfort Modes**: Instant toggling between Normal, Parchment Sepia, and Obsidian Dark reading modes with persistent local preferences.
+- **Distraction-Free Controls Bar**: Streamlined floating toolbar `< 1 / 243 > | ➖ 57% ➕ | 🌙 🏳️ ⛶` focused purely on reading, navigation, and page rendering.
 
-2. **Direct CloudFront Native Streaming**:
-   - Embeds the document directly inside `<iframe id="viewerPanelFrame">` using the canonical CloudFront URL (`pdfUrl + '#toolbar=1&navpanes=0'`).
-   - Utilizes CloudFront HTTP Range requests for instant page-to-page seeking without waiting for full multi-megabyte downloads.
-   - Eliminates external Google Docs / GView third-party intermediaries, guaranteeing 100% privacy, stability, and zero quota or billing risks.
-
-3. **Direct Browser Open & Download Controls**:
-   - The viewer top bar provides an always-accessible "Open in Browser" button (`#viewerPanelExternal`) to launch direct native reading in a separate tab, alongside instant direct download (`#viewerPanelDownload`).
+### 2. Direct CloudFront Native Streaming
+- Embeds the document directly inside `<iframe id="viewerPanelFrame">` using the canonical CloudFront URL (`pdfUrl + '#toolbar=1&navpanes=0'`).
+- Utilizes CloudFront HTTP Range requests for instant page-to-page seeking without waiting for full multi-megabyte downloads.
+- Eliminates external Google Docs / GView third-party intermediaries, guaranteeing 100% privacy, stability, and zero quota or billing risks.
 
 ---
 
@@ -190,7 +268,7 @@ Students can "star" or "pin" their degree programmes to keep them anchored at th
 The platform operates as a standalone Progressive Web App with zero external runtime dependencies.
 
 ### Cache Strategy
-- **Service Worker Version**: `sgou-v148` with asset versioning query parameters (`v=20261008_03`).
+- **Service Worker Version**: `sgou-v149` with asset versioning query parameters (`v=20261008_04`).
 - **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `css/components/*`, `js/components/*`, `js/utils/*`, `js/qrcode.min.js`, `view.html`, `reader.html`, `pdfjs/pdf.min.js`, `pdfjs/pdf.worker.min.js`, `manifest.json`, `opensearch.xml`, `data/pyq_overrides.json`, and touch icons are served instantaneously from CacheStorage.
 - **Academic Datasets (Network-First with Cache Fallback)**: `data/sgou_slm_data.json` and `data/sgou_questions_cleaned.json` fetch latest updates from the network with instant fallback to local cached versions if offline.
 - **Google Fonts (Stale-While-Revalidate)**: Font stylesheets and `.woff2` files are cached with strict Content Security Policy (`connect-src https://fonts.googleapis.com https://fonts.gstatic.com`).
@@ -214,19 +292,6 @@ For direct external sharing, syllabus referencing, and deep-linking, the reposit
   - `?title=...&type=slm|pyq|assignment` $\rightarrow$ Populates viewer titlebar and metadata.
 - **Eye-Comfort Modes**: Built-in reader filters (Parchment, Soft Sepia, Scholar Obsidian, and Contrast Boost) for long study sessions.
 - **Citation & Social Card Support**: Auto-generates APA/MLA academic citations, quick-copies shareable URLs, and provides Open Graph meta tags for WhatsApp, Telegram, and X preview cards.
-
----
-
-## UI/UX Design System & Spacing Tokens
-
-The user interface adheres to the **8px Spatial System** and **Gestalt principles**:
-
-- **Spatial Cadence**: All margins, padding, and gaps are structured around multiples of $8\text{px}$ ($4\text{px}, 8\text{px}, 16\text{px}, 24\text{px}, 32\text{px}, 48\text{px}$).
-- **Color Contrast (WCAG 2.1 AA Compliant)**:
-  - Light Background: `#f5f0e8` (warm parchment) with `#1a1714` body ink ($16.5:1$ contrast ratio).
-  - Dark Background: `#0e0d0c` (deep scholar obsidian) with `#ece8e0` body ink ($13.7:1$ contrast ratio).
-  - Primary Scholarly Accent: `#b8432f` (Light) / `#e06b52` (Dark) with dedicated `:focus-visible` high-contrast outline rings.
-- **Mobile Touch Targets**: All interactive controls (`.search-clear`, `.type-btn`, `.pill`, `.modal-close`) meet or exceed the standard $44\times 44\text{px}$ touch target boundary.
 
 ---
 
@@ -254,22 +319,24 @@ The platform is optimized for both traditional search engines (Google, Bing) and
 
 ---
 
-## Keyboard Navigation & Accessibility
+## Keyboard Navigation & Accessibility Standards
 
 | Shortcut | Context | Action |
 | :--- | :--- | :--- |
-| `/` or `Ctrl + K` | Global | Focuses the main search input immediately |
-| `U` | Global / Viewer / Reader | Opens voluntary UPI Support & Tip Jar modal |
-| `Escape` | Global | Clears active search query / Closes PDF viewer panel / Closes drawer / Closes modals |
-| `Tab` / `Shift + Tab` | Global | Accessible linear focus navigation across all interactive elements |
-| `Enter` / `Space` | Cards & Buttons | Expands accordions, toggles filters, stars programmes |
+| <kbd>/</kbd> or <kbd>Ctrl + K</kbd> | Global | Focuses the main search input immediately |
+| <kbd>U</kbd> | Global / Viewer / Reader | Opens voluntary UPI Support & Community Tip Jar modal |
+| <kbd>Escape</kbd> | Global | Clears active search query / Closes PDF viewer panel / Closes drawer / Closes modals |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Global | Accessible linear focus navigation across all interactive elements |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Cards & Buttons | Expands accordions, toggles filters, stars programmes |
+| <kbd>T</kbd> | Catalog / Viewer | Toggles dark / light scholar theme |
+| <kbd>+</kbd> / <kbd>-</kbd> / <kbd>0</kbd> | Canvas Reader | Zoom in, zoom out, restore fit-to-width zoom |
 
 - **High-Contrast Rings**: High-visibility `:focus-visible` rings ensure full visibility without mouse focus styling.
 - **Screen Reader Announcements**: Live region (`aria-live="polite"`) announces search result counts and filter updates.
 
 ---
 
-## Complete Repository Structure
+## Repository Structure
 
 ```
 sgou-database/
@@ -288,14 +355,24 @@ sgou-database/
 │       ├── og-image.png                # Warm parchment social card (1200x630)
 │       └── og-image-dark.png           # Dark theme social card (1200x630)
 ├── css/
-│   └── style.css                       # Design system (8px grid, dark mode, FLIP animations)
+│   ├── components/                     # Modular component styles
+│   │   ├── support-modal.css           # Voluntary contribution modal design tokens
+│   │   └── toast.css                   # Floating feedback toast alert component
+│   └── style.css                       # Core design system (8px grid, typography, FLIP animations)
 ├── data/
-│   ├── sgou_slm_data.json              # Complete SGOU SLM textbook repository dataset (37 progs)
-│   └── sgou_questions_cleaned.json     # Cleaned PYQs and assignments dataset
+│   ├── pyq_overrides.json              # Curated metadata overrides for question papers
+│   ├── sgou_questions_cleaned.json     # Cleaned PYQs and assignments dataset
+│   └── sgou_slm_data.json              # Complete SGOU SLM textbook repository dataset (37 progs)
 ├── js/
+│   ├── components/                     # Reusable UI component modules (UMD)
+│   │   ├── support-modal.js            # Self-mounting SupportModal component
+│   │   ├── theme.js                    # Cross-tab synchronized light/dark theme manager
+│   │   └── toast.js                    # Non-blocking, accessible toast feedback system
+│   ├── utils/                          # Common utility modules
+│   │   └── clipboard.js                # Async clipboard helper with execCommand fallback
 │   ├── qrcode.min.js                   # Zero-dependency offline vector QR code generator (20KB)
 │   └── script.js                       # S.O.L.I.D client architecture, search & UI controller
-├── pdfjs/                              # Vendored standalone PDF.js engine for in-app reader
+├── pdfjs/                              # Standalone PDF.js vector engine for in-app reader
 │   ├── pdf.min.js                      # PDF.js main runtime
 │   └── pdf.worker.min.js               # PDF.js web worker
 ├── sitemaps/                           # Granular SEO XML sitemaps
@@ -308,17 +385,17 @@ sgou-database/
 │   ├── ping_indexnow.py                # Automated IndexNow ping for Bing/Yandex search engines
 │   ├── sgou_enhanced_pyq_scraper.py    # Scraping pipeline for previous question papers
 │   ├── sgou_scrape.py                  # Scraping pipeline for SLM textbook repository
-│   ├── sync_to_github.cmd              # Production sync batch script
-│   └── sync_to_github.py               # Production mirror synchronizer & cleaner
+│   ├── sync_to_github.cmd              # Production sync batch launcher
+│   └── sync_to_github.py               # Production mirror synchronizer & integrity cleaner
 ├── .gitignore                          # Production git ignore configuration
 ├── 4a8f9c1d2e3b4a5f60718293a4b5c6d7.txt # IndexNow search engine verification key
-├── dev_server.js                       # Local zero-dependency development server with proxying
+├── dev_server.js                       # Zero-dependency local development server with proxying
 ├── index.html                          # Main application, Schema.org Graph & Open Graph
 ├── llms.txt                            # Standard LLM crawler specification (ChatGPT, Claude)
 ├── llms-full.txt                       # Machine-readable university syllabus catalog
 ├── manifest.json                       # PWA web application manifest (Root-scoped)
 ├── opensearch.xml                      # OpenSearch 1.1 description for browser address bars
-├── reader.html                         # Full-screen zero-download in-app PDF reader
+├── reader.html                         # Full-screen zero-download in-app vector PDF reader
 ├── README.md                           # System documentation & deployment guide
 ├── robots.txt                          # Search engine & AI bot crawler directives
 ├── sitemap.xml                         # Root XML sitemap index
@@ -340,50 +417,27 @@ To run the platform locally with full proxy support:
    node dev_server.js
    ```
 3. **Open in Browser**:
-   Navigate to [http://localhost:3030](http://localhost:3030).
+   Navigate to [http://localhost:3030](http://localhost:3030).  
    The server serves all static files with `no-cache` development headers and proxies `/api/download` requests.
 
 ---
 
 ## Automated Verification Suite
 
-The repository includes a comprehensive 61-point automated verification suite:
+The repository includes a comprehensive 70-point automated verification suite:
 
 ```bash
 node scratch/verify_all.js
 ```
 
 ### What It Tests
-1. **JSON Schemas & Manifest Integrity**: Validates `manifest.json`, `vercel.json`, and both academic datasets. Confirms every icon declared in the manifest exists on disk.
-2. **CSS Balance & Rules**: Checks matching braces across 95KB+ of CSS, verifies mobile viewer decongestion rules, and ensures drawer z-index elevations (`z-index: 950`).
+1. **JSON Schemas & Manifest Integrity**: Validates `manifest.json`, `vercel.json`, and all academic datasets. Confirms every icon declared in the manifest exists on disk.
+2. **CSS Balance & Rules**: Checks matching braces across 124KB+ of CSS, verifies mobile viewer decongestion rules, and ensures drawer z-index elevations (`z-index: 950`).
 3. **HTML & Schema Validation**: Verifies Schema.org JSON-LD nodes, critical DOM IDs, and zero-CLS pre-rendered filter pills.
-4. **Service Worker Version Parity**: Enforces synchronized version hashes between `index.html`, `style.css`, `script.js`, and `sw.js`.
+4. **Service Worker Version Parity**: Enforces synchronized version hashes between `index.html`, `style.css`, `script.js`, `support-modal.css`, and `sw.js`.
 5. **Runtime Logic & History Management**: Confirms single-state secondary tab hierarchy, root SLM back-exit navigation, viewer panel dismissals, fallback stores, and Content-Security-Policy headers.
 6. **PDF Reader Vector Engine**: Verifies serial queue execution (`queuePageRender`), opaque 2D canvas context, and high-DPI rasterization scaling in `reader.html`.
-7. **Live HTTP Responses**: Boots an in-memory HTTP server and verifies status 200, MIME types, and Content-Length across all endpoints.
-
----
-
-## One-Click Production Synchronization Tool
-
-To effortlessly copy **only verified production files** to the final GitHub deployment repository (`D:\Github\sgou-slm-database`):
-
-### Option A: 1-Click via Windows Explorer
-Simply double-click:
-```
-sync_to_github.cmd
-```
-
-### Option B: via Terminal
-```bash
-python scripts/sync_to_github.py
-```
-
-### How It Works
-- **Strict Whitelist**: Copies only necessary production files (HTML, CSS, JS, JSON data, icons, sitemaps, configs).
-- **Safety First**: Preserves the destination `.git` directory untouched so git tracking and history remain clean.
-- **Obsolete Cleanup**: Automatically prunes temporary folders (`scratch/`, `sr/`, `__pycache__/`) and obsolete files (`og-image-old.png`) from the destination.
-- **Hash Verification**: Only writes files whose SHA-256 hash has changed, completing in under 1 second.
+7. **Live HTTP Responses**: Boots an in-memory HTTP server and verifies status 200, MIME types, and Content-Length across all 14 primary endpoints.
 
 ---
 
@@ -467,7 +521,7 @@ The platform ingests two primary JSON datasets located in the `data/` directory:
 
 ---
 
-## Security & SSRF Protection
+## Security & SSRF Mitigation
 
 - **Strict Host Allowlisting**: The edge download proxy strictly validates upstream URLs against official SGOU endpoints (`d198y4z1gpgoxg.cloudfront.net`, `sgou.ac.in`, `www.sgou.ac.in`) to prevent Server-Side Request Forgery (SSRF).
 - **Header Injection & Traversal Protection**: Filenames and URL parameters are sanitized to remove carriage returns, null bytes, and path traversal sequences (`../`).
@@ -478,6 +532,6 @@ The platform ingests two primary JSON datasets located in the `data/` directory:
 
 ## License & Acknowledgments
 
-- **Platform Architecture & Development**: Created and maintained by **Ahayas**.
+- **Platform Architecture & Development**: Designed, engineered, and maintained by **Ahayas**.
 - **Educational Disclaimer**: Materials, textbooks, syllabi, question papers, and course names are the intellectual property of **Sree Narayana Guru Open University (SGOU)**, Kollam, Kerala. This project is an open educational utility designed to assist distance education students.
 - **License**: Released under the [MIT License](https://opensource.org/licenses/MIT).

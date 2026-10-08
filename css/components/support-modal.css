@@ -87,18 +87,27 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: rgba(184, 67, 47, 0.1);
-  color: var(--accent, #b8432f);
+  background: var(--heart-red-bg, rgba(225, 29, 72, 0.09));
+  border: 1px solid var(--heart-red-border, rgba(225, 29, 72, 0.22));
+  color: var(--heart-red, #e11d48);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform .2s ease;
+  transition: transform .2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px var(--heart-red-glow, rgba(225, 29, 72, 0.12));
+}
+
+.support-heart-badge svg {
+  fill: currentColor;
+  stroke: none;
 }
 
 [data-theme="dark"] .support-heart-badge {
-  background: rgba(224, 107, 82, 0.14);
-  color: var(--accent, #e06b52);
+  background: var(--heart-red-bg, rgba(251, 113, 133, 0.14));
+  border-color: var(--heart-red-border, rgba(251, 113, 133, 0.28));
+  color: var(--heart-red, #fb7185);
+  box-shadow: 0 2px 10px rgba(251, 113, 133, 0.18);
 }
 
 .support-title {

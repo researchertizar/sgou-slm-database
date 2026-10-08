@@ -3,16 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com;">
   <title>Academic Reader — SGOU</title>
-  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261008_03">
-  <link rel="stylesheet" href="./css/components/toast.css?v=20261008_03">
+  <!-- Typography & Modular CSS Components -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261008_04">
+  <link rel="stylesheet" href="./css/components/toast.css?v=20261008_04">
   <style>
     /* ============================================================
        THEME SYSTEM — Synchronized with SGOU Academic Design Tokens
        ============================================================ */
     :root, html[data-theme="light"] {
       color-scheme: light;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-serif: 'DM Serif Display', Georgia, serif;
+      --font-mono: 'DM Mono', monospace;
+      --heart-red: #e11d48;
+      --heart-red-hover: #be123c;
+      --heart-red-bg: rgba(225, 29, 72, 0.08);
+      --heart-red-border: rgba(225, 29, 72, 0.22);
+      --heart-red-hover-bg: rgba(225, 29, 72, 0.15);
+      --heart-red-glow: rgba(225, 29, 72, 0.16);
+      /* Standardized Typographic Scale Tokens (Cognitive Ease & Psychology) */
+      --text-2xs: 10px;
+      --text-xs: 11.5px;
+      --text-sm: 13px;
+      --text-base: 14px;
+      --text-md: 15.5px;
+      --text-lg: 18px;
+      --text-xl: 22px;
+      --text-2xl: 28px;
       --bg: #ebe4d6;
       --surface: #ffffff;
       --surface-subtle: #f5f0e8;
@@ -32,6 +54,12 @@
 
     html[data-theme="dark"] {
       color-scheme: dark;
+      --heart-red: #fb7185;
+      --heart-red-hover: #fda4af;
+      --heart-red-bg: rgba(251, 113, 133, 0.12);
+      --heart-red-border: rgba(251, 113, 133, 0.28);
+      --heart-red-hover-bg: rgba(251, 113, 133, 0.2);
+      --heart-red-glow: rgba(251, 113, 133, 0.22);
       --bg: #141210;
       --surface: #1e1b18;
       --surface-subtle: #24221f;
@@ -56,7 +84,7 @@
       overflow: hidden;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      font-family: var(--font-sans);
       transition: background 0.2s ease, color 0.2s ease;
       -webkit-font-smoothing: antialiased;
       touch-action: none;
@@ -967,13 +995,6 @@
         </svg>
       </button>
 
-      <!-- Voluntary Support / Tip Jar Button -->
-      <button type="button" class="bar-btn" id="readerSupportBtn" title="Support SGOU Database (U)" aria-label="Support SGOU Database">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-        </svg>
-      </button>
-
       <!-- Dynamic Fullscreen Button (Toggles between Enter and Exit based on event) -->
       <button type="button" class="bar-btn" id="fullscreenBtn" title="Enter fullscreen (F)" aria-label="Enter fullscreen">
         <svg id="fullscreenIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1097,7 +1118,7 @@
         <div class="support-modal-header">
           <div class="support-header-left">
             <div class="support-heart-badge" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
             </div>
@@ -1207,11 +1228,11 @@
   </div>
 
   <script src="./pdfjs/pdf.min.js"></script>
-  <script src="./js/utils/clipboard.js?v=20261008_03"></script>
-  <script src="./js/components/toast.js?v=20261008_03"></script>
-  <script src="./js/components/theme.js?v=20261008_03"></script>
-  <script src="./js/qrcode.min.js?v=20261008_03"></script>
-  <script src="./js/components/support-modal.js?v=20261008_03"></script>
+  <script src="./js/utils/clipboard.js?v=20261008_04"></script>
+  <script src="./js/components/toast.js?v=20261008_04"></script>
+  <script src="./js/components/theme.js?v=20261008_04"></script>
+  <script src="./js/qrcode.min.js?v=20261008_04"></script>
+  <script src="./js/components/support-modal.js?v=20261008_04"></script>
   <script>
     (function () {
       'use strict';
@@ -2537,10 +2558,10 @@
 
       // Keyboard navigation
       window.addEventListener('keydown', function (e) {
-        if (supportModal && supportModal.classList.contains('active')) {
+        if (window.SupportModal && typeof window.SupportModal.isOpen === 'function' && window.SupportModal.isOpen()) {
           if (e.key === 'Escape') {
             e.preventDefault();
-            closeSupportModal();
+            window.SupportModal.close();
             return;
           }
           return;
@@ -2590,10 +2611,12 @@
           openReaderReport();
         } else if (key === 'u') {
           e.preventDefault();
-          if (supportModal && supportModal.classList.contains('active')) {
-            closeSupportModal();
-          } else {
-            openSupportModal(25);
+          if (window.SupportModal) {
+            if (typeof window.SupportModal.isOpen === 'function' && window.SupportModal.isOpen()) {
+              window.SupportModal.close();
+            } else {
+              window.SupportModal.open(25);
+            }
           }
         } else if (key === 't' || key === 'e') {
           e.preventDefault();
