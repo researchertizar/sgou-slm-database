@@ -69,13 +69,13 @@
           '<div class="support-modal-header">' +
             '<div class="support-header-left">' +
               '<div class="support-heart-badge" aria-hidden="true">' +
-                '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                   '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' +
                 '</svg>' +
               '</div>' +
               '<div>' +
-                '<h3 id="supportModalTitle" class="support-title">Support SGOU Database</h3>' +
-                '<p class="support-subtitle">Keep this community academic portal free &amp; active</p>' +
+                '<h3 id="supportModalTitle" class="support-title">Support Project</h3>' +
+                '<p class="support-subtitle">Voluntary student contribution</p>' +
               '</div>' +
             '</div>' +
             '<button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">' +
@@ -89,6 +89,14 @@
           '<div class="support-modal-body">' +
             '<!-- High-Trust Platform Message -->' +
             '<div class="support-intro-card">' +
+              '<div class="support-intro-icon" aria-hidden="true">' +
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>' +
+                  '<rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>' +
+                  '<line x1="6" y1="6" x2="6.01" y2="6"></line>' +
+                  '<line x1="6" y1="18" x2="6.01" y2="18"></line>' +
+                '</svg>' +
+              '</div>' +
               '<p class="support-intro-text">' +
                 'This platform is maintained by <strong>' + CONFIG.payee + '</strong> as a free service for all SGOU students. Your voluntary contributions directly fund server hosting, domain renewals, and syllabus updates.' +
               '</p>' +
@@ -98,23 +106,23 @@
             '<div class="support-section-label">Choose Contribution</div>' +
             '<div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">' +
               '<button type="button" class="amount-chip" data-amount="15">₹15</button>' +
-              '<button type="button" class="amount-chip active" data-amount="25">₹25 <span class="chip-popular-badge">Popular</span></button>' +
+              '<button type="button" class="amount-chip active" data-amount="25">₹25<span class="chip-star">★</span></button>' +
               '<button type="button" class="amount-chip" data-amount="50">₹50</button>' +
               '<button type="button" class="amount-chip" data-amount="100">₹100</button>' +
-              '<button type="button" class="amount-chip" data-amount="custom">Custom</button>' +
+              '<button type="button" class="amount-chip" data-amount="custom">Any</button>' +
             '</div>' +
 
             '<!-- Mobile 1-Tap Action Section (Primary on Mobile) -->' +
             '<div class="support-mobile-section">' +
               '<a href="' + SupportModal.buildUpiUri(CONFIG.defaultAmount) + '" ' +
                  'id="supportDirectPayBtn" class="support-pay-primary-btn" target="_blank" rel="noopener">' +
-                '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-                  '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' +
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">' +
+                  '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>' +
                 '</svg>' +
                 '<span id="supportDirectPayBtnText">Support with ₹25 via UPI</span>' +
               '</a>' +
               '<div class="support-apps-hint">' +
-                '<span>Works with GPay, PhonePe, Paytm, BHIM &amp; all UPI apps</span>' +
+                '<span>Works with GPay, PhonePe, Paytm, BHIM</span>' +
               '</div>' +
               '<button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn">' +
                 '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -123,7 +131,7 @@
                   '<rect x="14" y="14" width="7" height="7"></rect>' +
                   '<rect x="3" y="14" width="7" height="7"></rect>' +
                 '</svg>' +
-                '<span id="supportToggleQrText">Show QR Code to Scan</span>' +
+                '<span id="supportToggleQrText">Show QR Code</span>' +
               '</button>' +
             '</div>' +
 
@@ -141,10 +149,9 @@
 
             '<!-- UPI ID Copy Section -->' +
             '<div class="support-vpa-box">' +
-              '<div class="support-vpa-details">' +
-                '<span class="support-vpa-label">UPI ID (VPA)</span>' +
+              '<div class="support-vpa-left">' +
+                '<span class="support-vpa-label">UPI ID</span>' +
                 '<code class="support-vpa-text" id="supportVpaText">' + CONFIG.vpa + '</code>' +
-                '<span class="support-payee-tag">Payee: ' + CONFIG.payee + '</span>' +
               '</div>' +
               '<button type="button" class="support-copy-btn" id="supportCopyVpaBtn" title="Copy UPI ID to clipboard">' +
                 '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -162,7 +169,7 @@
                 '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>' +
                 '<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' +
               '</svg>' +
-              'Direct voluntary contribution &middot; 0% fee' +
+              'Direct UPI &middot; 0% fee' +
             '</span>' +
             '<button type="button" class="support-done-btn" id="supportDoneBtn">Done</button>' +
           '</div>' +
@@ -182,6 +189,8 @@
         modal.setAttribute('aria-hidden', 'true');
         modal.innerHTML = SupportModal.getTemplate();
         document.body.appendChild(modal);
+      } else {
+        modal.innerHTML = SupportModal.getTemplate();
       }
       state.modalEl = modal;
       state.qrContainer = document.getElementById('supportQrContainer');
