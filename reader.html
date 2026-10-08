@@ -9,7 +9,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
+    function gtag() { (window.dataLayer = window.dataLayer || []).push(arguments); }
     gtag('js', new Date());
     gtag('config', 'G-E2N7NJNRQB', {
       send_page_view: true,
@@ -1359,7 +1359,10 @@
       var params = new URLSearchParams(window.location.search);
       var rawFile = params.get('file') || '';
       var docName = params.get('name') || 'Document';
+      var courseCode = params.get('code') || '';
+      var docType = params.get('type') || 'SLM';
 
+      var container = document.getElementById('viewerContainer');
       var loadingOverlay = document.getElementById('loadingOverlay');
       var loadingMsg = document.getElementById('loadingMsg');
       var errorBox = document.getElementById('errorBox');
@@ -1763,7 +1766,7 @@
 
       function getOptimalRasterScale(scale) {
         var dpr = window.devicePixelRatio || 1;
-        var isMobile = (window.innerWidth <= 768) || ('ontouchstart' in window) || (navigator.maxTouchPoints > 1);
+        var isMobile = (window.innerWidth <= 768) || ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1);
         // Guarantee 100% uncompromising, crystal-clear vector sharpness at any magnification.
         // Effective density scales with zoom level * DPR, up to a safe 3.2x ceiling on mobile (4.0x on desktop)
         // to prevent GPU memory crashes while maintaining print-grade typography even at high zoom.
@@ -2274,7 +2277,6 @@
       var readerMismatchReportBtn = document.getElementById('readerMismatchReportBtn');
       var readerMismatchDismissBtn = document.getElementById('readerMismatchDismissBtn');
       var reportCloseBtn = document.getElementById('readerReportCloseBtn');
-      var courseCode = params.get('code') || '';
       var isOverrideParam = params.get('override') === '1' || params.get('mismatch') === '1';
 
       function checkAndDisplayMismatch() {

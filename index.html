@@ -336,7 +336,7 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
+        function gtag() { (window.dataLayer = window.dataLayer || []).push(arguments); }
         gtag('js', new Date());
         gtag('config', 'G-E2N7NJNRQB', {
             send_page_view: true,
