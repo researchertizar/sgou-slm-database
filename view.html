@@ -107,7 +107,7 @@
     </script>
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20261007_09">
+    <link rel="manifest" href="/manifest.json?v=20261008_06">
     <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png?v=20260904_10">
@@ -119,8 +119,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261008_05">
-    <link rel="stylesheet" href="/css/components/toast.css?v=20261008_05">
+    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261008_06">
+    <link rel="stylesheet" href="/css/components/toast.css?v=20261008_06">
     <style>
         @view-transition {
             navigation: auto;
@@ -1916,11 +1916,11 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="/js/utils/clipboard.js?v=20261008_05"></script>
-    <script src="/js/components/toast.js?v=20261008_05"></script>
-    <script src="/js/components/theme.js?v=20261008_05"></script>
-    <script src="/js/qrcode.min.js?v=20261008_05"></script>
-    <script src="/js/components/support-modal.js?v=20261008_05"></script>
+    <script src="/js/utils/clipboard.js?v=20261008_06"></script>
+    <script src="/js/components/toast.js?v=20261008_06"></script>
+    <script src="/js/components/theme.js?v=20261008_06"></script>
+    <script src="/js/qrcode.min.js?v=20261008_06"></script>
+    <script src="/js/components/support-modal.js?v=20261008_06"></script>
     <script>
         (function () {
             var params = new URLSearchParams(window.location.search);
@@ -1963,7 +1963,13 @@
 
             if (toggleBtn && topbarEl) {
                 toggleBtn.addEventListener('click', function () {
-                    topbarEl.classList.toggle('expanded');
+                    var isExp = topbarEl.classList.toggle('expanded');
+                    if (typeof gtag === 'function') {
+                        gtag('event', 'details_drawer_toggle', {
+                            is_expanded: isExp,
+                            item_id: code || courseCode || ''
+                        });
+                    }
                 });
             }
 
@@ -2464,6 +2470,9 @@
                         document.documentElement.setAttribute('data-theme', next);
                         try { localStorage.setItem('sgou-theme-v2', next); } catch (_) {}
                         syncThemeMeta();
+                        if (typeof gtag === 'function') {
+                            gtag('event', 'theme_change', { new_theme: next });
+                        }
 
                         var f = document.getElementById('pdfFrame');
                         if (f && f.contentWindow) {
@@ -2526,6 +2535,13 @@
 
                     syncReportModalMode();
                     reportModal.classList.add('visible');
+                    if (typeof gtag === 'function') {
+                        gtag('event', 'report_modal_open', {
+                            item_id: code || courseCode || '',
+                            item_name: name || '',
+                            item_category: matType || 'SLM'
+                        });
+                    }
                     setTimeout(function () {
                         if (selectEl) selectEl.focus();
                     }, 60);
@@ -2579,6 +2595,16 @@
                     var courseTitle = name ? (name + (code ? ' (' + code + ')' : '')) : (code || 'Course Material');
                     var programme = prog || 'SGOU Academic Material';
                     var docUrl = pdfUrl || (code ? ('https://sgou-slm-database.vercel.app/view.html?code=' + code) : window.location.href);
+
+                    if (typeof gtag === 'function') {
+                        gtag('event', 'report_document_issue', {
+                            channel: channel,
+                            issue_type: reasonVal,
+                            item_id: code || courseCode || '',
+                            item_name: name || '',
+                            item_category: matType || 'SLM'
+                        });
+                    }
 
                     if (channel === 'form') {
                         if (typeof navigator !== 'undefined' && navigator.onLine === false) {

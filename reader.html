@@ -3,14 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com https://docs.google.com; frame-src 'self' https://docs.google.com; form-action 'self' https://docs.google.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: https://www.google-analytics.com https://*.google-analytics.com; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com; frame-src 'self' https://docs.google.com; form-action 'self' https://docs.google.com;">
   <title>Academic Reader — SGOU</title>
+  <!-- Google Analytics 4 (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-E2N7NJNRQB', {
+      send_page_view: true,
+      cookie_flags: 'SameSite=None;Secure',
+      link_attribution: true
+    });
+  </script>
   <!-- Typography & Modular CSS Components -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261008_05">
-  <link rel="stylesheet" href="./css/components/toast.css?v=20261008_05">
+  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261008_06">
+  <link rel="stylesheet" href="./css/components/toast.css?v=20261008_06">
   <style>
     /* ============================================================
        THEME SYSTEM — Synchronized with SGOU Academic Design Tokens
@@ -1228,11 +1240,11 @@
   </div>
 
   <script src="./pdfjs/pdf.min.js"></script>
-  <script src="./js/utils/clipboard.js?v=20261008_05"></script>
-  <script src="./js/components/toast.js?v=20261008_05"></script>
-  <script src="./js/components/theme.js?v=20261008_05"></script>
-  <script src="./js/qrcode.min.js?v=20261008_05"></script>
-  <script src="./js/components/support-modal.js?v=20261008_05"></script>
+  <script src="./js/utils/clipboard.js?v=20261008_06"></script>
+  <script src="./js/components/toast.js?v=20261008_06"></script>
+  <script src="./js/components/theme.js?v=20261008_06"></script>
+  <script src="./js/qrcode.min.js?v=20261008_06"></script>
+  <script src="./js/components/support-modal.js?v=20261008_06"></script>
   <script>
     (function () {
       'use strict';
@@ -1266,6 +1278,9 @@
         var next = current === 'dark' ? 'light' : 'dark';
         try { localStorage.setItem('sgou-theme-v2', next); } catch (_) {}
         applyTheme(next);
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'theme_change', { new_theme: next });
+        }
         try {
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: 'sgou-theme-change', theme: next }, '*');
@@ -1281,7 +1296,6 @@
         if (e.data.type === 'sgou-theme-change') {
           applyTheme(e.data.theme);
         }
-      });
       });
 
       // --- Fullscreen Dynamic Management ---
@@ -1309,6 +1323,9 @@
           fullscreenIcon.innerHTML = '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>';
           fullscreenBtn.title = 'Enter fullscreen (F)';
           fullscreenBtn.setAttribute('aria-label', 'Enter fullscreen');
+        }
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_fullscreen', { is_fullscreen: full });
         }
       }
 
@@ -1381,6 +1398,13 @@
         loadingMsg.style.display = 'none';
         errorBox.style.display = 'flex';
         errorMsg.textContent = msg;
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_load_error', {
+            error_message: msg,
+            item_id: courseCode || '',
+            item_name: docName || ''
+          });
+        }
       }
 
       function resolveFileUrl(url) {
@@ -1499,6 +1523,23 @@
         initIntersectionObserver();
 
         loadingOverlay.classList.add('hidden');
+
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_open', {
+            item_id: courseCode || '',
+            item_name: docName || '',
+            item_category: docType || 'SLM',
+            total_pages: totalPages,
+            offline_cached: !!pdfData
+          });
+          window.gtag('event', 'view_item', {
+            item_id: courseCode || '',
+            item_name: docName || '',
+            item_category: docType || 'SLM',
+            item_brand: 'SGOU',
+            total_pages: totalPages
+          });
+        }
 
         // Render active page and adjacent page sequentially on initial load
         queuePageRender(1, true);
@@ -1841,6 +1882,28 @@
         }
       }
 
+      var readingMilestonesTracked = {};
+      function checkReadingMilestones(curPage) {
+        if (!totalPages || totalPages <= 0) return;
+        var pct = Math.round((curPage / totalPages) * 100);
+        var marks = [25, 50, 75, 100];
+        for (var i = 0; i < marks.length; i++) {
+          var m = marks[i];
+          if (pct >= m && !readingMilestonesTracked[m]) {
+            readingMilestonesTracked[m] = true;
+            if (typeof window.gtag === 'function') {
+              window.gtag('event', 'reader_progress_milestone', {
+                milestone_percent: m,
+                page_number: curPage,
+                total_pages: totalPages,
+                item_id: courseCode || '',
+                item_name: docName || ''
+              });
+            }
+          }
+        }
+      }
+
       // --- Intelligent Bi-Directional Scroll & Active Page Tracking ---
       function handleScroll() {
         if (isTeleporting) return;
@@ -1880,6 +1943,7 @@
         if (activeNum !== currentPage) {
           currentPage = activeNum;
           pageNumEl.textContent = currentPage;
+          checkReadingMilestones(currentPage);
         }
 
         // Bi-directional sequential on-demand rendering based on scroll direction
@@ -2282,6 +2346,14 @@
 
         syncReaderReportModalMode();
         reportModal.classList.add('active');
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'report_modal_open', {
+            item_id: courseCode || '',
+            item_name: docName || '',
+            item_category: docType || 'SLM',
+            current_page: currentPage
+          });
+        }
         setTimeout(function () {
           if (selectEl) selectEl.focus();
         }, 60);
@@ -2319,6 +2391,17 @@
         var reasonText = reasonMap[reasonVal] || 'Other Issue';
         var docTitle = (docName ? docName + (courseCode ? ' (' + courseCode + ')' : '') : (courseCode || 'Course Material'));
         var docUrl = rawFile || window.location.href;
+
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'report_document_issue', {
+            channel: channel,
+            issue_type: reasonVal,
+            item_id: courseCode || '',
+            item_name: docName || '',
+            item_category: docType || 'SLM',
+            current_page: currentPage
+          });
+        }
 
         if (channel === 'form') {
           if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -2602,6 +2685,7 @@
 
       loadDocument();
       checkAndDisplayMismatch();
+    })();
   </script>
 </body>
 </html>

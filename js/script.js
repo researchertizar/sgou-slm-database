@@ -2908,43 +2908,14 @@ class UIController {
     }
   }
 
-  // --- PDF Reader Eye-Comfort Filter ---
+  // --- PDF Reader Filter (Deprecated: Replaced by platform theme toggle) ---
 
   toggleReaderFilter() {
-    const frame = $('viewerPanelFrame');
-    if (!frame) return;
-    const modes = ['normal', 'sepia', 'dark'];
-    let current = 'normal';
-    try { current = localStorage.getItem('sgou-pdf-filter') || 'normal'; } catch (_) {}
-    const nextIdx = (modes.indexOf(current) + 1) % modes.length;
-    const next = modes[nextIdx];
-    try { localStorage.setItem('sgou-pdf-filter', next); } catch (_) {}
-    this.applyReaderFilter(next, true);
+    // Deprecated: Reading modes removed; platform theme toggle used instead
   }
 
   applyReaderFilter(mode, showFeedback = false) {
-    const frame = $('viewerPanelFrame');
-    const btn = $('viewerPanelFilter');
-    if (btn) {
-      btn.classList.remove('filter-active');
-      if (mode === 'sepia') {
-        btn.classList.add('filter-active');
-        btn.setAttribute('title', 'Eye Comfort: Warm Sepia (Click to change)');
-        if (showFeedback) this.showToast('Reader Mode: Warm Sepia');
-      } else if (mode === 'dark') {
-        btn.classList.add('filter-active');
-        btn.setAttribute('title', 'Eye Comfort: Dark Invert (Click to change)');
-        if (showFeedback) this.showToast('Reader Mode: Dark Invert');
-      } else {
-        btn.setAttribute('title', 'Eye Comfort: Normal (Click to change)');
-        if (showFeedback) this.showToast('Reader Mode: Standard');
-      }
-    }
-    if (frame && frame.contentWindow) {
-      try {
-        frame.contentWindow.postMessage({ type: 'sgou-filter-change', filter: mode }, '*');
-      } catch (_) {}
-    }
+    // Deprecated: Reading modes removed; platform theme toggle used instead
   }
 
   // --- My Downloads Library Drawer ---
@@ -3007,6 +2978,11 @@ class UIController {
 
     this.syncReportModalMode();
     modal.classList.add('visible');
+    Analytics.event('report_modal_open', {
+      item_id: item.code || '',
+      item_name: item.name || '',
+      item_category: item.type || 'SLM'
+    });
     setTimeout(() => $('reportReasonSelect')?.focus(), 60);
   }
 
@@ -3075,6 +3051,14 @@ class UIController {
     const courseTitle = item.name ? `${item.name} (${item.code || 'No Code'})` : (item.code || 'Course Material');
     const programme = item.prog || 'SGOU Academic Material';
     const docUrl = item.url || (item.code ? `https://sgou-slm-database.vercel.app/view.html?code=${item.code}` : window.location.href);
+
+    Analytics.event('report_document_issue', {
+      channel,
+      issue_type: reasonVal,
+      item_id: item.code || '',
+      item_name: item.name || '',
+      item_category: item.type || 'SLM'
+    });
 
     if (channel === 'form') {
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -3926,11 +3910,6 @@ class UIController {
           this.toggleTheme(e);
           return;
         }
-        if (keyLow === 'f' || keyLow === 'c') {
-          e.preventDefault();
-          this.toggleReaderFilter();
-          return;
-        }
         if (keyLow === 'd') {
           e.preventDefault();
           const panel = $('viewerPanel');
@@ -4171,11 +4150,6 @@ class UIController {
         return;
       }
 
-      // Viewer Eye-Comfort Filter Toggle
-      if (e.target.closest('#viewerPanelFilter')) {
-        this.toggleReaderFilter();
-        return;
-      }
 
       // Viewer External Open
       if (e.target.closest('#viewerPanelExternal')) {
@@ -4570,17 +4544,14 @@ class UIController {
       }, { passive: false });
     }
 
-    // Coordinate safe reader back navigation and filter sync from embedded iframe
+    // Coordinate safe reader back navigation and platform theme sync from embedded iframe
     window.addEventListener('message', e => {
       if (!e.data) return;
       if (e.data.type === 'READER_BACK') {
         this.hideViewerPanel(true);
-      } else if (e.data.type === 'sgou-reader-filter-sync') {
-        const mode = e.data.filter;
-        const btn = $('viewerPanelFilter');
-        if (btn) {
-          btn.classList.remove('filter-active');
-          if (mode === 'sepia' || mode === 'dark') btn.classList.add('filter-active');
+      } else if (e.data.type === 'sgou-theme-change' && e.data.theme) {
+        if (document.documentElement.getAttribute('data-theme') !== e.data.theme) {
+          this.toggleTheme();
         }
       }
     });

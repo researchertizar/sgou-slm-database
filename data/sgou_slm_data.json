@@ -4073,6 +4073,21 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/P6EPLlRpX0JkdPDAlcDbEZ2tzh9gO4fFwfWTBUfA.pdf"
           }
         ]
+      },
+      {
+        "semester": "S6",
+        "courses": [
+          {
+            "name": "Cyber Crime",
+            "code": "B21CA13DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/OVOtDfiFi9jWbKX2sG9QtU8MqaehdfzWAX5dNWdv.pdf"
+          },
+          {
+            "name": "Machine Learning",
+            "code": "B21CA04DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/xMW5Xz18vS4iAncPBnMvFVYty2zJ0MBjtydzqhh3.pdf"
+          }
+        ]
       }
     ]
   },

@@ -29,6 +29,14 @@
     amounts: [15, 25, 50, 100, 'custom']
   };
 
+  function sendTelemetry(name, params) {
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', name, params || {});
+      }
+    } catch (_) {}
+  }
+
   var state = {
     activeAmount: CONFIG.defaultAmount,
     modalEl: null,
@@ -252,6 +260,9 @@
       }
 
       SupportModal.renderQr(state.activeAmount);
+      sendTelemetry('support_amount_select', {
+        amount: state.activeAmount !== null ? state.activeAmount : 'custom'
+      });
     },
 
     /**
@@ -262,6 +273,9 @@
       var doFeedback = function () {
         if (state.copyBtn) state.copyBtn.classList.add('copied');
         if (state.copyBtnText) state.copyBtnText.textContent = 'Copied! ✓';
+        sendTelemetry('support_copy_upi', {
+          amount: state.activeAmount !== null ? state.activeAmount : 'custom'
+        });
         if (Toast && typeof Toast.show === 'function') {
           Toast.show('UPI ID copied: ' + vpa);
         }
@@ -298,6 +312,11 @@
       state.modalEl.classList.add('visible', 'active');
       state.modalEl.setAttribute('aria-hidden', 'false');
 
+      sendTelemetry('support_modal_open', {
+        amount: targetAmount,
+        source: triggerEl ? (triggerEl.id || triggerEl.getAttribute('aria-label') || 'trigger') : 'direct'
+      });
+
       // Focus first chip for accessibility
       var activeChip = state.modalEl.querySelector('.amount-chip.active');
       if (activeChip) activeChip.focus();
@@ -330,12 +349,12 @@
       // Delegate triggers across document
       document.addEventListener('click', function (e) {
         // Open Triggers
-        var trigger = e.target.closest('#supportBtn, #footerSupportBtn, #topbarSupport, #readerSupportBtn, [data-action="support"], .support-trigger');
+        var trigger = e.target.closest('#supportBtn, #footerSupportBtn, #topbarSupport, #readerSupportBtn, #headerSupportBtn, #viewerPanelSupport, [data-action="support"], .support-trigger');
         if (trigger) {
           e.preventDefault();
           var rawAmt = trigger.getAttribute('data-support-amount');
           var amt = rawAmt ? Number(rawAmt) : CONFIG.defaultAmount;
-          SupportModal.open(amt);
+          SupportModal.open(amt, trigger);
           return;
         }
 
@@ -363,6 +382,13 @@
           return;
         }
 
+        // Direct Pay UPI Click
+        if (e.target.closest('#supportDirectPayBtn')) {
+          sendTelemetry('support_upi_click', {
+            amount: state.activeAmount !== null ? state.activeAmount : 'custom'
+          });
+        }
+
         // Mobile QR Toggle
         if (e.target.closest('#supportToggleQrBtn')) {
           e.preventDefault();
@@ -371,6 +397,7 @@
             if (state.qrToggleText) {
               state.qrToggleText.textContent = isShow ? 'Hide QR Code' : 'Show QR Code to Scan';
             }
+            sendTelemetry('support_qr_toggle', { is_shown: isShow });
           }
           return;
         }

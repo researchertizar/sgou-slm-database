@@ -21,38 +21,52 @@
     <link rel="canonical" href="https://sgou-slm-database.vercel.app/">
     <title>SGOU Academic Database | By Ahayas</title>
     <script>
-        (function(){try{var p=new URLSearchParams(location.search);var ut=p.get('theme');if(ut==='dark'||ut==='light'){document.documentElement.setAttribute('data-theme',ut);try{localStorage.setItem('sgou-theme-v2',ut);}catch(_){}}else{var t=localStorage.getItem('sgou-theme-v2');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}}catch(_){}})();
+        (function () { try { var p = new URLSearchParams(location.search); var ut = p.get('theme'); if (ut === 'dark' || ut === 'light') { document.documentElement.setAttribute('data-theme', ut); try { localStorage.setItem('sgou-theme-v2', ut); } catch (_) { } } else { var t = localStorage.getItem('sgou-theme-v2'); if (t === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); } else { document.documentElement.setAttribute('data-theme', 'light'); } } } catch (_) { } })();
         if (location.search.indexOf('og=1') !== -1) { document.documentElement.classList.add('og-mode'); }
     </script>
     <style>
-        html.og-mode, html.og-mode body { overflow: hidden !important; scrollbar-width: none !important; }
-        html.og-mode ::-webkit-scrollbar { display: none !important; width: 0 !important; }
-        html.og-mode #installBanner, html.og-mode .install-banner { display: none !important; }
+        html.og-mode,
+        html.og-mode body {
+            overflow: hidden !important;
+            scrollbar-width: none !important;
+        }
+
+        html.og-mode ::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+        }
+
+        html.og-mode #installBanner,
+        html.og-mode .install-banner {
+            display: none !important;
+        }
     </style>
 
     <!-- Open Graph & Social Sharing (WhatsApp, LinkedIn, Facebook, Telegram) -->
     <meta property="og:site_name" content="SGOU Academic Database">
     <meta property="og:title" content="SGOU Academic Database | SLM Textbooks, PYQs & Assignments">
     <meta property="og:description"
-        content="Free academic repository for Sree Narayana Guru Open University (SNGOU). Search, preview, and download 1,200+ SLM books, 950+ question papers, and 75+ assignments offline.">
+        content="Free academic repository for SGOU, maintained by Ahayas. Search, preview, and download 1,200+ SLM books, 950+ question papers, and 75+ assignments.">
     <meta property="og:url" content="https://sgou-slm-database.vercel.app/">
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_IN">
     <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261008_01">
-    <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261008_01">
+    <meta property="og:image:secure_url"
+        content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261008_01">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="SGOU Academic Database — Comprehensive SLM Textbooks and Question Papers Repository">
+    <meta property="og:image:alt"
+        content="SGOU Academic Database — Comprehensive SLM Textbooks and Question Papers Repository">
 
     <!-- Twitter / X Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="SGOU Academic Database — By Ahayas">
     <meta name="twitter:description"
-        content="Free academic portal for Sree Narayana Guru Open University (SNGOU): 1,200+ SLM books, 950+ PYQs, and 75+ assignments with offline PWA support.">
+        content="Free academic repository for SGOU, maintained by Ahayas. Search, preview, and download 1,200+ SLM books, 950+ question papers, and 75+ assignments.">
     <meta name="twitter:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261008_01">
     <meta name="twitter:image:alt" content="SGOU Academic Database — Preview Card">
-    <meta name="twitter:creator" content="@researchertizar">
+    <meta name="twitter:creator" content="@ahayas">
 
     <!-- Geographic & Local Knowledge Meta Tags (GEO SEO) -->
     <meta name="geo.region" content="IN-KL">
@@ -61,7 +75,7 @@
     <meta name="ICBM" content="8.8932, 76.6141">
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="manifest.json?v=20261008_05">
+    <link rel="manifest" href="manifest.json?v=20261008_06">
     <link rel="icon" type="image/svg+xml" href="assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16x16.png?v=20260904_10">
@@ -74,9 +88,9 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="css/components/support-modal.css?v=20261008_05">
-    <link rel="stylesheet" href="css/components/toast.css?v=20261008_05">
-    <link rel="stylesheet" href="css/style.css?v=20261008_05">
+    <link rel="stylesheet" href="css/components/support-modal.css?v=20261008_06">
+    <link rel="stylesheet" href="css/components/toast.css?v=20261008_06">
+    <link rel="stylesheet" href="css/style.css?v=20261008_06">
 
     <!-- Schema.org Knowledge Graph (JSON-LD) for Search Engines & AI Crawlers -->
     <!-- Search Engine Webmaster Verification Hooks -->
@@ -380,13 +394,17 @@
                             </svg>
                             <span class="downloads-badge" id="downloadsBadge" style="display:none">0</span>
                         </button>
-                        <button class="header-action-btn support-action-btn" id="headerSupportBtn" aria-label="Support Project"
-                            title="Support SGOU Database (UPI)">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        <button class="header-action-btn support-action-btn" id="headerSupportBtn"
+                            aria-label="Support Project" title="Support SGOU Database (UPI)">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path
+                                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                                </path>
                             </svg>
                         </button>
-                        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme (T)">
+                        <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode"
+                            title="Toggle theme (T)">
                             <svg class="icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="5" />
@@ -414,18 +432,22 @@
     <div class="sticky-controls" id="stickyControls">
         <div class="controls-deck">
             <!-- Tier 1: Material Type Switcher (3 Core Sections) -->
-            <div class="material-type-switcher" id="materialTypeSwitcher" role="tablist" aria-label="Material Type" data-active="SLM">
+            <div class="material-type-switcher" id="materialTypeSwitcher" role="tablist" aria-label="Material Type"
+                data-active="SLM">
                 <div class="switcher-slider" id="switcherSlider" aria-hidden="true"></div>
-                <button class="type-btn active" data-type="SLM" role="tab" aria-selected="true" title="SLM Books (Shortcut: 1)">
+                <button class="type-btn active" data-type="SLM" role="tab" aria-selected="true"
+                    title="SLM Books (Shortcut: 1)">
                     <svg class="type-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                         <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                     </svg>
-                    <span class="type-label"><span class="label-full">SLM Books</span><span class="label-short">SLM</span></span>
+                    <span class="type-label"><span class="label-full">SLM Books</span><span
+                            class="label-short">SLM</span></span>
                     <span class="type-count" id="countSlm">1,205</span>
                 </button>
-                <button class="type-btn" data-type="PYQ" role="tab" aria-selected="false" title="Previous Year Questions (Shortcut: 2)">
+                <button class="type-btn" data-type="PYQ" role="tab" aria-selected="false"
+                    title="Previous Year Questions (Shortcut: 2)">
                     <svg class="type-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -433,16 +455,19 @@
                         <line x1="16" y1="13" x2="8" y2="13" />
                         <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
-                    <span class="type-label"><span class="label-full">PYQs</span><span class="label-short">PYQ</span></span>
+                    <span class="type-label"><span class="label-full">PYQs</span><span
+                            class="label-short">PYQ</span></span>
                     <span class="type-count" id="countPyq">959</span>
                 </button>
-                <button class="type-btn" data-type="ASSIGNMENT" role="tab" aria-selected="false" title="Assignment Booklets (Shortcut: 3)">
+                <button class="type-btn" data-type="ASSIGNMENT" role="tab" aria-selected="false"
+                    title="Assignment Booklets (Shortcut: 3)">
                     <svg class="type-svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
                         <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
                     </svg>
-                    <span class="type-label"><span class="label-full">Assignments</span><span class="label-short">Asgn</span></span>
+                    <span class="type-label"><span class="label-full">Assignments</span><span
+                            class="label-short">Asgn</span></span>
                     <span class="type-count" id="countAsgn">77</span>
                 </button>
             </div>
@@ -455,11 +480,11 @@
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
-                    <input type="text" id="searchInput"
-                        placeholder="Search courses, codes (e.g. B21CA01)..."
+                    <input type="text" id="searchInput" placeholder="Search courses, codes (e.g. B21CA01)..."
                         autocomplete="off" aria-label="Search">
                     <button class="search-clear" id="searchClear" aria-label="Clear search">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
                         </svg>
@@ -486,17 +511,18 @@
                     <div class="view-controls" id="viewControls">
                         <button class="view-btn minimal-toggle" id="shortcutsBtn" aria-label="Keyboard Shortcuts (?)"
                             title="Keyboard Shortcuts (?)">
-                            <svg class="toggle-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="toggle-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="2" y="4" width="20" height="16" rx="3" />
-                                <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M6 12h.001M10 12h.001M14 12h.001M18 12h.001M8 16h8" />
+                                <path
+                                    d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M6 12h.001M10 12h.001M14 12h.001M18 12h.001M8 16h8" />
                             </svg>
                             <span class="toggle-text">Shortcuts</span>
                         </button>
                         <button class="view-btn minimal-toggle" id="toggleAll" aria-label="Toggle all programmes"
                             title="Expand or collapse all programmes" data-state="collapsed">
-                            <svg class="toggle-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="toggle-icon" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="7 13 12 18 17 13" />
                                 <polyline points="7 6 12 11 17 6" />
                             </svg>
@@ -512,68 +538,136 @@
     <main>
         <section class="sr-only" aria-label="University Repository Overview">
             <h2>Sree Narayana Guru Open University (SGOU / SNGOU) Academic Database</h2>
-            <p>Independent, open-access academic portal curated and developed by Ahayas for students and scholars of Sree Narayana Guru Open University, Kollam, Kerala. This repository offers free access to 1,200+ Self-Learning Material (SLM) course textbooks, 950+ previous year question papers (PYQs), and continuous evaluation assignment question booklets across all 37 Four Year Undergraduate (FYUG), Undergraduate (UG), and Postgraduate (PG) degree programmes.</p>
+            <p>Independent, open-access academic portal curated and developed by Ahayas for students and scholars of
+                Sree Narayana Guru Open University, Kollam, Kerala. This repository offers free access to 1,200+
+                Self-Learning Material (SLM) course textbooks, 950+ previous year question papers (PYQs), and continuous
+                evaluation assignment question booklets across all 37 Four Year Undergraduate (FYUG), Undergraduate
+                (UG), and Postgraduate (PG) degree programmes.</p>
         </section>
         <div class="search-results" id="searchResults" role="region" aria-label="Search results"></div>
         <div class="programme-grid" id="grid" role="list" aria-label="Programmes"></div>
 
         <!-- Semantic Zero-JS Search & AI Crawler Directory Fallback -->
         <noscript>
-            <div class="crawler-academic-catalog" style="padding:2rem 1.5rem;max-width:1100px;margin:2rem auto;background:#fff;border:1px solid #d6cfc2;border-radius:12px;font-family:sans-serif;color:#1a1714;line-height:1.6">
-                <h2 style="font-size:1.5rem;margin-bottom:0.5rem;color:#b8432f">SGOU Academic Programmes &amp; Study Materials Directory</h2>
-                <p style="color:#6b6358;margin-bottom:1.5rem">Complete curriculum directory for Sree Narayana Guru Open University (SNGOU), Kollam. Access official Self-Learning Material (SLM) textbooks, previous year exam question papers (PYQs), and continuous internal assessment booklets.</p>
+            <div class="crawler-academic-catalog"
+                style="padding:2rem 1.5rem;max-width:1100px;margin:2rem auto;background:#fff;border:1px solid #d6cfc2;border-radius:12px;font-family:sans-serif;color:#1a1714;line-height:1.6">
+                <h2 style="font-size:1.5rem;margin-bottom:0.5rem;color:#b8432f">SGOU Academic Programmes &amp; Study
+                    Materials Directory</h2>
+                <p style="color:#6b6358;margin-bottom:1.5rem">Complete curriculum directory for Sree Narayana Guru Open
+                    University (SNGOU), Kollam. Access official Self-Learning Material (SLM) textbooks, previous year
+                    exam question papers (PYQs), and continuous internal assessment booklets.</p>
 
-                <h3 style="font-size:1.2rem;border-bottom:2px solid #235090;padding-bottom:4px;color:#235090;margin-top:1.5rem">Four Year Undergraduate Programmes (FYUG)</h3>
+                <h3
+                    style="font-size:1.2rem;border-bottom:2px solid #235090;padding-bottom:4px;color:#235090;margin-top:1.5rem">
+                    Four Year Undergraduate Programmes (FYUG)</h3>
                 <ul style="columns:2;column-gap:2rem;margin:1rem 0;padding-left:1.5rem">
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ENGLISH)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. English (FYUG - 4 Years)</a> — 37 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20COMMERCE%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">Bachelor of Commerce (B.Com FYUG - 4 Years)</a> — 38 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20BUSINESS%20ADMINISTRATION%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">Bachelor of Business Administration (BBA FYUG - 4 Years)</a> — 38 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(MALAYALAM)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. Malayalam (FYUG - 4 Years)</a> — 37 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(HISTORY)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. History (FYUG - 4 Years)</a> — 36 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(SOCIOLOGY)%2004%20years%20duration" style="color:#1a1714;text-decoration:underline">B.A. Sociology (FYUG - 4 Years)</a> — 37 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ENGLISH)%2004%20years%20duration"
+                            style="color:#1a1714;text-decoration:underline">B.A. English (FYUG - 4 Years)</a> — 37
+                        Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20COMMERCE%2004%20years%20duration"
+                            style="color:#1a1714;text-decoration:underline">Bachelor of Commerce (B.Com FYUG - 4
+                            Years)</a> — 38 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20BUSINESS%20ADMINISTRATION%2004%20years%20duration"
+                            style="color:#1a1714;text-decoration:underline">Bachelor of Business Administration (BBA
+                            FYUG - 4 Years)</a> — 38 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(MALAYALAM)%2004%20years%20duration"
+                            style="color:#1a1714;text-decoration:underline">B.A. Malayalam (FYUG - 4 Years)</a> — 37
+                        Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(HISTORY)%2004%20years%20duration"
+                            style="color:#1a1714;text-decoration:underline">B.A. History (FYUG - 4 Years)</a> — 36
+                        Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(SOCIOLOGY)%2004%20years%20duration"
+                            style="color:#1a1714;text-decoration:underline">B.A. Sociology (FYUG - 4 Years)</a> — 37
+                        Courses</li>
                 </ul>
 
-                <h3 style="font-size:1.2rem;border-bottom:2px solid #1f5a43;padding-bottom:4px;color:#1f5a43;margin-top:1.5rem">Undergraduate Degree Programmes (UG - 3 Years)</h3>
+                <h3
+                    style="font-size:1.2rem;border-bottom:2px solid #1f5a43;padding-bottom:4px;color:#1f5a43;margin-top:1.5rem">
+                    Undergraduate Degree Programmes (UG - 3 Years)</h3>
                 <ul style="columns:2;column-gap:2rem;margin:1rem 0;padding-left:1.5rem">
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20ENGLISH%20LANGUAGE%20AND%20LITERATURE" style="color:#1a1714;text-decoration:underline">B.A. English Language &amp; Literature</a> — 47 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20COMMERCE" style="color:#1a1714;text-decoration:underline">Bachelor of Commerce (B.Com)</a> — 43 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20COMPUTER%20APPLICATIONS" style="color:#1a1714;text-decoration:underline">Bachelor of Computer Applications (BCA)</a> — 43 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20BUSINESS%20ADMINISTRATION" style="color:#1a1714;text-decoration:underline">Bachelor of Business Administration (BBA)</a> — 43 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20MALAYALAM%20LANGUAGE%20AND%20LITERATURE" style="color:#1a1714;text-decoration:underline">B.A. Malayalam Language &amp; Literature</a> — 48 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20HISTORY" style="color:#1a1714;text-decoration:underline">B.A. History</a> — 47 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ECONOMICS)" style="color:#1a1714;text-decoration:underline">B.A. Economics</a> — 47 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20SOCIOLOGY" style="color:#1a1714;text-decoration:underline">B.A. Sociology</a> — 48 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(PHILOSOPHY)" style="color:#1a1714;text-decoration:underline">B.A. Philosophy</a> — 48 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(POLITICAL%20SCIENCE)" style="color:#1a1714;text-decoration:underline">B.A. Political Science</a> — 30 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(PSYCHOLOGY)" style="color:#1a1714;text-decoration:underline">B.A. Psychology</a> — 29 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(HINDI)" style="color:#1a1714;text-decoration:underline">B.A. Hindi</a> — 47 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(SANSKRIT)" style="color:#1a1714;text-decoration:underline">B.A. Sanskrit</a> — 44 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ARABIC)" style="color:#1a1714;text-decoration:underline">B.A. Arabic</a> — 47 Courses</li>
-                    <li><a href="/?search=BACHELOR%20OF%20SCIENCE%20(DATA%20SCIENCE%20AND%20ANALYTICS)" style="color:#1a1714;text-decoration:underline">B.Sc Data Science &amp; Analytics</a> — 36 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20ENGLISH%20LANGUAGE%20AND%20LITERATURE"
+                            style="color:#1a1714;text-decoration:underline">B.A. English Language &amp; Literature</a> —
+                        47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20COMMERCE"
+                            style="color:#1a1714;text-decoration:underline">Bachelor of Commerce (B.Com)</a> — 43
+                        Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20COMPUTER%20APPLICATIONS"
+                            style="color:#1a1714;text-decoration:underline">Bachelor of Computer Applications (BCA)</a>
+                        — 43 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20BUSINESS%20ADMINISTRATION"
+                            style="color:#1a1714;text-decoration:underline">Bachelor of Business Administration
+                            (BBA)</a> — 43 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20MALAYALAM%20LANGUAGE%20AND%20LITERATURE"
+                            style="color:#1a1714;text-decoration:underline">B.A. Malayalam Language &amp; Literature</a>
+                        — 48 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20HISTORY"
+                            style="color:#1a1714;text-decoration:underline">B.A. History</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ECONOMICS)"
+                            style="color:#1a1714;text-decoration:underline">B.A. Economics</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20SOCIOLOGY"
+                            style="color:#1a1714;text-decoration:underline">B.A. Sociology</a> — 48 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(PHILOSOPHY)"
+                            style="color:#1a1714;text-decoration:underline">B.A. Philosophy</a> — 48 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(POLITICAL%20SCIENCE)"
+                            style="color:#1a1714;text-decoration:underline">B.A. Political Science</a> — 30 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(PSYCHOLOGY)"
+                            style="color:#1a1714;text-decoration:underline">B.A. Psychology</a> — 29 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(HINDI)"
+                            style="color:#1a1714;text-decoration:underline">B.A. Hindi</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(SANSKRIT)"
+                            style="color:#1a1714;text-decoration:underline">B.A. Sanskrit</a> — 44 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20ARTS%20(ARABIC)"
+                            style="color:#1a1714;text-decoration:underline">B.A. Arabic</a> — 47 Courses</li>
+                    <li><a href="/?search=BACHELOR%20OF%20SCIENCE%20(DATA%20SCIENCE%20AND%20ANALYTICS)"
+                            style="color:#1a1714;text-decoration:underline">B.Sc Data Science &amp; Analytics</a> — 36
+                        Courses</li>
                 </ul>
 
-                <h3 style="font-size:1.2rem;border-bottom:2px solid #5e3370;padding-bottom:4px;color:#5e3370;margin-top:1.5rem">Postgraduate Degree Programmes (PG - 2 Years)</h3>
+                <h3
+                    style="font-size:1.2rem;border-bottom:2px solid #5e3370;padding-bottom:4px;color:#5e3370;margin-top:1.5rem">
+                    Postgraduate Degree Programmes (PG - 2 Years)</h3>
                 <ul style="columns:2;column-gap:2rem;margin:1rem 0;padding-left:1.5rem">
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ENGLISH)" style="color:#1a1714;text-decoration:underline">M.A. English Language &amp; Literature</a> — 22 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20COMMERCE" style="color:#1a1714;text-decoration:underline">Master of Commerce (M.Com)</a> — 22 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(MALAYALAM)" style="color:#1a1714;text-decoration:underline">M.A. Malayalam</a> — 21 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(HISTORY)" style="color:#1a1714;text-decoration:underline">M.A. History</a> — 22 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ECONOMICS)" style="color:#1a1714;text-decoration:underline">M.A. Economics</a> — 22 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(SOCIOLOGY)" style="color:#1a1714;text-decoration:underline">M.A. Sociology</a> — 22 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(POLITICAL%20SCIENCE)" style="color:#1a1714;text-decoration:underline">M.A. Political Science</a> — 22 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(PUBLIC%20ADMINISTRATION)" style="color:#1a1714;text-decoration:underline">M.A. Public Administration</a> — 21 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(PHILOSOPHY)" style="color:#1a1714;text-decoration:underline">M.A. Philosophy</a> — 21 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(HINDI)" style="color:#1a1714;text-decoration:underline">M.A. Hindi</a> — 21 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(SANSKRIT)" style="color:#1a1714;text-decoration:underline">M.A. Sanskrit</a> — 21 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ARABIC)" style="color:#1a1714;text-decoration:underline">M.A. Arabic</a> — 21 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20COMPUTER%20APPLICATIONS" style="color:#1a1714;text-decoration:underline">Master of Computer Applications (MCA)</a> — 6 Courses</li>
-                    <li><a href="/?search=MASTER%20OF%20BUSINESS%20ADMINISTRATION" style="color:#1a1714;text-decoration:underline">Master of Business Administration (MBA)</a> — 5 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ENGLISH)"
+                            style="color:#1a1714;text-decoration:underline">M.A. English Language &amp; Literature</a> —
+                        22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20COMMERCE" style="color:#1a1714;text-decoration:underline">Master
+                            of Commerce (M.Com)</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(MALAYALAM)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Malayalam</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(HISTORY)"
+                            style="color:#1a1714;text-decoration:underline">M.A. History</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ECONOMICS)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Economics</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(SOCIOLOGY)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Sociology</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(POLITICAL%20SCIENCE)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Political Science</a> — 22 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(PUBLIC%20ADMINISTRATION)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Public Administration</a> — 21 Courses
+                    </li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(PHILOSOPHY)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Philosophy</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(HINDI)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Hindi</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(SANSKRIT)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Sanskrit</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20ARTS%20(ARABIC)"
+                            style="color:#1a1714;text-decoration:underline">M.A. Arabic</a> — 21 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20COMPUTER%20APPLICATIONS"
+                            style="color:#1a1714;text-decoration:underline">Master of Computer Applications (MCA)</a> —
+                        6 Courses</li>
+                    <li><a href="/?search=MASTER%20OF%20BUSINESS%20ADMINISTRATION"
+                            style="color:#1a1714;text-decoration:underline">Master of Business Administration (MBA)</a>
+                        — 5 Courses</li>
                 </ul>
 
-                <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #d6cfc2;display:flex;gap:1.5rem;font-size:0.9rem">
+                <div
+                    style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #d6cfc2;display:flex;gap:1.5rem;font-size:0.9rem">
                     <a href="/?type=slm" style="color:#b8432f;font-weight:600">Browse All Textbooks (SLM) &rarr;</a>
-                    <a href="/?type=pyq" style="color:#b8432f;font-weight:600">Browse Exam Question Papers (PYQ) &rarr;</a>
-                    <a href="/?type=assignment" style="color:#b8432f;font-weight:600">Browse Assignment Booklets &rarr;</a>
+                    <a href="/?type=pyq" style="color:#b8432f;font-weight:600">Browse Exam Question Papers (PYQ)
+                        &rarr;</a>
+                    <a href="/?type=assignment" style="color:#b8432f;font-weight:600">Browse Assignment Booklets
+                        &rarr;</a>
                 </div>
             </div>
         </noscript>
@@ -591,14 +685,19 @@
         <div class="footer-minimal">
             <span>Built by <strong>Ahayas</strong></span>
             <span class="footer-sep">&middot;</span>
-            <button class="footer-support-link" id="footerSupportBtn" type="button" title="Support SGOU Database via UPI">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true" style="margin-right:2px; vertical-align:-1px;">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            <button class="footer-support-link" id="footerSupportBtn" type="button"
+                title="Support SGOU Database via UPI">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"
+                    style="margin-right:2px; vertical-align:-1px;">
+                    <path
+                        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                    </path>
                 </svg>
                 <span>Support Project (UPI)</span>
             </button>
             <span class="footer-sep">&middot;</span>
-            <button class="footer-minimal-btn" id="footerShortcutsBtn" type="button" title="Keyboard Shortcuts (?)">Shortcuts (?)</button>
+            <button class="footer-minimal-btn" id="footerShortcutsBtn" type="button"
+                title="Keyboard Shortcuts (?)">Shortcuts (?)</button>
             <span class="footer-sep">&middot;</span>
             <a href="https://sgou-slm-database.vercel.app/" target="_blank" rel="noopener">SGOU Academic Database</a>
         </div>
@@ -608,7 +707,8 @@
     <div class="viewer-panel" id="viewerPanel">
         <div class="vp-topbar">
             <div class="vp-topbar-row">
-                <button class="vp-btn vp-back" id="viewerBack" aria-label="Go back to catalog" title="Go back to catalog (Esc)" type="button">
+                <button class="vp-btn vp-back" id="viewerBack" aria-label="Go back to catalog"
+                    title="Go back to catalog (Esc)" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 12H5" />
@@ -645,7 +745,8 @@
                             <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
                     </button>
-                    <button class="vp-btn" id="viewerPanelShare" aria-label="Share" title="Share link (S)" type="button">
+                    <button class="vp-btn" id="viewerPanelShare" aria-label="Share" title="Share link (S)"
+                        type="button">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="18" cy="5" r="3" />
@@ -655,9 +756,11 @@
                             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                         </svg>
                     </button>
-                    <button class="vp-btn support-action-btn" id="viewerPanelSupport" aria-label="Support platform" title="Support SGOU Database (UPI)" type="button">
+                    <button class="vp-btn support-action-btn" id="viewerPanelSupport" aria-label="Support platform"
+                        title="Support SGOU Database (UPI)" type="button">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                            <path
+                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                         </svg>
                     </button>
                 </div>
@@ -669,14 +772,17 @@
                 <span class="vp-code" id="viewerCourseCode"></span>
             </div>
             <div class="vp-mismatch-banner" id="viewerPanelMismatchBanner" style="display:none;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
                 <div class="vp-mismatch-content">
                     <strong id="vpMismatchBadge">University Portal Error:</strong>
-                    <span id="vpMismatchText">SGOU portal uploaded the wrong question paper under this course link.</span>
+                    <span id="vpMismatchText">SGOU portal uploaded the wrong question paper under this course
+                        link.</span>
                 </div>
             </div>
         </div>
@@ -695,7 +801,8 @@
             <div class="report-modal-header">
                 <div class="report-header-info">
                     <div class="report-header-title">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
                             <line x1="4" y1="22" x2="4" y2="15"></line>
                         </svg>
@@ -707,8 +814,10 @@
                         <span class="report-doc-meta" id="reportModalDocMeta">SGOU Academic Material</span>
                     </div>
                 </div>
-                <button class="report-close-btn" id="reportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="report-close-btn" id="reportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)"
+                    type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -725,28 +834,35 @@
                             <option value="metadata">Incorrect Date or Subject Code</option>
                             <option value="other">Other Issue</option>
                         </select>
-                        <svg class="report-select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <svg class="report-select-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.2">
                             <polyline points="6 9 12 15 18 9"></polyline>
                         </svg>
                     </div>
                 </div>
 
                 <div class="report-field-group">
-                    <label for="reportNoteInput" class="report-field-label">Description <span class="report-label-opt">(optional)</span></label>
-                    <input type="text" id="reportNoteInput" class="report-input" placeholder="e.g. Missing pages or incorrect year..." maxlength="250">
+                    <label for="reportNoteInput" class="report-field-label">Description <span
+                            class="report-label-opt">(optional)</span></label>
+                    <input type="text" id="reportNoteInput" class="report-input"
+                        placeholder="e.g. Missing pages or incorrect year..." maxlength="250">
                 </div>
             </div>
 
             <div class="report-modal-footer">
                 <div class="report-footer-left">
-                    <button type="button" class="report-tool-btn whatsapp-tool-btn" id="reportSendWhatsApp" title="Send structured report directly on WhatsApp">
+                    <button type="button" class="report-tool-btn whatsapp-tool-btn" id="reportSendWhatsApp"
+                        title="Send structured report directly on WhatsApp">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z"/>
+                            <path
+                                d="M12.031 2C6.496 2 2 6.494 2 12.029c0 1.93.548 3.738 1.498 5.275L2 22l4.832-1.454A9.974 9.974 0 0 0 12.031 22C17.566 22 22 17.506 22 12.029 22 6.494 17.566 2 12.031 2zm5.727 14.168c-.24.673-1.393 1.288-1.928 1.343-.49.05-1.127.08-3.32-.828-2.618-1.082-4.294-3.757-4.425-3.931-.13-.174-1.054-1.402-1.054-2.674 0-1.272.668-1.897.906-2.155.239-.258.522-.323.696-.323.174 0 .348.002.5.01.163.008.382-.062.597.455.228.549.773 1.884.84 2.022.066.138.11.3.022.474-.088.174-.131.283-.262.434-.13.151-.274.337-.392.454-.13.13-.265.272-.114.531.151.26 1.058 1.737 2.272 2.818 1.562 1.39 2.878 1.82 3.287 2.022.409.202.648.169.887-.109.239-.278 1.026-1.196 1.301-1.606.275-.41.55-.342.923-.203.373.138 2.36 1.112 2.765 1.314.405.202.675.303.774.474.098.172.098.998-.142 1.671z" />
                         </svg>
                         <span>WhatsApp</span>
                     </button>
-                    <button type="button" class="report-tool-btn" id="reportCopyDetails" title="Copy structured report to clipboard">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <button type="button" class="report-tool-btn" id="reportCopyDetails"
+                        title="Copy structured report to clipboard">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
@@ -755,8 +871,10 @@
                 </div>
                 <div class="report-footer-right">
                     <button type="button" class="report-cancel-btn" id="reportCancelBtn">Cancel</button>
-                    <button type="button" class="report-submit-btn" id="reportSubmitForm" data-channel="form" title="Submit report">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <button type="button" class="report-submit-btn" id="reportSubmitForm" data-channel="form"
+                        title="Submit report">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
                             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                         </svg>
@@ -768,13 +886,16 @@
     </div>
 
     <!-- ============ VOLUNTARY SUPPORT & TIP JAR MODAL ============ -->
-    <div class="support-modal-backdrop" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle">
+    <div class="support-modal-backdrop" id="supportModal" role="dialog" aria-modal="true"
+        aria-labelledby="supportModalTitle">
         <div class="support-modal">
             <div class="support-modal-header">
                 <div class="support-header-left">
                     <div class="support-heart-badge" aria-hidden="true">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            <path
+                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                            </path>
                         </svg>
                     </div>
                     <div>
@@ -782,8 +903,10 @@
                         <p class="support-subtitle">Keep this community academic portal free &amp; active</p>
                     </div>
                 </div>
-                <button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog"
+                    title="Close (Esc)" type="button">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -794,7 +917,9 @@
                 <!-- High-Trust Platform Message -->
                 <div class="support-intro-card">
                     <p class="support-intro-text">
-                        This platform is maintained by <strong>Ahayas</strong> as a free service for all SGOU students. Your voluntary contributions directly fund server hosting, domain renewals, and syllabus updates.
+                        This platform is maintained by <strong>Ahayas</strong> as a free service for all SGOU students.
+                        Your voluntary contributions directly fund server hosting, domain renewals, and syllabus
+                        updates.
                     </p>
                 </div>
 
@@ -802,7 +927,8 @@
                 <div class="support-section-label">Choose Contribution</div>
                 <div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">
                     <button type="button" class="amount-chip" data-amount="15">₹15</button>
-                    <button type="button" class="amount-chip active" data-amount="25">₹25 <span class="chip-popular-badge">Popular</span></button>
+                    <button type="button" class="amount-chip active" data-amount="25">₹25 <span
+                            class="chip-popular-badge">Popular</span></button>
                     <button type="button" class="amount-chip" data-amount="50">₹50</button>
                     <button type="button" class="amount-chip" data-amount="100">₹100</button>
                     <button type="button" class="amount-chip" data-amount="custom">Custom</button>
@@ -810,10 +936,12 @@
 
                 <!-- Mobile 1-Tap Action Section (Primary on Mobile) -->
                 <div class="support-mobile-section">
-                    <a href="upi://pay?pa=ahayas.info@oksbi&amp;pn=Ahayas&amp;am=25&amp;cu=INR&amp;tn=Support%20SGOU%20Database" 
-                       id="supportDirectPayBtn" class="support-pay-primary-btn" target="_blank" rel="noopener">
+                    <a href="upi://pay?pa=ahayas.info@oksbi&amp;pn=Ahayas&amp;am=25&amp;cu=INR&amp;tn=Support%20SGOU%20Database"
+                        id="supportDirectPayBtn" class="support-pay-primary-btn" target="_blank" rel="noopener">
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            <path
+                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                            </path>
                         </svg>
                         <span id="supportDirectPayBtnText">Support with ₹25 via UPI</span>
                     </a>
@@ -822,7 +950,8 @@
                     </div>
 
                     <button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
@@ -851,8 +980,10 @@
                         <code class="support-vpa-text" id="supportVpaText">ahayas.info@oksbi</code>
                         <span class="support-payee-tag">Payee: Ahayas</span>
                     </div>
-                    <button type="button" class="support-copy-btn" id="supportCopyVpaBtn" title="Copy UPI ID to clipboard">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <button type="button" class="support-copy-btn" id="supportCopyVpaBtn"
+                        title="Copy UPI ID to clipboard">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
@@ -863,7 +994,8 @@
 
             <div class="support-modal-footer">
                 <span class="support-security-note">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
@@ -890,8 +1022,10 @@
                     <h3 id="dlModalTitle">Download Course Material</h3>
                     <p id="dlModalSubtitle">Customized naming & destination</p>
                 </div>
-                <button class="modal-close" id="dlModalClose" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="modal-close" id="dlModalClose" aria-label="Close dialog" title="Close (Esc)"
+                    type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -971,8 +1105,10 @@
                 <span class="dp-status" id="dpStatus">Downloading PDF&hellip;</span>
                 <span class="dp-filename" id="dpFilename">document.pdf</span>
             </div>
-            <button class="dp-cancel" id="dpCancelBtn" aria-label="Cancel download" title="Cancel download" type="button">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <button class="dp-cancel" id="dpCancelBtn" aria-label="Cancel download" title="Cancel download"
+                type="button">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -987,7 +1123,8 @@
         </div>
         <div class="dp-success-actions" id="dpSuccessActions" style="display:none">
             <button class="dp-btn-open" id="dpOpenBtn" type="button">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                     <polyline points="15 3 21 3 21 9"></polyline>
                     <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -995,7 +1132,8 @@
                 <span>Open PDF</span>
             </button>
             <button class="dp-btn-dismiss" id="dpDismissBtn" type="button" aria-label="Dismiss" title="Dismiss">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -1017,8 +1155,10 @@
                     </svg>
                     <h3 id="drawerTitle">Saved Materials</h3>
                 </div>
-                <button class="drawer-close" id="myDownloadsClose" aria-label="Close drawer" title="Close drawer (Esc)" type="button">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="drawer-close" id="myDownloadsClose" aria-label="Close drawer" title="Close drawer (Esc)"
+                    type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -1038,21 +1178,27 @@
                 <!-- Dynamically populated -->
             </div>
             <div class="drawer-footer">
-                <button class="drawer-support-btn" id="drawerSupportBtn" type="button" title="Support this free academic project">
+                <button class="drawer-support-btn" id="drawerSupportBtn" type="button"
+                    title="Support this free academic project">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                        <path
+                            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+                        </path>
                     </svg>
                     <span>Support</span>
                 </button>
                 <button class="drawer-update-link" id="drawerUpdateBtn" type="button" title="Check for app updates">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                     </svg>
                     <span>Check Updates</span>
                     <span class="update-badge-dot" id="updateBadgeDot" style="display:none"></span>
                 </button>
-                <button class="drawer-clear-btn" id="myDownloadsClearBtn" type="button" title="Clear all download history">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="drawer-clear-btn" id="myDownloadsClearBtn" type="button"
+                    title="Clear all download history">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
@@ -1078,8 +1224,10 @@
                     <h3 id="helpTitle">Where do my downloads go?</h3>
                     <p>Device storage guide</p>
                 </div>
-                <button class="modal-close" id="storageHelpClose" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="modal-close" id="storageHelpClose" aria-label="Close dialog" title="Close (Esc)"
+                    type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -1099,21 +1247,28 @@
                             (or check <em>Recents</em>).</li>
                         <li><strong>Save to Specific Folder</strong>: When the PDF opens in Safari, tap the
                             <strong>Share icon (↑)</strong> and select <strong>"Save to Files"</strong> to pick any
-                            iCloud or device folder, or tap <strong>"Books"</strong> to keep it in Apple Books.</li>
+                            iCloud or device folder, or tap <strong>"Books"</strong> to keep it in Apple Books.
+                        </li>
                     </ol>
                 </div>
                 <div class="guide-content" id="androidTab">
                     <ol class="guide-steps">
-                        <li><strong>Default Folder</strong>: Files save automatically to your phone's <code>Downloads</code> folder.</li>
-                        <li><strong>Find Your File</strong>: Open <em>Files by Google</em> or your phone's <em>File Manager</em> &rarr; tap <em>Downloads</em>.</li>
-                        <li><strong>Notification</strong>: Swipe down from the top of your screen to tap the finished download notification directly.</li>
+                        <li><strong>Default Folder</strong>: Files save automatically to your phone's
+                            <code>Downloads</code> folder.</li>
+                        <li><strong>Find Your File</strong>: Open <em>Files by Google</em> or your phone's <em>File
+                                Manager</em> &rarr; tap <em>Downloads</em>.</li>
+                        <li><strong>Notification</strong>: Swipe down from the top of your screen to tap the finished
+                            download notification directly.</li>
                     </ol>
                 </div>
                 <div class="guide-content" id="pcTab">
                     <ol class="guide-steps">
-                        <li><strong>Default Folder</strong>: Saved to your computer's <code>Downloads</code> directory.</li>
-                        <li><strong>Choose Folder (Chrome / Edge)</strong>: Use the <em>"Choose Folder"</em> button in the download popup to pick any specific folder or USB drive.</li>
-                        <li><strong>Shortcut</strong>: Press <code>Ctrl + J</code> (Windows) or <code>Cmd + Option + L</code> (Mac) to view browser downloads.</li>
+                        <li><strong>Default Folder</strong>: Saved to your computer's <code>Downloads</code> directory.
+                        </li>
+                        <li><strong>Choose Folder (Chrome / Edge)</strong>: Use the <em>"Choose Folder"</em> button in
+                            the download popup to pick any specific folder or USB drive.</li>
+                        <li><strong>Shortcut</strong>: Press <code>Ctrl + J</code> (Windows) or
+                            <code>Cmd + Option + L</code> (Mac) to view browser downloads.</li>
                     </ol>
                 </div>
             </div>
@@ -1131,8 +1286,10 @@
                     <h3 id="updateModalTitle">Update App</h3>
                     <p id="appVersionLabel">v2026.10.06</p>
                 </div>
-                <button class="modal-close" id="updateModalClose" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="modal-close" id="updateModalClose" aria-label="Close dialog" title="Close (Esc)"
+                    type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -1147,35 +1304,40 @@
                 <button class="btn-update-check full-width" id="btnCheckUpdate" type="button">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                         stroke-linecap="round" stroke-linejoin="round" id="checkUpdateSvg">
-                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                     </svg>
                     <span id="btnCheckUpdateText">Check for Updates</span>
                 </button>
 
                 <div class="update-minimal-footer">
-                    <button class="link-force-update" id="btnForceUpdate" type="button">Clear cache &amp; reload</button>
+                    <button class="link-force-update" id="btnForceUpdate" type="button">Clear cache &amp;
+                        reload</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- ============ KEYBOARD SHORTCUTS MODAL ============ -->
-    <div class="modal-backdrop" id="shortcutsModal" role="dialog" aria-modal="true" aria-labelledby="shortcutsModalTitle">
+    <div class="modal-backdrop" id="shortcutsModal" role="dialog" aria-modal="true"
+        aria-labelledby="shortcutsModalTitle">
         <div class="modal-card shortcuts-modal-card">
             <div class="modal-header">
                 <div class="modal-header-icon help-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <rect x="2" y="4" width="20" height="16" rx="3" />
-                        <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M6 12h.001M10 12h.001M14 12h.001M18 12h.001M8 16h8" />
+                        <path
+                            d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M6 12h.001M10 12h.001M14 12h.001M18 12h.001M8 16h8" />
                     </svg>
                 </div>
                 <div class="modal-header-text">
                     <h3 id="shortcutsModalTitle">Keyboard Shortcuts</h3>
                     <p>Logical navigation &amp; quick power actions</p>
                 </div>
-                <button class="modal-close" id="shortcutsModalClose" aria-label="Close dialog" title="Close (Esc)" type="button">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="modal-close" id="shortcutsModalClose" aria-label="Close dialog" title="Close (Esc)"
+                    type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -1209,7 +1371,8 @@
                     <div class="shortcuts-section-title">Catalog &amp; Material Filtering</div>
                     <div class="shortcut-row">
                         <span class="shortcut-desc">Filter Material Type</span>
-                        <div class="shortcut-keys"><kbd>1</kbd> SLM &nbsp;<kbd>2</kbd> PYQ &nbsp;<kbd>3</kbd> ASGN &nbsp;<kbd>0</kbd> All</div>
+                        <div class="shortcut-keys"><kbd>1</kbd> SLM &nbsp;<kbd>2</kbd> PYQ &nbsp;<kbd>3</kbd> ASGN
+                            &nbsp;<kbd>0</kbd> All</div>
                     </div>
                     <div class="shortcut-row">
                         <span class="shortcut-desc">Expand / Collapse All Programmes</span>
@@ -1233,10 +1396,6 @@
                     <div class="shortcut-row">
                         <span class="shortcut-desc">Toggle Theme</span>
                         <div class="shortcut-keys"><kbd>T</kbd></div>
-                    </div>
-                    <div class="shortcut-row">
-                        <span class="shortcut-desc">Cycle Eye Comfort Filter (Sepia / Dark / Normal)</span>
-                        <div class="shortcut-keys"><kbd>F</kbd></div>
                     </div>
                     <div class="shortcut-row">
                         <span class="shortcut-desc">Download Active Material</span>
@@ -1268,8 +1427,10 @@
             </div>
             <div class="install-actions">
                 <button class="install-btn" id="installBtn">INSTALL</button>
-                <button class="install-dismiss" id="installDismiss" aria-label="Dismiss prompt" title="Dismiss" type="button">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <button class="install-dismiss" id="installDismiss" aria-label="Dismiss prompt" title="Dismiss"
+                    type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -1281,12 +1442,12 @@
     <!-- Toast & Update Notification Container -->
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/utils/clipboard.js?v=20261008_05" defer></script>
-    <script src="js/components/toast.js?v=20261008_05" defer></script>
-    <script src="js/components/theme.js?v=20261008_05" defer></script>
-    <script src="js/qrcode.min.js?v=20261008_05" defer></script>
-    <script src="js/components/support-modal.js?v=20261008_05" defer></script>
-    <script src="js/script.js?v=20261008_05" defer></script>
+    <script src="js/utils/clipboard.js?v=20261008_06" defer></script>
+    <script src="js/components/toast.js?v=20261008_06" defer></script>
+    <script src="js/components/theme.js?v=20261008_06" defer></script>
+    <script src="js/qrcode.min.js?v=20261008_06" defer></script>
+    <script src="js/components/support-modal.js?v=20261008_06" defer></script>
+    <script src="js/script.js?v=20261008_06" defer></script>
 </body>
 
 </html>
