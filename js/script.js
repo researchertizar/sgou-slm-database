@@ -3246,9 +3246,9 @@ class UIController {
     if (payBtn) payBtn.href = uri;
     if (payBtnText) {
       if (amount && Number(amount) > 0) {
-        payBtnText.textContent = `Pay ₹${amount} via UPI App`;
+        payBtnText.textContent = `Pay ₹${amount} via UPI`;
       } else {
-        payBtnText.textContent = 'Pay via UPI App (Any Amount)';
+        payBtnText.textContent = 'Pay via UPI (Any Amount)';
       }
     }
   }
@@ -3272,7 +3272,7 @@ class UIController {
     const qrSection = $('supportQrSection');
     const qrToggleText = $('supportToggleQrText');
     if (qrSection) qrSection.classList.remove('show');
-    if (qrToggleText) qrToggleText.textContent = 'Show QR Code to Scan';
+    if (qrToggleText) qrToggleText.textContent = 'Show QR Code';
 
     modal.classList.add('visible');
   }
@@ -4063,7 +4063,7 @@ class UIController {
         const toggleTxt = $('supportToggleQrText');
         if (qrSec) {
           const isShown = qrSec.classList.toggle('show');
-          if (toggleTxt) toggleTxt.textContent = isShown ? 'Hide QR Code' : 'Show QR Code to Scan';
+          if (toggleTxt) toggleTxt.textContent = isShown ? 'Hide QR Code' : 'Show QR Code';
         }
         return;
       }
@@ -4073,7 +4073,7 @@ class UIController {
       }
 
       // Keyboard Shortcuts Dialog
-      if (e.target.closest('#shortcutsBtn')) {
+      if (e.target.closest('#shortcutsBtn') || e.target.closest('#footerShortcutsBtn')) {
         this.openShortcutsModal();
         return;
       }
