@@ -21,8 +21,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261008_06">
-  <link rel="stylesheet" href="./css/components/toast.css?v=20261008_06">
+  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261009_01">
+  <link rel="stylesheet" href="./css/components/toast.css?v=20261009_01">
   <style>
     /* ============================================================
        THEME SYSTEM — Synchronized with SGOU Academic Design Tokens
@@ -1239,12 +1239,38 @@
     </div>
   </div>
 
+  <script>
+    // Ensure all 2D canvas contexts (including PDF.js internal scratch & SMask canvases)
+    // enable willReadFrequently to suppress browser readback warnings and optimize rendering throughput.
+    (function () {
+      try {
+        var origGetContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (type, options) {
+          if (type === '2d') {
+            options = Object.assign({ willReadFrequently: true }, options);
+            return origGetContext.call(this, type, options);
+          }
+          return origGetContext.apply(this, arguments);
+        };
+        if (typeof OffscreenCanvas !== 'undefined' && OffscreenCanvas.prototype.getContext) {
+          var origOffscreen = OffscreenCanvas.prototype.getContext;
+          OffscreenCanvas.prototype.getContext = function (type, options) {
+            if (type === '2d') {
+              options = Object.assign({ willReadFrequently: true }, options);
+              return origOffscreen.call(this, type, options);
+            }
+            return origOffscreen.apply(this, arguments);
+          };
+        }
+      } catch (_) {}
+    })();
+  </script>
   <script src="./pdfjs/pdf.min.js"></script>
-  <script src="./js/utils/clipboard.js?v=20261008_06"></script>
-  <script src="./js/components/toast.js?v=20261008_06"></script>
-  <script src="./js/components/theme.js?v=20261008_06"></script>
-  <script src="./js/qrcode.min.js?v=20261008_06"></script>
-  <script src="./js/components/support-modal.js?v=20261008_06"></script>
+  <script src="./js/utils/clipboard.js?v=20261009_01"></script>
+  <script src="./js/components/toast.js?v=20261009_01"></script>
+  <script src="./js/components/theme.js?v=20261009_01"></script>
+  <script src="./js/qrcode.min.js?v=20261009_01"></script>
+  <script src="./js/components/support-modal.js?v=20261009_01"></script>
   <script>
     (function () {
       'use strict';
@@ -2593,7 +2619,7 @@
       if (supportBtn) {
         supportBtn.addEventListener('click', function () {
           if (window.SupportModal) {
-            window.SupportModal.open(25);
+            window.SupportModal.open(25, supportBtn);
           }
         });
       }

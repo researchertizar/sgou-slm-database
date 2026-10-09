@@ -3274,14 +3274,15 @@ class UIController {
     }
   }
 
-  openSupportModal(initialAmount = 25) {
+  openSupportModal(initialAmount = 25, triggerEl = null) {
     if (window.SupportModal && typeof window.SupportModal.open === 'function') {
-      window.SupportModal.open(initialAmount);
+      window.SupportModal.open(initialAmount, triggerEl);
       return;
     }
     const modal = $('supportModal');
     if (!modal) return;
     this._supportActiveAmount = initialAmount;
+    this._supportLastFocused = triggerEl || (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
 
     // Reset amount chips
     const chips = modal.querySelectorAll('.amount-chip');
@@ -3300,6 +3301,8 @@ class UIController {
     if (qrToggleText) qrToggleText.textContent = 'Show QR Code to Scan';
 
     modal.classList.add('visible');
+    modal.setAttribute('aria-hidden', 'false');
+    if ('inert' in modal) modal.inert = false;
   }
 
   closeSupportModal() {
@@ -3307,7 +3310,19 @@ class UIController {
       window.SupportModal.close();
       return;
     }
-    $('supportModal')?.classList.remove('visible');
+    const modal = $('supportModal');
+    if (!modal) return;
+    if (modal.contains(document.activeElement)) {
+      if (this._supportLastFocused && typeof this._supportLastFocused.focus === 'function' && document.body.contains(this._supportLastFocused) && !modal.contains(this._supportLastFocused)) {
+        try { this._supportLastFocused.focus(); } catch (_) {}
+      } else if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        try { document.activeElement.blur(); } catch (_) {}
+      }
+    }
+    modal.classList.remove('visible');
+    modal.setAttribute('aria-hidden', 'true');
+    if ('inert' in modal) modal.inert = true;
+    this._supportLastFocused = null;
   }
 
   copySupportVpa() {
@@ -4064,8 +4079,9 @@ class UIController {
       }
 
       // Voluntary Support & Tip Jar Dialog
-      if (e.target.closest('#headerSupportBtn') || e.target.closest('#footerSupportBtn') || e.target.closest('#drawerSupportBtn') || e.target.closest('#viewerPanelSupport')) {
-        this.openSupportModal();
+      const supTrigger = e.target.closest('#headerSupportBtn, #footerSupportBtn, #drawerSupportBtn, #viewerPanelSupport');
+      if (supTrigger) {
+        this.openSupportModal(25, supTrigger);
         return;
       }
       if (e.target.closest('#supportModalCloseBtn') || e.target.closest('#supportDoneBtn') || (e.target === $('supportModal'))) {

@@ -48,6 +48,7 @@
     qrToggleText: null,
     copyBtn: null,
     copyBtnText: null,
+    lastFocusedElement: null,
     isQrExpandedOnMobile: false
   };
 
@@ -194,11 +195,19 @@
         modal = document.createElement('div');
         modal.id = 'supportModal';
         modal.className = 'support-modal-backdrop';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'supportModalTitle');
         modal.setAttribute('aria-hidden', 'true');
+        if ('inert' in modal) modal.inert = true;
         modal.innerHTML = SupportModal.getTemplate();
         document.body.appendChild(modal);
       } else {
         modal.innerHTML = SupportModal.getTemplate();
+        if (!modal.classList.contains('visible') && !modal.classList.contains('active')) {
+          modal.setAttribute('aria-hidden', 'true');
+          if ('inert' in modal) modal.inert = true;
+        }
       }
       state.modalEl = modal;
       state.qrContainer = document.getElementById('supportQrContainer');
@@ -297,13 +306,17 @@
     /**
      * Open modal dialog
      * @param {number} [amount=25]
+     * @param {HTMLElement} [triggerEl=null]
      */
-    open: function (amount) {
+    open: function (amount, triggerEl) {
       SupportModal.ensureMounted();
       if (!state.modalEl) return;
 
       var targetAmount = typeof amount === 'number' ? amount : CONFIG.defaultAmount;
       SupportModal.setAmount(targetAmount);
+
+      // Save trigger element for accessible focus restoration on close
+      state.lastFocusedElement = triggerEl || (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
 
       // Reset mobile QR toggle
       if (state.qrSection) state.qrSection.classList.remove('show');
@@ -311,6 +324,9 @@
 
       state.modalEl.classList.add('visible', 'active');
       state.modalEl.setAttribute('aria-hidden', 'false');
+      if ('inert' in state.modalEl) {
+        state.modalEl.inert = false;
+      }
 
       sendTelemetry('support_modal_open', {
         amount: targetAmount,
@@ -319,7 +335,9 @@
 
       // Focus first chip for accessibility
       var activeChip = state.modalEl.querySelector('.amount-chip.active');
-      if (activeChip) activeChip.focus();
+      if (activeChip) {
+        try { activeChip.focus(); } catch (_) {}
+      }
     },
 
     /**
@@ -327,8 +345,27 @@
      */
     close: function () {
       if (state.modalEl) {
+        // Move focus away from modal descendants before applying aria-hidden="true"
+        // to satisfy WAI-ARIA and avoid browser warning:
+        // "Blocked aria-hidden on an element because its descendant retained focus"
+        if (state.modalEl.contains(document.activeElement)) {
+          if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === 'function' && document.body.contains(state.lastFocusedElement) && !state.modalEl.contains(state.lastFocusedElement)) {
+            try {
+              state.lastFocusedElement.focus();
+            } catch (_) {}
+          } else if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            try {
+              document.activeElement.blur();
+            } catch (_) {}
+          }
+        }
+
         state.modalEl.classList.remove('visible', 'active');
         state.modalEl.setAttribute('aria-hidden', 'true');
+        if ('inert' in state.modalEl) {
+          state.modalEl.inert = true;
+        }
+        state.lastFocusedElement = null;
       }
     },
 
@@ -349,7 +386,7 @@
       // Delegate triggers across document
       document.addEventListener('click', function (e) {
         // Open Triggers
-        var trigger = e.target.closest('#supportBtn, #footerSupportBtn, #topbarSupport, #readerSupportBtn, #headerSupportBtn, #viewerPanelSupport, [data-action="support"], .support-trigger');
+        var trigger = e.target.closest('#supportBtn, #footerSupportBtn, #topbarSupport, #readerSupportBtn, #headerSupportBtn, #drawerSupportBtn, #viewerPanelSupport, [data-action="support"], .support-trigger');
         if (trigger) {
           e.preventDefault();
           var rawAmt = trigger.getAttribute('data-support-amount');
