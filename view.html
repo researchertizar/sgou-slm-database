@@ -1930,7 +1930,38 @@
             var rawCode = params.get('code') || params.get('course') || pathCode || decodeURIComponent(hash || '');
             var courseCode = rawCode.trim();
 
-            var pdfUrl = params.get('url') || '';
+            function isValidPdfUrl(rawUrl) {
+                if (!rawUrl || typeof rawUrl !== 'string') return false;
+                var trimmed = rawUrl.trim();
+                if (!trimmed) return false;
+                if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+                    if (trimmed.startsWith('//')) return false;
+                    return true;
+                }
+                try {
+                    var parsed = new URL(trimmed, (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://sgou.ac.in');
+                    if (parsed.protocol !== 'https:') {
+                        if (parsed.protocol === 'http:' && typeof window !== 'undefined' && window.location && (parsed.hostname.toLowerCase() === window.location.hostname.toLowerCase() || parsed.hostname.toLowerCase() === 'localhost')) {
+                            // allow local http in development
+                        } else {
+                            return false;
+                        }
+                    }
+                    var host = parsed.hostname.toLowerCase();
+                    var allowedHosts = ['sgou.ac.in', 'www.sgou.ac.in', 'd198y4z1gpgoxg.cloudfront.net'];
+                    if (allowedHosts.indexOf(host) !== -1) return true;
+                    if (typeof window !== 'undefined' && window.location && host === window.location.hostname.toLowerCase()) return true;
+                    return false;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            var rawPdfUrl = params.get('url') || '';
+            var pdfUrl = isValidPdfUrl(rawPdfUrl) ? rawPdfUrl : '';
+            if (rawPdfUrl && !pdfUrl) {
+                console.warn('[Security] Rejected untrusted or invalid PDF URL:', rawPdfUrl);
+            }
             var name = params.get('name') || '';
             var code = courseCode;
             var prog = params.get('prog') || '';
@@ -2215,17 +2246,22 @@
                     topBadge.className = 'topbar-badge ' + (matType === 'PYQ' ? 'pyq' : matType === 'ASSIGNMENT' ? 'asgn' : (level === 'PG' ? 'pg' : level === 'UG' ? 'ug' : 'fyug'));
                 }
                 if (openBtn) {
-                    openBtn.href = pdfUrl;
-                    openBtn.onclick = function () {
-                        if (typeof gtag === 'function') {
-                            gtag('event', 'outbound_pdf_open', {
-                                item_id: code || courseCode,
-                                item_name: name || '',
-                                item_category: matType || 'SLM',
-                                link_url: pdfUrl
-                            });
-                        }
-                    };
+                    if (isValidPdfUrl(pdfUrl)) {
+                        openBtn.href = pdfUrl;
+                        openBtn.onclick = function () {
+                            if (typeof gtag === 'function') {
+                                gtag('event', 'outbound_pdf_open', {
+                                    item_id: code || courseCode,
+                                    item_name: name || '',
+                                    item_category: matType || 'SLM',
+                                    link_url: pdfUrl
+                                });
+                            }
+                        };
+                    } else {
+                        openBtn.removeAttribute('href');
+                        openBtn.onclick = function (e) { e.preventDefault(); };
+                    }
                 }
 
                 // Google Analytics 4 Telemetry for Document View
@@ -2252,7 +2288,13 @@
                 var ldOpen = document.getElementById('loadingDirectBtn');
                 if (ldTitle) ldTitle.textContent = (name || 'Document') + (code ? ' (' + code + ')' : '');
                 if (ldSub) ldSub.textContent = formattedProg + ' \u00B7 ' + typeLabel;
-                if (ldOpen) ldOpen.href = pdfUrl;
+                if (ldOpen) {
+                    if (isValidPdfUrl(pdfUrl)) {
+                        ldOpen.href = pdfUrl;
+                    } else {
+                        ldOpen.removeAttribute('href');
+                    }
+                }
 
                 var cleanCode = code ? code + '_' : '';
                 var cleanName = (name || 'doc').replace(/[^a-zA-Z0-9 _\-]/g, '').trim();
@@ -2284,7 +2326,9 @@
                         });
                     }
                     if (isIOS) {
-                        window.open(pdfUrl, '_blank', 'noopener');
+                        if (isValidPdfUrl(pdfUrl)) {
+                            window.open(pdfUrl, '_blank', 'noopener');
+                        }
                         var t = document.getElementById('toast');
                         if (t) {
                             t.textContent = "iPhone: Tap Share (\u2191) at bottom and select 'Save to Files'";
@@ -2432,13 +2476,16 @@
             }
 
             function showFallback(url) {
+                var safeUrl = isValidPdfUrl(url) ? escA(url) : '#';
+                var downloadAttr = isValidPdfUrl(url) ? ' download' : '';
+                var targetAttr = isValidPdfUrl(url) ? ' target="_blank" rel="noopener"' : '';
                 loading.innerHTML =
                     '<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
                     '<span style="text-align:center;max-width:260px">PDF viewer could not load this file.</span>' +
                     '<div style="display:flex;gap:.35rem;flex-wrap:wrap;justify-content:center;margin-top:.5rem">' +
-                    '<a href="' + escA(url) + '" download class="btn-view" style="text-decoration:none;padding:.42rem .85rem;font-size:12px">Download</a>' +
+                    '<a href="' + safeUrl + '"' + downloadAttr + ' class="btn-view" style="text-decoration:none;padding:.42rem .85rem;font-size:12px">Download</a>' +
                     '<button onclick="location.reload()" class="btn-view" style="padding:.42rem .85rem;font-size:12px;cursor:pointer;background:transparent;border:1.5px solid var(--accent);color:var(--accent);border-radius:5px">Retry</button>' +
-                    '<a href="' + escA(url) + '" target="_blank" rel="noopener" class="btn-view" style="text-decoration:none;padding:.42rem .85rem;font-size:12px">New Tab</a>' +
+                    '<a href="' + safeUrl + '"' + targetAttr + ' class="btn-view" style="text-decoration:none;padding:.42rem .85rem;font-size:12px">New Tab</a>' +
                     '</div>';
             }
 

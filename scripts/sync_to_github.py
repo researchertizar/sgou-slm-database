@@ -57,6 +57,7 @@ SUBDIRS = [
     "pdfjs",
     "scripts",
     "sitemaps",
+    "tests",
 ]
 
 # Directories and files explicitly forbidden in destination root

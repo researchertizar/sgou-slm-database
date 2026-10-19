@@ -117,12 +117,36 @@ const server = http.createServer((req, res) => {
     }
   }
 
-  // Handle static files
-  let filePath = path.join(__dirname, reqUrl.pathname === '/' ? 'index.html' : reqUrl.pathname);
+  // Security: prevent directory traversal (reject any raw traversal tokens before resolution)
+  const rawUrl = req.url || '';
+  if (rawUrl.includes('..') || rawUrl.includes('%2e%2e') || rawUrl.includes('%2E%2E')) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    return res.end('Forbidden');
+  }
+  try {
+    if (decodeURIComponent(rawUrl).includes('..')) {
+      res.writeHead(403, { 'Content-Type': 'text/plain' });
+      return res.end('Forbidden');
+    }
+  } catch (_) {
+    res.writeHead(400, { 'Content-Type': 'text/plain' });
+    return res.end('Bad Request');
+  }
 
-  // Security: prevent directory traversal
-  if (!filePath.startsWith(__dirname)) {
-    res.writeHead(403);
+  // Security: block dotfiles and hidden dot-directories (.git, .env, .gitignore, etc.)
+  const pathSegments = reqUrl.pathname.split('/');
+  if (pathSegments.some(seg => seg.startsWith('.'))) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    return res.end('Forbidden');
+  }
+
+  // Handle static files
+  const safeRoot = path.resolve(__dirname) + path.sep;
+  let filePath = path.resolve(__dirname, reqUrl.pathname === '/' ? 'index.html' : '.' + reqUrl.pathname);
+
+  // Security: prevent directory traversal by anchoring to root with directory separator
+  if (!filePath.startsWith(safeRoot)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
     return res.end('Forbidden');
   }
 
