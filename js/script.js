@@ -93,6 +93,32 @@ function hl(text, query) {
 }
 
 /**
+ * Accessible modal focus trap conforming to WAI-ARIA authoring practices.
+ * @param {HTMLElement} modalEl - Active modal dialog container
+ * @returns {Function} Cleanup function to remove listener
+ */
+function trapFocus(modalEl) {
+  if (!modalEl) return () => {};
+  const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const handleKeydown = (e) => {
+    if (e.key !== 'Tab') return;
+    const focusable = Array.from(modalEl.querySelectorAll(focusableSelector)).filter(el => el.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  modalEl.addEventListener('keydown', handleKeydown);
+  return () => modalEl.removeEventListener('keydown', handleKeydown);
+}
+
+/**
  * Converts shouty uppercase programme names to polished Title Case,
  * preserving acronyms like UG, PG, FYUG, BA, MA, B.Com, MCA, etc.
  * @param {string} name - Raw programme name
@@ -2114,8 +2140,10 @@ class UIController {
       const count = counts[lv] || 0;
 
       const pill = document.createElement('button');
-      pill.className = 'pill' + (this.activeLevel === lv ? ' active' : '');
+      const isActive = this.activeLevel === lv;
+      pill.className = 'pill' + (isActive ? ' active' : '');
       pill.dataset.level = lv;
+      pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       pill.innerHTML = `${lv === 'ALL' ? 'All' : lv} <span class="pill-count">${count}</span>`;
       container.appendChild(pill);
     });
@@ -2978,6 +3006,7 @@ class UIController {
       this._lastFocusBeforeShortcuts = document.activeElement;
       modal.classList.add('visible');
       Analytics.trackEngagement('shortcuts_modal_open');
+      this._shortcutsTrapCleanup = trapFocus(modal);
       const closeBtn = $('shortcutsModalClose') || $('shortcutsModalDoneBtn');
       setTimeout(() => closeBtn?.focus(), 50);
     }
@@ -2987,6 +3016,10 @@ class UIController {
     const modal = $('shortcutsModal');
     if (modal) {
       modal.classList.remove('visible');
+      if (this._shortcutsTrapCleanup) {
+        this._shortcutsTrapCleanup();
+        this._shortcutsTrapCleanup = null;
+      }
       if (this._lastFocusBeforeShortcuts && typeof this._lastFocusBeforeShortcuts.focus === 'function') {
         this._lastFocusBeforeShortcuts.focus();
         this._lastFocusBeforeShortcuts = null;
@@ -2999,6 +3032,7 @@ class UIController {
   openReportModal(item = {}) {
     const modal = $('reportModal');
     if (!modal) return;
+    this._lastFocusBeforeReport = document.activeElement;
     this._reportData = item;
 
     const titleEl = $('reportModalDocTitle');
@@ -3018,6 +3052,7 @@ class UIController {
 
     this.syncReportModalMode();
     modal.classList.add('visible');
+    this._reportTrapCleanup = trapFocus(modal);
     Analytics.event('report_modal_open', {
       item_id: item.code || '',
       item_name: item.name || '',
@@ -3056,6 +3091,14 @@ class UIController {
 
   closeReportModal() {
     $('reportModal')?.classList.remove('visible');
+    if (this._reportTrapCleanup) {
+      this._reportTrapCleanup();
+      this._reportTrapCleanup = null;
+    }
+    if (this._lastFocusBeforeReport && typeof this._lastFocusBeforeReport.focus === 'function') {
+      this._lastFocusBeforeReport.focus();
+      this._lastFocusBeforeReport = null;
+    }
     const submitBtn = $('reportSubmitForm');
     if (submitBtn) {
       submitBtn.classList.remove('submitting', 'success');
@@ -3630,8 +3673,11 @@ class UIController {
 
     if (lChanged) {
       this.activeLevel = level;
-      document.querySelectorAll('.pill').forEach(p =>
-        p.classList.toggle('active', p.dataset.level === this.activeLevel));
+      document.querySelectorAll('.pill').forEach(p => {
+        const isActive = p.dataset.level === this.activeLevel;
+        p.classList.toggle('active', isActive);
+        p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
     }
 
     if (tChanged) {
@@ -4562,8 +4608,11 @@ class UIController {
       const filterPill = e.target.closest('.pill');
       if (filterPill && filterPill.dataset.level) {
         this.activeLevel = filterPill.dataset.level;
-        document.querySelectorAll('.pill').forEach(p =>
-          p.classList.toggle('active', p.dataset.level === this.activeLevel));
+        document.querySelectorAll('.pill').forEach(p => {
+          const isActive = p.dataset.level === this.activeLevel;
+          p.classList.toggle('active', isActive);
+          p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
         Analytics.trackFilter(this.activeLevel);
         this.executeSearch();
         this.syncUrlFromState();

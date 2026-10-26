@@ -447,10 +447,32 @@
         }
       });
 
-      // Escape key listener
+      // Keyboard trap and Escape key listener
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && state.modalEl && (state.modalEl.classList.contains('visible') || state.modalEl.classList.contains('active'))) {
+        var isModalOpen = state.modalEl && (state.modalEl.classList.contains('visible') || state.modalEl.classList.contains('active'));
+        if (!isModalOpen) return;
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
           SupportModal.close();
+          return;
+        }
+
+        if (e.key === 'Tab') {
+          var focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+          var focusable = Array.prototype.slice.call(state.modalEl.querySelectorAll(focusableSelector)).filter(function (el) {
+            return el.offsetParent !== null;
+          });
+          if (!focusable.length) return;
+          var first = focusable[0];
+          var last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
       });
     }

@@ -77,7 +77,7 @@
       --surface-subtle: #24221f;
       --surface-border: #38322c;
       --text: #f0ede8;
-      --text-muted: #a39e95;
+      --text-muted: #b5afa6;
       --accent: #e5725a;
       --accent-hover: #f28b75;
       --toolbar-bg: rgba(30, 27, 24, 0.94);
@@ -86,7 +86,7 @@
       --toolbar-btn-hover: rgba(255, 255, 255, 0.12);
       --canvas-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
       --placeholder-bg: #24201c;
-      --placeholder-text: #787168;
+      --placeholder-text: #9e968a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -232,6 +232,7 @@
     }
 
     .bar-btn {
+      position: relative;
       background: transparent;
       border: none;
       color: var(--toolbar-text);
@@ -244,6 +245,17 @@
       border-radius: 50%;
       transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
       touch-action: manipulation;
+    }
+    .bar-btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 44px;
+      min-height: 44px;
+      width: 100%;
+      height: 100%;
     }
     .bar-btn:hover {
       background: var(--toolbar-btn-hover);
@@ -1386,8 +1398,39 @@
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/pdf.worker.min.js';
 
+      function isValidPdfUrl(rawUrl) {
+        if (!rawUrl || typeof rawUrl !== 'string') return false;
+        var trimmed = rawUrl.trim();
+        if (!trimmed) return false;
+        if (trimmed.startsWith('/') || trimmed.startsWith('./') || trimmed.startsWith('../')) {
+          if (trimmed.startsWith('//')) return false;
+          return true;
+        }
+        try {
+          var parsed = new URL(trimmed, (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://sgou.ac.in');
+          if (parsed.protocol !== 'https:') {
+            if (parsed.protocol === 'http:' && typeof window !== 'undefined' && window.location && (parsed.hostname.toLowerCase() === window.location.hostname.toLowerCase() || parsed.hostname.toLowerCase() === 'localhost' || parsed.hostname === '127.0.0.1')) {
+              // allow local development http
+            } else {
+              return false;
+            }
+          }
+          var host = parsed.hostname.toLowerCase();
+          var allowedHosts = ['sgou.ac.in', 'www.sgou.ac.in', 'd198y4z1gpgoxg.cloudfront.net'];
+          if (allowedHosts.indexOf(host) !== -1) return true;
+          if (typeof window !== 'undefined' && window.location && host === window.location.hostname.toLowerCase()) return true;
+          return false;
+        } catch (e) {
+          return false;
+        }
+      }
+
       var params = new URLSearchParams(window.location.search);
-      var rawFile = params.get('file') || '';
+      var rawFileParam = params.get('file') || '';
+      var rawFile = isValidPdfUrl(rawFileParam) ? rawFileParam : '';
+      if (rawFileParam && !rawFile) {
+        console.warn('[Security] Rejected untrusted or invalid PDF URL in reader:', rawFileParam);
+      }
       var docName = params.get('name') || 'Document';
       var courseCode = params.get('code') || '';
       var docType = params.get('type') || 'SLM';
@@ -1432,9 +1475,14 @@
         errorBox.style.display = 'flex';
         errorMsg.textContent = msg;
         var directBtn = document.getElementById('errorDirectBtn');
-        if (directBtn && rawFile) {
-          directBtn.href = rawFile;
-          directBtn.style.display = 'inline-flex';
+        if (directBtn) {
+          if (rawFile && isValidPdfUrl(rawFile)) {
+            directBtn.href = rawFile;
+            directBtn.style.display = 'inline-flex';
+          } else {
+            directBtn.removeAttribute('href');
+            directBtn.style.display = 'none';
+          }
         }
         if (typeof window.gtag === 'function') {
           window.gtag('event', 'reader_load_error', {
@@ -1446,7 +1494,7 @@
       }
 
       function resolveFileUrl(url) {
-        if (!url) return '';
+        if (!url || !isValidPdfUrl(url)) return '';
         if (url.startsWith('blob:') || url.startsWith('data:') || url.startsWith('/') || url.startsWith('./')) {
           return url;
         }
@@ -1467,8 +1515,8 @@
       }
 
       async function loadDocument() {
-        if (!rawFile) {
-          showError('No document URL provided.');
+        if (!rawFile || !isValidPdfUrl(rawFile)) {
+          showError('Invalid or untrusted document URL provided.');
           return;
         }
 
@@ -2237,6 +2285,46 @@
         zoomPresetBtn.addEventListener('click', toggleFitZoom);
       }
 
+      var activeFocusCleanup = null;
+      var lastFocusBeforeModal = null;
+      function trapModalFocus(modalEl) {
+        if (activeFocusCleanup) { activeFocusCleanup(); activeFocusCleanup = null; }
+        if (!modalEl) return;
+        lastFocusBeforeModal = document.activeElement;
+        var focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        var handleKeyDown = function (e) {
+          if (e.key !== 'Tab') return;
+          var focusable = Array.prototype.slice.call(modalEl.querySelectorAll(focusableSelector)).filter(function (el) {
+            return el.offsetParent !== null;
+          });
+          if (!focusable.length) return;
+          var first = focusable[0];
+          var last = focusable[focusable.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        };
+        modalEl.addEventListener('keydown', handleKeyDown);
+        activeFocusCleanup = function () {
+          modalEl.removeEventListener('keydown', handleKeyDown);
+        };
+      }
+
+      function releaseModalFocus() {
+        if (activeFocusCleanup) {
+          activeFocusCleanup();
+          activeFocusCleanup = null;
+        }
+        if (lastFocusBeforeModal && typeof lastFocusBeforeModal.focus === 'function') {
+          try { lastFocusBeforeModal.focus(); } catch (_) {}
+          lastFocusBeforeModal = null;
+        }
+      }
+
       // Quick Jump & Visual Scrubber Dialog
       pageJumpBtn.addEventListener('click', function () {
         jumpPageInput.value = currentPage;
@@ -2247,6 +2335,7 @@
         document.getElementById('jumpMaxBadge').textContent = totalPages;
         document.getElementById('jumpTotalText').textContent = '/ ' + totalPages;
         jumpModal.classList.add('active');
+        trapModalFocus(jumpModal);
         setTimeout(function () { jumpPageInput.focus(); jumpPageInput.select(); }, 50);
       });
 
@@ -2281,10 +2370,14 @@
 
       jumpCancelBtn.addEventListener('click', function () {
         jumpModal.classList.remove('active');
+        releaseModalFocus();
       });
 
       jumpModal.addEventListener('click', function (e) {
-        if (e.target === jumpModal) jumpModal.classList.remove('active');
+        if (e.target === jumpModal) {
+          jumpModal.classList.remove('active');
+          releaseModalFocus();
+        }
       });
 
       function submitJump() {
@@ -2391,6 +2484,7 @@
 
         syncReaderReportModalMode();
         reportModal.classList.add('active');
+        trapModalFocus(reportModal);
         if (typeof window.gtag === 'function') {
           window.gtag('event', 'report_modal_open', {
             item_id: courseCode || '',
@@ -2406,6 +2500,7 @@
 
       function closeReaderReport() {
         if (reportModal) reportModal.classList.remove('active');
+        releaseModalFocus();
         var submitBtn = document.getElementById('readerReportSubmit');
         if (submitBtn) {
           submitBtn.classList.remove('submitting', 'success');

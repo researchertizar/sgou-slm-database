@@ -12,17 +12,45 @@ const ALLOWED_HOSTS = new Set([
   'www.sgou.ac.in'
 ]);
 
+const ALLOWED_ORIGINS = new Set([
+  'https://sgou-slm-database.vercel.app',
+  'https://sgou-database.vercel.app',
+  'https://sgou.ac.in',
+  'https://www.sgou.ac.in'
+]);
+
+function getCorsOrigin(request) {
+  const origin = request.headers.get('Origin');
+  if (!origin) return '*'; // Direct browser navigation or non-browser client
+  try {
+    const parsed = new URL(origin);
+    const host = parsed.hostname.toLowerCase();
+    if (ALLOWED_ORIGINS.has(origin.toLowerCase())) return origin;
+    if (host === 'localhost' || host === '127.0.0.1') return origin;
+  } catch (_) {}
+  return null; // Disallowed origin
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const corsOrigin = getCorsOrigin(request);
+    if (!corsOrigin) {
+      return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     // 1. CORS Preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 204,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': corsOrigin,
           'Access-Control-Allow-Methods': 'GET, OPTIONS',
           'Access-Control-Allow-Headers': 'Range, Content-Type',
-          'Access-Control-Max-Age': '86400'
+          'Access-Control-Max-Age': '86400',
+          'Vary': 'Origin'
         }
       });
     }
@@ -30,7 +58,7 @@ export default {
     if (request.method !== 'GET') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': corsOrigin, 'Vary': 'Origin' }
       });
     }
 
@@ -42,7 +70,7 @@ export default {
     if (!raw || typeof raw !== 'string') {
       return new Response(JSON.stringify({ error: 'Missing url parameter' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': corsOrigin, 'Vary': 'Origin' }
       });
     }
 
@@ -116,7 +144,8 @@ export default {
       const headers = new Headers();
       headers.set('Content-Type', 'application/pdf');
       headers.set('Content-Disposition', `${disposition}; filename="${encodeURIComponent(filename)}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
-      headers.set('Access-Control-Allow-Origin', '*');
+      headers.set('Access-Control-Allow-Origin', corsOrigin);
+      headers.set('Vary', 'Origin');
       headers.set('Access-Control-Expose-Headers', 'Content-Length, Content-Disposition, Content-Range, Accept-Ranges');
       headers.set('Cache-Control', 'public, max-age=86400, s-maxage=604800');
       headers.set('X-Content-Type-Options', 'nosniff');

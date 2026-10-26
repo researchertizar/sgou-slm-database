@@ -1,4 +1,4 @@
-const CACHE = 'sgou-v154';
+const CACHE = 'sgou-v155';
 const SHELL = [
     './',
     './index.html',

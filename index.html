@@ -85,6 +85,7 @@
     <!-- Typography & CSS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap">
     <link
         href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
@@ -498,10 +499,10 @@
             <div class="controls-toolbar">
                 <div class="toolbar-left">
                     <div class="filters" id="filters" role="group" aria-label="Level filter">
-                        <button class="pill active" data-level="ALL">All <span class="pill-count">37</span></button>
-                        <button class="pill" data-level="FYUG">FYUG <span class="pill-count">24</span></button>
-                        <button class="pill" data-level="UG">UG <span class="pill-count">2</span></button>
-                        <button class="pill" data-level="PG">PG <span class="pill-count">11</span></button>
+                        <button class="pill active" data-level="ALL" aria-pressed="true">All <span class="pill-count">37</span></button>
+                        <button class="pill" data-level="FYUG" aria-pressed="false">FYUG <span class="pill-count">24</span></button>
+                        <button class="pill" data-level="UG" aria-pressed="false">UG <span class="pill-count">2</span></button>
+                        <button class="pill" data-level="PG" aria-pressed="false">PG <span class="pill-count">11</span></button>
                     </div>
                 </div>
                 <div class="toolbar-center">
