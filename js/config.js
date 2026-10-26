@@ -8,5 +8,5 @@ window.SGOU_CONFIG = {
   // viewer streams route through Cloudflare's free, zero-egress edge network.
   //
   // Leave empty ('') for direct CloudFront downloads (zero cost, zero proxy).
-  PDF_PROXY_URL: ''
+  PDF_PROXY_URL: 'https://sgou-pdf-proxy.researcher-tizar.workers.dev'
 };
