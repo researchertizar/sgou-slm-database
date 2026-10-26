@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://drive.google.com blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com; object-src 'none'; base-uri 'self'; form-action 'self' https://docs.google.com;">
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://drive.google.com blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com https://*.workers.dev; object-src 'none'; base-uri 'self'; form-action 'self' https://docs.google.com;">
     <meta name="description"
         content="Document Viewer — Preview, read, and download Sree Narayana Guru Open University (SGOU / SNGOU) SLM textbooks, previous year question papers (PYQs), and assignment booklets.">
     <meta name="keywords"
@@ -23,6 +23,7 @@
     <script>
         (function(){try{var p=new URLSearchParams(location.search);var ut=p.get('theme');if(ut==='dark'||ut==='light'){document.documentElement.setAttribute('data-theme',ut);try{localStorage.setItem('sgou-theme-v2',ut);}catch(_){}}else{var t=localStorage.getItem('sgou-theme-v2');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}}catch(_){}})();
     </script>
+    <script src="js/config.js?v=20261026_01"></script>
 
     <!-- Open Graph & Social Cards -->
     <meta property="og:site_name" content="SGOU Academic Database">
@@ -2307,7 +2308,16 @@
                     fn = cleanCode + cleanName + '_SLM.pdf';
                 }
 
-                var dlUrl = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&filename=' + encodeURIComponent(fn);
+                var proxyBase = (window.SGOU_CONFIG && window.SGOU_CONFIG.PDF_PROXY_URL) ? window.SGOU_CONFIG.PDF_PROXY_URL : '';
+                var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                var dlUrl;
+                if (proxyBase) {
+                    dlUrl = proxyBase + '?url=' + encodeURIComponent(pdfUrl) + '&filename=' + encodeURIComponent(fn);
+                } else if (isLocal) {
+                    dlUrl = '/api/download?url=' + encodeURIComponent(pdfUrl) + '&filename=' + encodeURIComponent(fn);
+                } else {
+                    dlUrl = pdfUrl;
+                }
                 var errDl = document.getElementById('errorDownload');
                 if (errDl) { errDl.href = dlUrl; errDl.download = fn; }
 
@@ -2325,12 +2335,12 @@
                             link_url: pdfUrl
                         });
                     }
-                    if (isIOS) {
+                    if (isIOS || dlUrl === pdfUrl) {
                         if (isValidPdfUrl(pdfUrl)) {
                             window.open(pdfUrl, '_blank', 'noopener');
                         }
                         var t = document.getElementById('toast');
-                        if (t) {
+                        if (t && isIOS) {
                             t.textContent = "iPhone: Tap Share (\u2191) at bottom and select 'Save to Files'";
                             t.classList.add('visible');
                             setTimeout(function () { t.classList.remove('visible'); }, 4500);
@@ -2438,7 +2448,18 @@
                 var curTheme = document.documentElement.getAttribute('data-theme') || 'light';
                 var fullTarget = '';
                 if (url || streamSource) {
-                    var docSource = streamSource || ('/api/download?url=' + encodeURIComponent(url) + '&inline=1');
+                    var proxyBase = (window.SGOU_CONFIG && window.SGOU_CONFIG.PDF_PROXY_URL) ? window.SGOU_CONFIG.PDF_PROXY_URL : '';
+                    var isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                    var docSource;
+                    if (streamSource) {
+                        docSource = streamSource;
+                    } else if (proxyBase) {
+                        docSource = proxyBase + '?url=' + encodeURIComponent(url) + '&inline=1';
+                    } else if (isLocal) {
+                        docSource = '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
+                    } else {
+                        docSource = url;
+                    }
                     var ovParam = activeOverride ? '&override=1' : '';
                     fullTarget = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Document') + '&theme=' + encodeURIComponent(curTheme) + (code ? '&code=' + encodeURIComponent(code) : '') + ovParam;
                 }

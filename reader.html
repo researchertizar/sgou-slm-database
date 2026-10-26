@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: https://www.google-analytics.com https://*.google-analytics.com; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com; frame-src 'self' https://docs.google.com; form-action 'self' https://docs.google.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: https://www.google-analytics.com https://*.google-analytics.com; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com https://*.workers.dev; frame-src 'self' https://docs.google.com; form-action 'self' https://docs.google.com;">
   <title>Academic Reader — SGOU</title>
   <!-- Google Analytics 4 (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
@@ -934,8 +934,11 @@
       <div class="spinner"></div>
       <div class="loading-text" id="loadingMsg">Preparing document preview&hellip;</div>
       <div id="errorBox">
-        <div class="error-title" id="errorMsg">Could not load document</div>
-        <button type="button" class="retry-btn" id="retryBtn">Retry</button>
+        <div class="error-title" id="errorMsg">Could not load document preview</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap;">
+          <button type="button" class="retry-btn" id="retryBtn">Retry</button>
+          <a id="errorDirectBtn" class="retry-btn" target="_blank" rel="noopener" style="text-decoration:none;display:none;background:var(--accent,#2563eb);color:#fff;align-items:center;">Open PDF in Browser</a>
+        </div>
       </div>
     </div>
 
@@ -1265,6 +1268,7 @@
       } catch (_) {}
     })();
   </script>
+  <script src="./js/config.js?v=20261026_01"></script>
   <script src="./pdfjs/pdf.min.js"></script>
   <script src="./js/utils/clipboard.js?v=20261009_01"></script>
   <script src="./js/components/toast.js?v=20261009_01"></script>
@@ -1427,6 +1431,11 @@
         loadingMsg.style.display = 'none';
         errorBox.style.display = 'flex';
         errorMsg.textContent = msg;
+        var directBtn = document.getElementById('errorDirectBtn');
+        if (directBtn && rawFile) {
+          directBtn.href = rawFile;
+          directBtn.style.display = 'inline-flex';
+        }
         if (typeof window.gtag === 'function') {
           window.gtag('event', 'reader_load_error', {
             error_message: msg,
@@ -1446,7 +1455,15 @@
             return url;
           }
         } catch (_) {}
-        return '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
+
+        var proxyBase = (window.SGOU_CONFIG && window.SGOU_CONFIG.PDF_PROXY_URL) ? window.SGOU_CONFIG.PDF_PROXY_URL : '';
+        if (proxyBase) {
+          return proxyBase + '?url=' + encodeURIComponent(url) + '&inline=1';
+        }
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          return '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
+        }
+        return url;
       }
 
       async function loadDocument() {

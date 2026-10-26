@@ -1263,8 +1263,48 @@ class DownloadManager {
     let receivedBytes = 0;
     const chunks = [];
 
+    const proxyBase = (window.SGOU_CONFIG && window.SGOU_CONFIG.PDF_PROXY_URL) ? window.SGOU_CONFIG.PDF_PROXY_URL : '';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // If no external proxy is set and not on localhost, use direct browser download:
+    // This avoids hitting Vercel compute completely and downloads at zero cost from upstream CDN!
+    if (!proxyBase && !isLocalhost) {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', 'file_download', {
+          file_name: fullFilename,
+          file_extension: 'pdf',
+          item_id: item.code || '',
+          item_name: item.name || '',
+          item_category: item.type || 'SLM',
+          download_location: 'direct_cdn',
+          link_url: item.url
+        });
+      }
+      const a = document.createElement('a');
+      a.href = item.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.download = fullFilename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => a.remove(), 250);
+      this._showSuccessState(fullFilename, 0, null);
+      Storage.addDownloadHistory({
+        code: item.code || '',
+        name: item.name || 'Course PDF',
+        prog: item.prog || '',
+        filename: fullFilename,
+        size: 'Direct Download',
+        url: item.url,
+        timestamp: Date.now()
+      });
+      return;
+    }
+
     try {
-      const fetchUrl = '/api/download?url=' + encodeURIComponent(item.url) + '&filename=' + encodeURIComponent(fullFilename);
+      const fetchUrl = proxyBase
+        ? `${proxyBase}?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(fullFilename)}`
+        : `/api/download?url=${encodeURIComponent(item.url)}&filename=${encodeURIComponent(fullFilename)}`;
       const response = await fetch(fetchUrl, { signal: this.abortController.signal });
 
       if (!response.ok) throw new Error('HTTP ' + response.status);

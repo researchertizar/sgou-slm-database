@@ -1,0 +1,7 @@
+# Ignore backend compute functions — Vercel builds 100% pure static frontend
+api/
+cloudflare-worker/
+scratch/
+tests/
+*.cmd
+sync_to_github.*

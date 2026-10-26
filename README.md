@@ -198,8 +198,8 @@ Vercel's Free Hobby plan includes **100 GB of Fast Data Transfer / month**. The 
 
 ### The Solution: Direct Client-to-CDN Streaming
 1. **Primary Streaming Route**: All in-app PDF preview iframes and standard downloads link **directly to SGOU's Amazon CloudFront CDN** (`d198y4z1gpgoxg.cloudfront.net`).
-2. **Zero Vercel Egress**: The heavy binary PDF data flows directly from Amazon CloudFront to the student's browser. **0 MB** of PDF bandwidth touches Vercel edge servers.
-3. **Resilient Edge Proxy Fallback (`/api/download`)**: The Edge function in [api/download.js](file:///d:/Apps/sgou-database/api/download.js) is reserved strictly as a lightweight fallback for legacy mobile browsers requiring forced `Content-Disposition: attachment` headers. It performs an instant HTTP redirect or stream with strict host allowlisting (`d198y4z1gpgoxg.cloudfront.net`, `sgou.ac.in`, `www.sgou.ac.in`) to eliminate SSRF vulnerabilities.
+2. **Zero Vercel Egress & Zero Origin Transfer**: The heavy binary PDF data flows directly from Amazon CloudFront to the student's browser. **0 MB** of PDF compute or origin transfer touches Vercel servers.
+3. **Dedicated Cloudflare Worker Proxy (`cloudflare-worker/`)**: PDF streaming and CORS headers for in-app canvas reading can optionally be routed through a free Cloudflare Worker, completely offloading Vercel Compute with 0 egress costs.
 4. **Direct Disk Streaming**: On Chromium desktop browsers, the platform leverages the **File System Access API** (`window.showSaveFilePicker`), piping CloudFront streams directly to local disk without memory overhead.
 
 ---
@@ -450,16 +450,16 @@ This repository is configured natively for Vercel with zero setup required.
    ```bash
    vercel --prod
    ```
-2. The [vercel.json](file:///d:/Apps/sgou-database/vercel.json) configuration automatically provisions:
-   - Edge Runtime for [api/download.js](file:///d:/Apps/sgou-database/api/download.js)
+2. The [vercel.json](vercel.json) configuration automatically provisions:
+   - 100% pure static deployment (0 compute functions, 0 Fast Origin Transfer)
    - SPA rewrites for clean URLs
    - Security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`)
    - Stale-While-Revalidate caching for static JSON datasets
 
-### Cloudflare Pages & Workers
-1. Connect the repository to **Cloudflare Pages**.
-2. Set build output directory to `/` (no build step needed).
-3. Deploy [api/download.js](file:///d:/Apps/sgou-database/api/download.js) as a Cloudflare Worker route for `/api/download`.
+### Cloudflare Worker Proxy (Optional for In-App Canvas Reader)
+1. Navigate to [`cloudflare-worker/`](cloudflare-worker/README.md).
+2. Deploy the worker to Cloudflare (free, 100,000 req/day, unlimited bandwidth).
+3. Set the worker URL in [`js/config.js`](js/config.js).
 
 ### Static Hosting / GitHub Pages
 1. Push the codebase to GitHub Pages.

@@ -30,6 +30,7 @@ DEST_DIR = Path(r"D:\Github\sgou-slm-database")
 # Explicit Whitelist of Root Production Files
 ROOT_FILES = [
     ".gitignore",
+    ".vercelignore",
     "4a8f9c1d2e3b4a5f60718293a4b5c6d7.txt",
     "dev_server.js",
     "index.html",
@@ -49,8 +50,8 @@ ROOT_FILES = [
 
 # Explicit Whitelist of Subdirectories to Sync (recursive)
 SUBDIRS = [
-    "api",
     "assets",
+    "cloudflare-worker",
     "css",
     "data",
     "js",
@@ -62,6 +63,7 @@ SUBDIRS = [
 
 # Directories and files explicitly forbidden in destination root
 FORBIDDEN_ROOT_NAMES = {
+    "api",
     "scratch",
     "sr",
     "__pycache__",
