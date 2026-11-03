@@ -1287,6 +1287,7 @@
   <script src="./js/components/theme.js?v=20261009_01"></script>
   <script src="./js/qrcode.min.js?v=20261009_01"></script>
   <script src="./js/components/support-modal.js?v=20261009_01"></script>
+  <script src="./js/telemetry/analytics-core.js?v=20261103_01"></script>
   <script>
     (function () {
       'use strict';
@@ -2038,6 +2039,11 @@
           currentPage = activeNum;
           pageNumEl.textContent = currentPage;
           checkReadingMilestones(currentPage);
+          try {
+            window.dispatchEvent(new CustomEvent('sgou:reader_page_rendered', {
+              detail: { page: currentPage, courseCode: courseCode || '' }
+            }));
+          } catch (_) {}
         }
 
         // Bi-directional sequential on-demand rendering based on scroll direction

@@ -24,8 +24,149 @@ const MIME_TYPES = {
   '.pdf': 'application/pdf'
 };
 
+// In-memory telemetry buffer for local testing
+const localTelemetry = {
+  sessions: new Map(),
+  events: [],
+  zeroSearches: new Map([
+    ['fyug semester 3 syllabus', { category: 'FYUG', hit_count: 42, last_searched: new Date().toISOString() }],
+    ['bca cloud computing', { category: 'UG', hit_count: 28, last_searched: new Date().toISOString() }],
+    ['mcom project guidelines', { category: 'PG', hit_count: 19, last_searched: new Date().toISOString() }],
+    ['b21eg05 pyq may 2024', { category: 'UG', hit_count: 15, last_searched: new Date().toISOString() }],
+    ['nano entrepreneurship model paper', { category: 'UG', hit_count: 12, last_searched: new Date().toISOString() }]
+  ]),
+  rageClicks: new Map([
+    ['button#viewerClose', { text_sample: 'Close', rage_count: 38, last_rage: new Date().toISOString() }],
+    ['div.filter-pill[data-val="fyug"]', { text_sample: 'FYUG', rage_count: 14, last_rage: new Date().toISOString() }],
+    ['button#readerFullscreen', { text_sample: 'Fullscreen', rage_count: 11, last_rage: new Date().toISOString() }]
+  ])
+};
+
 const server = http.createServer((req, res) => {
   const reqUrl = new URL(req.url, `http://${req.headers.host || 'localhost:' + PORT}`);
+
+  // 1. Handle local telemetry ingestion (/api/telemetry)
+  if (reqUrl.pathname === '/api/telemetry' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body);
+        const sid = payload.sid || 'local_session';
+        const profile = payload.profile || {};
+        const events = payload.events || [];
+
+        localTelemetry.sessions.set(sid, {
+          session_id: sid,
+          region: 'Kerala',
+          city: 'Kollam',
+          isp: 'Local Development Server',
+          device_type: profile.touch ? 'mobile' : 'desktop',
+          profile,
+          last_active: new Date().toISOString()
+        });
+
+        for (const evt of events) {
+          localTelemetry.events.unshift({
+            session_id: sid,
+            event_type: evt.t,
+            page_url: evt.url,
+            time_offset_ms: evt.ts,
+            details: evt.d,
+            created_at: new Date().toISOString()
+          });
+          if (localTelemetry.events.length > 200) localTelemetry.events.pop();
+
+          if (evt.t === 'zero_search' && evt.d?.q) {
+            const q = String(evt.d.q).trim().toLowerCase();
+            const existing = localTelemetry.zeroSearches.get(q) || { category: evt.d.tab || 'ALL', hit_count: 0 };
+            existing.hit_count++;
+            existing.last_searched = new Date().toISOString();
+            localTelemetry.zeroSearches.set(q, existing);
+          }
+
+          if (evt.t === 'rage_click' && evt.d?.selector) {
+            const s = String(evt.d.selector);
+            const existing = localTelemetry.rageClicks.get(s) || { text_sample: evt.d.text || '', rage_count: 0 };
+            existing.rage_count++;
+            existing.last_rage = new Date().toISOString();
+            localTelemetry.rageClicks.set(s, existing);
+          }
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ ok: true, received: events.length }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 2. Handle dashboard query endpoint (/api/analytics/query)
+  if (reqUrl.pathname === '/api/analytics/query') {
+    const action = reqUrl.searchParams.get('action') || 'overview';
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+
+    if (action === 'overview') {
+      return res.end(JSON.stringify({
+        overview: {
+          total_sessions: Math.max(localTelemetry.sessions.size, 142),
+          today_sessions: Math.max(localTelemetry.sessions.size, 68),
+          zero_searches_count: localTelemetry.zeroSearches.size,
+          rage_clicks_count: Array.from(localTelemetry.rageClicks.values()).reduce((a, b) => a + b.rage_count, 0),
+          avg_dwell_seconds: 312
+        }
+      }));
+    }
+
+    if (action === 'geo') {
+      return res.end(JSON.stringify({
+        geo: [
+          { region: 'Kerala', city: 'Kollam', count: 54 },
+          { region: 'Kerala', city: 'Thiruvananthapuram', count: 38 },
+          { region: 'Kerala', city: 'Ernakulam', count: 24 },
+          { region: 'Kerala', city: 'Kozhikode', count: 18 },
+          { region: 'Kerala', city: 'Kannur', count: 11 },
+          { region: 'Kerala', city: 'Malappuram', count: 9 }
+        ]
+      }));
+    }
+
+    if (action === 'zero_searches') {
+      const results = Array.from(localTelemetry.zeroSearches.entries()).map(([query, data]) => ({
+        query,
+        category: data.category,
+        hit_count: data.hit_count,
+        last_searched: data.last_searched
+      })).sort((a, b) => b.hit_count - a.hit_count);
+      return res.end(JSON.stringify({ zero_searches: results }));
+    }
+
+    if (action === 'frictions') {
+      const results = Array.from(localTelemetry.rageClicks.entries()).map(([element_selector, data]) => ({
+        element_selector,
+        text_sample: data.text_sample,
+        rage_count: data.rage_count,
+        last_rage: data.last_rage
+      })).sort((a, b) => b.rage_count - a.rage_count);
+      return res.end(JSON.stringify({ rage_clicks: results }));
+    }
+
+    if (action === 'devices') {
+      return res.end(JSON.stringify({
+        devices: [{ device_type: 'mobile', count: 118 }, { device_type: 'desktop', count: 32 }, { device_type: 'tablet', count: 6 }],
+        networks: [{ network_type: '4g', count: 104 }, { network_type: '3g', count: 26 }, { network_type: 'wifi', count: 26 }]
+      }));
+    }
+
+    if (action === 'recent_events') {
+      return res.end(JSON.stringify({ recent_events: localTelemetry.events.slice(0, 50) }));
+    }
+
+    return res.end(JSON.stringify({ error: 'Unknown action' }));
+  }
 
   // Handle local proxy for /api/download so progress bar and downloads work on localhost
   if (reqUrl.pathname === '/api/download') {
@@ -153,6 +294,11 @@ const server = http.createServer((req, res) => {
   // Rewrite /view/:course or clean /view to view.html
   if (reqUrl.pathname === '/view' || reqUrl.pathname.startsWith('/view/')) {
     filePath = path.join(__dirname, 'view.html');
+  }
+
+  // Rewrite /dashboard or /admin to admin/dashboard.html
+  if (reqUrl.pathname === '/dashboard' || reqUrl.pathname === '/admin' || reqUrl.pathname === '/admin/dashboard') {
+    filePath = path.join(__dirname, 'admin', 'dashboard.html');
   }
 
   // Rewrite /reader to reader.html

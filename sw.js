@@ -1,4 +1,4 @@
-const CACHE = 'sgou-v156';
+const CACHE = 'sgou-v157';
 const SHELL = [
     './',
     './index.html',
@@ -10,6 +10,7 @@ const SHELL = [
     './js/components/toast.js?v=20261009_01',
     './js/components/theme.js?v=20261009_01',
     './js/components/support-modal.js?v=20261009_01',
+    './js/telemetry/analytics-core.js?v=20261103_01',
     './js/script.js?v=20261009_01',
     './js/qrcode.min.js',
     './manifest.json?v=20261009_01',

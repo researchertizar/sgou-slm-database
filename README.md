@@ -6,7 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-v3.1.0-emerald.svg)](#overview)
 [![Test Suite](https://img.shields.io/badge/tests-71%2F71%20passing-brightgreen.svg)](#automated-verification-suite)
-[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v156)-blue.svg)](#offline-pwa--service-worker-lifecycle)
+[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v157)-blue.svg)](#offline-pwa--service-worker-lifecycle)
 [![Architecture](https://img.shields.io/badge/architecture-Modular%20Components%20%26%20S.O.L.I.D-purple.svg)](#solid-system-architecture)
 [![Edge CDN](https://img.shields.io/badge/bandwidth-zero--cost%20CloudFront-orange.svg)](#zero-cost-edge-architecture--bandwidth-protection)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license--acknowledgments)

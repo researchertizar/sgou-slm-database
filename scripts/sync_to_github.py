@@ -50,10 +50,12 @@ ROOT_FILES = [
 
 # Explicit Whitelist of Subdirectories to Sync (recursive)
 SUBDIRS = [
+    "admin",
     "assets",
     "cloudflare-worker",
     "css",
     "data",
+    "docs",
     "js",
     "pdfjs",
     "scripts",

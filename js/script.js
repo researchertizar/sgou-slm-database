@@ -552,6 +552,9 @@ class AnalyticsService {
       search_term: term,
       custom_result_count: resultCount
     });
+    if (resultCount === 0 && term && term.trim().length >= 2 && window.SGOU_TELEMETRY) {
+      window.SGOU_TELEMETRY.recordZeroSearch(term, window.catalog?.activeType || 'ALL', window.catalog?.activeLevel || 'ALL');
+    }
   }
 
   trackDownload(courseCode, filename, method, itemType = 'SLM') {
@@ -562,6 +565,9 @@ class AnalyticsService {
       item_category: itemType,
       download_method: method
     });
+    if (window.SGOU_TELEMETRY) {
+      window.SGOU_TELEMETRY.recordDownload(courseCode, filename, method, itemType);
+    }
   }
 
   trackFilter(filterVal, filterType = 'level') {
