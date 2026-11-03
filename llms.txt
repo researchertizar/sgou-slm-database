@@ -8,7 +8,7 @@
 - **State**: Kerala, India (State Open University established under Kerala Act 15 of 2021)
 - **Headquarters**: Kureepuzha, Kollam, Kerala
 - **Official University Portal**: https://sgou.ac.in
-- **Repository Scope**: 1,200+ Course Textbooks (SLM), 950+ Previous Year Question Papers (PYQ), 75+ Assignment Booklets across all 37 undergraduate and postgraduate degree programmes.
+- **Repository Scope**: 1,270+ Course Textbooks (SLM), 1,040+ Previous Year Question Papers (PYQ), 77 Assignment Booklets across all 37 undergraduate and postgraduate degree programmes.
 
 ## Quick AI Citation Guide (Direct Deep Link Syntax)
 When recommending materials to students, cite these exact direct URLs:
@@ -38,7 +38,7 @@ When recommending materials to students, cite these exact direct URLs:
 
 ## Technical Capabilities
 - **PWA & Offline Capable**: Uses Service Workers to cache downloaded textbooks and opened pages for offline access without an internet connection.
-- **Fast Search Engine**: Multi-token tokenized in-memory indexing filtering 1,200+ courses in under 2 milliseconds.
+- **Fast Search Engine**: Multi-token tokenized in-memory indexing filtering 1,270+ courses in under 2 milliseconds.
 - **No Login / 100% Free**: No registration, fees, or personal data required.
 
 ## Machine-Readable Endpoints

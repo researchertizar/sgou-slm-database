@@ -9,9 +9,9 @@ Sree Narayana Guru Open University (SNGOU) was established by the Government of 
 
 ## 2. Platform Purpose & Scope
 This independent open-access platform provides structured, search-indexed, and offline-capable access to all official study resources:
-1. **Self-Learning Material (SLM)**: 1,200+ official textbook modules prepared by university boards of study for distance learners.
-2. **Previous Year Question Papers (PYQ)**: 950+ semester examination papers from 2021 to 2026.
-3. **Assignment Booklets**: 75+ continuous assessment question booklets for all active semesters.
+1. **Self-Learning Material (SLM)**: 1,270+ official textbook modules prepared by university boards of study for distance learners.
+2. **Previous Year Question Papers (PYQ)**: 1,040+ semester examination papers from 2021 to 2026.
+3. **Assignment Booklets**: 77 continuous assessment question booklets for all active semesters.
 
 ## 3. Programmes & Degree Levels Catalog
 ### Four Year Undergraduate Programmes (FYUG)
@@ -63,7 +63,7 @@ Q: Where can I get official SGOU study materials and textbooks?
 A: You can search and download official SLM books for all semesters free of charge at https://sgou-slm-database.vercel.app/.
 
 Q: How can I find previous year exam question papers for SGOU Kollam?
-A: Visit https://sgou-slm-database.vercel.app/?type=pyq to browse 950+ original exam papers sorted by degree, semester, and course code.
+A: Visit https://sgou-slm-database.vercel.app/?type=pyq to browse 1,040+ original exam papers sorted by degree, semester, and course code.
 
 Q: Are continuous internal assessment (CIA) assignment questions available online?
 A: Yes, official assignment booklets for undergraduate and postgraduate courses are available at https://sgou-slm-database.vercel.app/?type=assignment.

@@ -1156,11 +1156,6 @@
         "semester": "S3",
         "courses": [
           {
-            "name": "Literature and the Contemporary World",
-            "code": "B21EG02LC",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/YJSXbQQ9A8NO97S8u2fvAldOsZGwspuQ2Wsla6D6.pdf"
-          },
-          {
             "name": "Humanism and Logic",
             "code": "B21HL01SC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/8evEXxszJFMRVslgaV8YdChcRXTEfENlunptueG4.pdf"
@@ -1179,6 +1174,11 @@
             "name": "Digital Marketing",
             "code": "B23NE01SE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/UpHwEorGGQAayJ7WygQZdqHGu4EHI0zfBCPfUKvd.pdf"
+          },
+          {
+            "name": "English for Business and Professional Communication",
+            "code": "B21EG11LC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/KoEZaAeQ0Ph5ECWI2toodgJSGSVlgXMLd72LSyJU.pdf"
           }
         ]
       },
@@ -1221,9 +1221,24 @@
         "semester": "S5",
         "courses": [
           {
+            "name": "Economics for Everyday Life",
+            "code": "B21EC01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/0vIJizOYebbGkoPtx0bsu77mlRjtgez7gEFxQmzN.pdf"
+          },
+          {
             "name": "Managerial Economics",
             "code": "B23NE05DC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/POxrGACpKcciR4yxQJVYqh03N0nQjxvd7uahuerD.pdf"
+          },
+          {
+            "name": "Support system for nano business in Kerala",
+            "code": "B23NE04AN",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/uphFnjrLvOFm2uEKR0vdkusf8cYdkMzyMQ7NAsNZ.pdf"
+          },
+          {
+            "name": "E-business",
+            "code": "B23NE02SE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/ipKKRsRzq5vEtA0eZl4JPX3s5KE1O9vfA4Bb1ESk.pdf"
           }
         ]
       }
@@ -1680,6 +1695,26 @@
         "semester": "S5",
         "courses": [
           {
+            "name": "सिंस्कृ तसोपानम् (Samskruthasopanam)",
+            "code": "B21SN01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/3giM6Fcfi7ntH5Tqoh2jjjxCyMTFY9KnliL4cjq3.pdf"
+          },
+          {
+            "name": "ആധുനിക മലയാള സാഹിത്യ ചരിത്രം",
+            "code": "B21ML01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/wOakgso4laZdiZjrr6Lc0C3zdIhfKTCA2rCIcZhx.pdf"
+          },
+          {
+            "name": "Modern Standard Arabic",
+            "code": "B21AR01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/A6hu02VOFdWp3g9i2kIR1o5ArdJgwzNDUKNbXl6d.pdf"
+          },
+          {
+            "name": "Vyavaharik Hindi",
+            "code": "B21HD01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/JKa30gguA0xbO2Ewu9hArJXbjS29fgZ2xvJN0bYJ.pdf"
+          },
+          {
             "name": "Appreciating Literature",
             "code": "B21EG01GE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/n4i1ZkPml3VrRUQ2DnwAkdVF6v9yvraig0dqCAQp.pdf"
@@ -1688,6 +1723,31 @@
             "name": "Introduction to Political Thought",
             "code": "B23PS05DC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/en3XSzepsQYtmKzJITHODL59b1QBZZBbPol0BTfV.pdf"
+          },
+          {
+            "name": "Gender and International Relations",
+            "code": "B23PS03DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/otfzwizmjzYREbHCxcsYMFjjwqa6Jfd2ZyNAVfyC.pdf"
+          },
+          {
+            "name": "Introduction to Public Policy",
+            "code": "B23PS04DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/m7BGrK0fYzD5BzgVaQiuB9hvGxbSiC2zTe4mbkT6.pdf"
+          },
+          {
+            "name": "Understanding Gandhi and Ambedkar",
+            "code": "B23PS05DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/jo18jFGU37wNVbVihxuxKJHMtMLi8fRpsVEi45GA.pdf"
+          },
+          {
+            "name": "Introduction To International Political Economy",
+            "code": "B23PS06DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/tbyaVJ120NKLLrATetIwzTzVkiwU8tEdTTKHYcOK.pdf"
+          },
+          {
+            "name": "E-Governance in India",
+            "code": "B23PS02SE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/9AzRD8f4LaNi02aGSAJVqq0nkICbRIhWwp5JG87H.pdf"
           }
         ]
       }
@@ -1862,6 +1922,11 @@
         "semester": "S5",
         "courses": [
           {
+            "name": "सिंस्कृ तसोपानम् (Samskruthasopanam)",
+            "code": "B21SN01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/3giM6Fcfi7ntH5Tqoh2jjjxCyMTFY9KnliL4cjq3.pdf"
+          },
+          {
             "name": "ആധുനിക മലയാള സാഹിത്യ ചരിത്രം",
             "code": "B21ML01GE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/wOakgso4laZdiZjrr6Lc0C3zdIhfKTCA2rCIcZhx.pdf"
@@ -1870,6 +1935,11 @@
             "name": "Modern Standard Arabic",
             "code": "B21AR01GE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/A6hu02VOFdWp3g9i2kIR1o5ArdJgwzNDUKNbXl6d.pdf"
+          },
+          {
+            "name": "Vyavaharik Hindi",
+            "code": "B21HD01GE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/JKa30gguA0xbO2Ewu9hArJXbjS29fgZ2xvJN0bYJ.pdf"
           },
           {
             "name": "Appreciating Literature",
@@ -4774,6 +4844,11 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/VXde0Yu5f807eQiG4MMn4C95oP88OqCumuXixBys.pdf"
           },
           {
+            "name": "Caste and Social Exclusion in India",
+            "code": "SGB24HS504ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/iLMEeaN3JKNbwClohPWqLKmegkGp5dVyQUcBGiN2.pdf"
+          },
+          {
             "name": "Understanding Political System",
             "code": "SGB24PS202MI",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/SgEIe3oVyvOeMgOyYs8ECI9cuQz8zWGgi3wkS0CE.pdf"
@@ -5004,6 +5079,11 @@
             "name": "ഭാഷാശാസ്ത്രപഠനം",
             "code": "SGB24ML306MC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/HNIJ8bcCR6S5Am1qYJrg2MHoPqxivenbuiUTBuoA.pdf"
+          },
+          {
+            "name": "ഗദ്യം - കഥേതര പാഠങ്ങൾ",
+            "code": "SGB24ML503ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/1dE3atqzpTXEnIvXc2iaLFt7SojDZz4r1wxc3bQd.pdf"
           },
           {
             "name": "മലയാള സാഹിത്യമാതൃകകൾ: ആത്മകഥ, ജീവചരിത്രം, യാത്രാവിവരണം, അനുഭവ സാഹിത്യം",
@@ -5251,6 +5331,11 @@
             "name": "Mass Media and Social Dynamics",
             "code": "SGB24SO504ME",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/zUMsY1BEyLQh10sFfqy57kqY1wv6sfpWhfTk4BbJ.pdf"
+          },
+          {
+            "name": "Social Formation in India",
+            "code": "SGB24HS232MI",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/flkn4Za76NKzvrsqdkPGsJwhENYsF5E4kTczmNDJ.pdf"
           }
         ]
       }
@@ -5483,6 +5568,21 @@
             "name": "Business Environment",
             "code": "SGB24BB306MC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/hSoiAdJYLDRR6nJITOthWVjFJOB37c2lru9NPymz.pdf"
+          },
+          {
+            "name": "Marketing: Service Marketing",
+            "code": "SGB24BB501ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/TGl4ucO8k9IJRwKFncrq7jXw9I0Io6Q8Cxm7c5Wm.pdf"
+          },
+          {
+            "name": "HR: Talent and Knowledge Management",
+            "code": "SGB24BB502ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/ovtLm4DvV8GIvEK6XKdGjevG9u1vDIbjPXUGdbZx.pdf"
+          },
+          {
+            "name": "Industrial and Labour Laws",
+            "code": "SGB24LW201MI",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/0Gbm4jGzq9s1baS0M1hqXpb0ot05IJeKVW3baLbw.pdf"
           }
         ]
       }
@@ -5715,6 +5815,21 @@
             "name": "Income Tax - I",
             "code": "SGB24CM306MC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/QwUDBFZ19FdqXOCzTRSAnAmUnevzUuckuRHOkqHq.pdf"
+          },
+          {
+            "name": "Financial Services and Markets",
+            "code": "SGB24CM504ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/NLFKJ8N2Gl0IAtmpHFHRXwiB94ASC0pd9iWbw5Zb.pdf"
+          },
+          {
+            "name": "Co-operative Management and Administration",
+            "code": "SGB24CM505ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/beQWuZr1kt64WduxYuy16vx5IOtLELJVnDTzIBMi.pdf"
+          },
+          {
+            "name": "Logistics and Supply Chain Management   Materials and Warehouse Management",
+            "code": "SGB24CM506ME",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/sZL7nj4tMoUUODxDmOBsnmqBwPQVupBVXad3z0YM.pdf"
           },
           {
             "name": "Human Resource Management",
@@ -7418,6 +7533,11 @@
             "name": "Python Programming Lab",
             "code": "M25CA02PC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/EmF6LnzjUqZvgMIBVdgED5MYNBjzsb7MVaJhiwQs.pdf"
+          },
+          {
+            "name": "Operating System Design (T)  2026 Admission Onwards (Scheme 2)",
+            "code": "M26CA01DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/hCNivIVFHchXZLRKqIhbZWCr18Je52QJZIjEMfiu.pdf"
           }
         ]
       }

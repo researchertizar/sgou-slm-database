@@ -5,8 +5,8 @@
 > **Designed and Developed by Ahayas**
 
 [![Version](https://img.shields.io/badge/version-v3.1.0-emerald.svg)](#overview)
-[![Test Suite](https://img.shields.io/badge/tests-70%2F70%20passing-brightgreen.svg)](#automated-verification-suite)
-[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v149)-blue.svg)](#offline-pwa--service-worker-lifecycle)
+[![Test Suite](https://img.shields.io/badge/tests-71%2F71%20passing-brightgreen.svg)](#automated-verification-suite)
+[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v156)-blue.svg)](#offline-pwa--service-worker-lifecycle)
 [![Architecture](https://img.shields.io/badge/architecture-Modular%20Components%20%26%20S.O.L.I.D-purple.svg)](#solid-system-architecture)
 [![Edge CDN](https://img.shields.io/badge/bandwidth-zero--cost%20CloudFront-orange.svg)](#zero-cost-edge-architecture--bandwidth-protection)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license--acknowledgments)
@@ -42,9 +42,9 @@
 
 The **SGOU Academic Database** is an open-access, zero-bloat digital repository built specifically for students and faculty of **Sree Narayana Guru Open University (SGOU)**, Kollam, Kerala. It unifies, normalizes, and indexes the complete academic catalog:
 
-- **1,200+ Course Self-Learning Material (SLM) Textbooks** across FYUG, UG, and PG curricula
-- **950+ Previous Year Exam Question Papers (PYQs)** organized by examination session and degree
-- **75+ Official Assignment Question Booklets**
+- **1,270+ Course Self-Learning Material (SLM) Textbooks** across FYUG, UG, and PG curricula
+- **1,040+ Previous Year Exam Question Papers (PYQs)** organized by examination session and degree
+- **77 Official Assignment Question Booklets**
 
 ### Core Architectural Philosophy
 1. **Zero External Runtime Bloat**: Zero megabyte runtime dependencies. Zero client-side frameworks (no React, Vue, or Angular bundles). The entire runtime is constructed with lightweight, browser-native HTML5, CSS3, and modern ECMAScript.
@@ -424,7 +424,7 @@ To run the platform locally with full proxy support:
 
 ## Automated Verification Suite
 
-The repository includes a comprehensive 70-point automated verification suite:
+The repository includes a comprehensive 71-point automated verification suite:
 
 ```bash
 node scratch/verify_all.js
