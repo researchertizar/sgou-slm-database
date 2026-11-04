@@ -12,8 +12,17 @@
   if (window.__SGOU_TELEMETRY_INITIALIZED__) return;
   window.__SGOU_TELEMETRY_INITIALIZED__ = true;
 
-  const ENDPOINT = '/api/telemetry';
-  const BATCH_INTERVAL_MS = 15000; // Micro-batch flush every 15 seconds
+  function getTelemetryEndpoint() {
+    try {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocalhost) return '/api/telemetry';
+      const proxyBase = (window.SGOU_CONFIG && window.SGOU_CONFIG.PDF_PROXY_URL) ? window.SGOU_CONFIG.PDF_PROXY_URL : '';
+      if (proxyBase) return `${proxyBase.replace(/\/+$/, '')}/api/telemetry`;
+    } catch (_) {}
+    return '/api/telemetry';
+  }
+
+  const BATCH_INTERVAL_MS = 45000; // Optimized micro-batch: flush every 45s (prevents CF/Vercel rate limit saturation)
   const MAX_QUEUE_SIZE = 25;
   const eventQueue = [];
 
@@ -48,7 +57,7 @@
     };
   }
 
-  // 3. Central Event Logger
+  // 3. Central Event Logger (Dual Telemetry: SQLite/D1 + Google Analytics)
   function log(eventType, details = {}) {
     eventQueue.push({
       t: eventType,
@@ -56,6 +65,19 @@
       url: window.location.pathname + window.location.search,
       d: details
     });
+
+    // Mirror to Google Analytics (gtag) if loaded
+    try {
+      if (typeof window.gtag === 'function') {
+        const gaPayload = {
+          event_category: 'telemetry',
+          page_location: window.location.href,
+          ...details
+        };
+        window.gtag('event', eventType, gaPayload);
+      }
+    } catch (_) {}
+
     if (eventQueue.length >= MAX_QUEUE_SIZE) {
       flush();
     }
@@ -75,13 +97,14 @@
     });
 
     try {
+      const endpoint = getTelemetryEndpoint();
       if (navigator.sendBeacon) {
-        const sent = navigator.sendBeacon(ENDPOINT, payload);
+        const sent = navigator.sendBeacon(endpoint, payload);
         if (!sent) {
-          fetch(ENDPOINT, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+          fetch(endpoint, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {});
         }
       } else {
-        fetch(ENDPOINT, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+        fetch(endpoint, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {});
       }
     } catch (_) {
       // Offline fallback: preserve events if delivery throws
@@ -292,19 +315,48 @@
   // Initial Session Entry Event
   log('session_start', { referrer: document.referrer ? new URL(document.referrer, location.href).hostname : 'direct' });
 
-  // Expose global telemetry API
+  // Expose global telemetry API (with native Google Analytics GA4 integration)
   window.SGOU_TELEMETRY = {
     log,
     flush,
     recordZeroSearch: (query, activeTab, activeLevel) => {
       log('zero_search', { q: query, tab: activeTab, lvl: activeLevel });
+      if (typeof window.gtag === 'function') {
+        try {
+          window.gtag('event', 'view_search_results', {
+            search_term: query,
+            results_count: 0,
+            category: activeTab,
+            level: activeLevel
+          });
+        } catch (_) {}
+      }
       flush();
     },
     recordDownload: (code, filename, method, itemType) => {
       log('document_download', { code, filename, method, type: itemType });
+      if (typeof window.gtag === 'function') {
+        try {
+          window.gtag('event', 'file_download', {
+            file_name: filename,
+            file_extension: 'pdf',
+            item_id: code,
+            item_type: itemType,
+            download_method: method
+          });
+        } catch (_) {}
+      }
     },
     recordConsumptionChoice: (code, choice) => {
       log('consumption_choice', { code, choice }); // 'canvas_reader' | 'modal_preview' | 'direct_download'
+      if (typeof window.gtag === 'function') {
+        try {
+          window.gtag('event', 'select_content', {
+            content_type: choice,
+            item_id: code
+          });
+        } catch (_) {}
+      }
     }
   };
 })();

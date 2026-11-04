@@ -29,6 +29,7 @@ DEST_DIR = Path(r"D:\Github\sgou-slm-database")
 
 # Explicit Whitelist of Root Production Files
 ROOT_FILES = [
+    ".env.example",
     ".gitignore",
     ".vercelignore",
     "4a8f9c1d2e3b4a5f60718293a4b5c6d7.txt",
@@ -109,7 +110,7 @@ def sync_directory_recursive(src_dir, dest_dir, rel_prefix=""):
     dest_dir.mkdir(parents=True, exist_ok=True)
 
     for item in src_dir.iterdir():
-        if item.name == "__pycache__" or item.name.startswith("."):
+        if item.name == "__pycache__" or item.name.startswith(".") or item.name.endswith((".db", ".db-journal", ".sqlite", ".sqlite3")):
             continue
         rel_path = f"{rel_prefix}/{item.name}" if rel_prefix else item.name
         dest_item = dest_dir / item.name

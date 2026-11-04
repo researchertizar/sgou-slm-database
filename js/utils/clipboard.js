@@ -22,16 +22,31 @@
     copy: function (text) {
       if (typeof text !== 'string') text = String(text || '');
 
+      function notifySuccess() {
+        try {
+          if (typeof window.gtag === 'function') {
+            window.gtag('event', 'clipboard_copy', {
+              char_count: text.length
+            });
+          }
+        } catch (_) {}
+        return true;
+      }
+
       // Modern asynchronous clipboard API
       if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function' && window.isSecureContext !== false) {
         return navigator.clipboard.writeText(text).then(function () {
-          return true;
+          return notifySuccess();
         }).catch(function () {
-          return ClipboardUtil._fallbackCopy(text);
+          var ok = ClipboardUtil._fallbackCopy(text);
+          if (ok) notifySuccess();
+          return ok;
         });
       }
 
-      return Promise.resolve(ClipboardUtil._fallbackCopy(text));
+      var ok = ClipboardUtil._fallbackCopy(text);
+      if (ok) notifySuccess();
+      return Promise.resolve(ok);
     },
 
     /**

@@ -54,6 +54,10 @@
             "destination": "/assets/icons/icon-512.png"
         },
         {
+            "source": "/api/:path*",
+            "destination": "https://sgou-pdf-proxy.researcher-tizar.workers.dev/api/:path*"
+        },
+        {
             "source": "/((?!view|.*\\.).*)",
             "destination": "/index.html"
         }

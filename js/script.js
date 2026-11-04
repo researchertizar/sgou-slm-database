@@ -522,6 +522,9 @@ class AnalyticsService {
       if (typeof window.gtag === 'function') {
         window.gtag('event', name, params);
       }
+      if (window.SGOU_TELEMETRY && typeof window.SGOU_TELEMETRY.log === 'function') {
+        window.SGOU_TELEMETRY.log(name, params);
+      }
     } catch {
       // Telemetry should never throw or break UI workflows
     }
@@ -629,27 +632,84 @@ class CatalogService {
     this.isLoaded = false;
   }
 
+  /**
+   * Resilient dataset loader with AbortController timeouts, CacheStorage fallbacks,
+   * and localStorage resilience mirrors.
+   * @returns {Promise<Array<Object>>}
+   */
   async load() {
     const slmSources = ['./data/sgou_slm_data.json', './sgou_slm_data.json'];
     const qSources = ['./data/sgou_questions_cleaned.json', './sgou_questions_cleaned.json'];
     const overrideSources = ['./data/pyq_overrides.json', './pyq_overrides.json'];
 
-    const fetchFirstValid = async (urls) => {
+    const fetchWithTimeout = async (url, timeoutMs = 10000) => {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+      try {
+        const res = await fetch(url, controller ? { signal: controller.signal } : {});
+        if (timer) clearTimeout(timer);
+        return res;
+      } catch (e) {
+        if (timer) clearTimeout(timer);
+        throw e;
+      }
+    };
+
+    const fetchFirstValid = async (urls, storageKey) => {
       for (const url of urls) {
         try {
-          const res = await fetch(url);
+          const res = await fetchWithTimeout(url, 10000);
           if (!res.ok) continue;
           const json = await res.json();
-          if (Array.isArray(json) && json.length > 0) return json;
+          if (Array.isArray(json) && json.length > 0) {
+            // Mirror to localStorage as offline safety net
+            try {
+              if (typeof localStorage !== 'undefined' && storageKey) {
+                localStorage.setItem('sgou_cache_' + storageKey, JSON.stringify(json));
+              }
+            } catch (_) {}
+            return json;
+          }
         } catch (_) {}
       }
+
+      // Fallback 1: Try ServiceWorker / CacheStorage
+      if (typeof caches !== 'undefined') {
+        for (const url of urls) {
+          try {
+            const cachedRes = await caches.match(url);
+            if (cachedRes && cachedRes.ok) {
+              const cachedJson = await cachedRes.json();
+              if (Array.isArray(cachedJson) && cachedJson.length > 0) {
+                console.info('[CatalogService] Loaded from CacheStorage fallback:', url);
+                return cachedJson;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+
+      // Fallback 2: Try localStorage mirror
+      if (typeof localStorage !== 'undefined' && storageKey) {
+        try {
+          const localData = localStorage.getItem('sgou_cache_' + storageKey);
+          if (localData) {
+            const parsed = JSON.parse(localData);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.info('[CatalogService] Loaded from localStorage fallback:', storageKey);
+              return parsed;
+            }
+          }
+        } catch (_) {}
+      }
+
       return null;
     };
 
     const fetchOverrides = async (urls) => {
       for (const url of urls) {
         try {
-          const res = await fetch(url);
+          const res = await fetchWithTimeout(url, 8000);
           if (!res.ok) continue;
           const json = await res.json();
           if (json && typeof json === 'object') return json;
@@ -659,8 +719,8 @@ class CatalogService {
     };
 
     const [slmRaw, qRaw, overridesRaw] = await Promise.all([
-      fetchFirstValid(slmSources),
-      fetchFirstValid(qSources),
+      fetchFirstValid(slmSources, 'slm'),
+      fetchFirstValid(qSources, 'questions'),
       fetchOverrides(overrideSources)
     ]);
 
@@ -1679,6 +1739,753 @@ class RouterService {
 const Router = new RouterService();
 
 // ============================================================================
+//  7A. FILTER SERVICE (S.O.L.I.D: Single Responsibility Filter State)
+// ============================================================================
+
+/**
+ * FilterService encapsulates material type (SLM, PYQ, ASSIGNMENT) and academic level
+ * (UG, PG, DIPLOMA, CERTIFICATE) selection, filter pill rendering, and URL synchronization.
+ */
+class FilterService {
+  /**
+   * @param {UIController} ui - The orchestrating UIController instance
+   */
+  constructor(ui) {
+    this.ui = ui;
+    this.activeType = 'SLM';
+    this.activeLevel = 'ALL';
+  }
+
+  /**
+   * Switches the active material type and re-evaluates filters and active listings.
+   * @param {string} type - 'SLM' | 'PYQ' | 'ASSIGNMENT'
+   */
+  setMaterialType(type) {
+    if (!['SLM', 'PYQ', 'ASSIGNMENT'].includes(type)) return;
+    if (this.activeType === type) return;
+
+    this.activeType = type;
+
+    // Synchronize switcher buttons DOM
+    const switcher = $('materialTypeSwitcher');
+    if (switcher) {
+      switcher.setAttribute('data-active', type);
+      const btns = switcher.querySelectorAll('.type-toggle-btn');
+      btns.forEach(btn => {
+        const isActive = btn.dataset.type === type;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    // Dispatch analytics telemetry
+    Analytics.event('search_category_switch', { category: type });
+
+    // Rebuild level filter pills with updated counts for this category
+    this.buildFilters();
+
+    // Refresh display
+    const searchInput = $('searchInput');
+    if (searchInput && searchInput.value.trim().length > 0) {
+      this.ui.executeSearch(searchInput.value.trim());
+    } else {
+      this.ui.renderProgrammes(Catalog.programmes);
+    }
+
+    this.ui.updateStats();
+    this.ui.syncUrlFromState();
+  }
+
+  /**
+   * Updates the selected academic level (UG, PG, etc.)
+   * @param {string} lv - Level identifier or 'ALL'
+   */
+  setLevel(lv) {
+    this.activeLevel = lv;
+    const container = $('filters');
+    if (container) {
+      const pills = container.querySelectorAll('.pill');
+      pills.forEach(p => {
+        const isActive = p.dataset.level === lv;
+        p.classList.toggle('active', isActive);
+        p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
+    }
+
+    Analytics.event('filter_change', { filter_type: 'level', filter_value: lv });
+    if (lv === 'ALL') {
+      Analytics.event('reset_filter', { filter_type: 'level' });
+    }
+
+    const searchInput = $('searchInput');
+    if (searchInput && searchInput.value.trim().length > 0) {
+      this.ui.executeSearch(searchInput.value.trim());
+    } else {
+      this.ui.renderProgrammes(Catalog.programmes);
+    }
+
+    this.ui.syncUrlFromState();
+  }
+
+  /**
+   * Generates level filter pills with dynamic count badges for the active material category.
+   */
+  buildFilters() {
+    const container = $('filters');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const counts = Catalog.getLevelCounts(this.activeType);
+
+    Catalog.levels.forEach(lv => {
+      const count = counts[lv] || 0;
+      const pill = document.createElement('button');
+      const isActive = this.activeLevel === lv;
+      pill.className = 'pill' + (isActive ? ' active' : '');
+      pill.dataset.level = lv;
+      pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      pill.innerHTML = `${lv === 'ALL' ? 'All' : lv} <span class="pill-count">${count}</span>`;
+      container.appendChild(pill);
+    });
+  }
+
+  /**
+   * Resets all filters back to default.
+   */
+  reset() {
+    this.activeLevel = 'ALL';
+    this.activeType = 'SLM';
+    this.buildFilters();
+    const switcher = $('materialTypeSwitcher');
+    if (switcher) switcher.setAttribute('data-active', 'SLM');
+  }
+}
+
+// ============================================================================
+//  7B. MODAL SERVICE (S.O.L.I.D: Accessible Modal Lifecycle & Focus Trapping)
+// ============================================================================
+
+/**
+ * ModalService coordinates accessible dialog lifecycles, focus-trapping,
+ * ESC dismissal, backdrop transitions, and telemetry.
+ */
+class ModalService {
+  /**
+   * @param {UIController} ui - The orchestrating UIController instance
+   */
+  constructor(ui) {
+    this.ui = ui;
+    this.activeModals = new Set();
+    this.focusMap = new Map();
+    this.trapCleanupMap = new Map();
+    this._lastFocusBeforeShortcuts = null;
+    this._shortcutsTrapCleanup = null;
+    this._lastFocusBeforeReport = null;
+    this._reportTrapCleanup = null;
+    this._reportData = null;
+    this._lastFocusBeforeSupport = null;
+    this._supportTrapCleanup = null;
+    this._lastFocusBeforeUpdate = null;
+    this._updateTrapCleanup = null;
+    this._activeSupportUpiUri = '';
+    this._activeSupportAmount = 50;
+
+    this._initEscapeListener();
+  }
+
+  _initEscapeListener() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (this.isOpen('shortcutsModal')) this.closeShortcuts();
+        else if (this.isOpen('reportModal')) this.closeReport();
+        else if (this.isOpen('supportModal')) this.closeSupport();
+        else if (this.isOpen('updateModal')) this.closeUpdate();
+      }
+    });
+  }
+
+  isOpen(modalId) {
+    const modal = $(modalId);
+    return modal ? modal.classList.contains('visible') || modal.classList.contains('open') : false;
+  }
+
+  // --- Shortcuts Modal ---
+  openShortcuts() {
+    const modal = $('shortcutsModal');
+    if (modal) {
+      this._lastFocusBeforeShortcuts = document.activeElement;
+      modal.classList.add('visible');
+      Analytics.event('modal_open', { modal: 'shortcuts' });
+      Analytics.trackEngagement('shortcuts_modal_open');
+      this._shortcutsTrapCleanup = trapFocus(modal);
+      const closeBtn = $('shortcutsModalClose') || $('shortcutsModalDoneBtn');
+      setTimeout(() => closeBtn?.focus(), 50);
+    }
+  }
+
+  closeShortcuts() {
+    const modal = $('shortcutsModal');
+    if (modal) {
+      modal.classList.remove('visible');
+      Analytics.event('modal_close', { modal: 'shortcuts' });
+      if (this._shortcutsTrapCleanup) {
+        this._shortcutsTrapCleanup();
+        this._shortcutsTrapCleanup = null;
+      }
+      if (this._lastFocusBeforeShortcuts && typeof this._lastFocusBeforeShortcuts.focus === 'function') {
+        this._lastFocusBeforeShortcuts.focus();
+        this._lastFocusBeforeShortcuts = null;
+      }
+    }
+  }
+
+  // --- Document Issue Reporting Modal ---
+  openReport(item = {}) {
+    const modal = $('reportModal');
+    if (!modal) return;
+    this._lastFocusBeforeReport = document.activeElement;
+    this._reportData = item;
+
+    const titleEl = $('reportModalDocTitle');
+    const metaEl = $('reportModalDocMeta');
+    const urlEl = $('reportModalDocUrl');
+    const noteEl = $('reportNoteInput');
+    const selectEl = $('reportReasonSelect');
+
+    if (titleEl) titleEl.textContent = item.name ? `${item.name} (${item.code || 'No Code'})` : (item.code || 'Course Material');
+    if (metaEl) {
+      const parts = [];
+      if (item.prog) parts.push(item.prog);
+      if (item.level) parts.push(item.level);
+      if (item.sem) parts.push(`Semester ${item.sem}`);
+      if (item.type) parts.push(item.type);
+      metaEl.textContent = parts.join(' • ');
+    }
+    if (urlEl) {
+      const rawUrl = item.pdfUrl || item.url || '';
+      urlEl.textContent = rawUrl.length > 58 ? rawUrl.slice(0, 55) + '…' : rawUrl;
+      urlEl.title = rawUrl;
+    }
+    if (noteEl) noteEl.value = '';
+    if (selectEl) selectEl.selectedIndex = 0;
+
+    const mode = this.syncReportModalMode();
+    const gformContainer = $('reportModalGFormContainer');
+    if (mode === 'gform' && gformContainer && !gformContainer.querySelector('iframe')) {
+      const prefillUrl = this.buildPrefilledGFormUrl(item);
+      const iframe = document.createElement('iframe');
+      iframe.className = 'report-gform-iframe';
+      iframe.src = prefillUrl;
+      iframe.setAttribute('title', 'Report Document Issue Google Form');
+      iframe.setAttribute('loading', 'lazy');
+      gformContainer.appendChild(iframe);
+    }
+
+    modal.classList.add('visible');
+    Analytics.event('modal_open', { modal: 'report' });
+    Analytics.trackEngagement('report_modal_open', {
+      course_code: item.code || '',
+      material_type: item.type || ''
+    });
+
+    this._reportTrapCleanup = trapFocus(modal);
+    setTimeout(() => {
+      if (mode === 'gform') {
+        const closeBtn = $('reportModalClose');
+        closeBtn?.focus();
+      } else {
+        selectEl?.focus();
+      }
+    }, 50);
+  }
+
+  isGFormConfigured() {
+    return Boolean(window.SGOU_CONFIG?.GFORM_REPORT_BASE_URL);
+  }
+
+  syncReportModalMode() {
+    const card = document.querySelector('.report-modal-card');
+    const mode = this.isGFormConfigured() ? 'gform' : 'manual';
+    if (card) {
+      card.setAttribute('data-report-mode', mode);
+    }
+    return mode;
+  }
+
+  closeReport() {
+    const modal = $('reportModal');
+    if (modal) {
+      modal.classList.remove('visible');
+      Analytics.event('modal_close', { modal: 'report' });
+      if (this._reportTrapCleanup) {
+        this._reportTrapCleanup();
+        this._reportTrapCleanup = null;
+      }
+      if (this._lastFocusBeforeReport && typeof this._lastFocusBeforeReport.focus === 'function') {
+        this._lastFocusBeforeReport.focus();
+        this._lastFocusBeforeReport = null;
+      }
+    }
+  }
+
+  submitReport() {
+    const selectEl = $('reportReasonSelect');
+    const noteEl = $('reportNoteInput');
+    const reason = selectEl ? selectEl.value : 'Broken / unreachable link';
+    const note = noteEl ? noteEl.value.trim() : '';
+
+    const payload = {
+      course_code: this._reportData?.code || 'N/A',
+      course_name: this._reportData?.name || 'N/A',
+      programme: this._reportData?.prog || 'N/A',
+      level: this._reportData?.level || 'N/A',
+      material_type: this._reportData?.type || 'SLM',
+      pdf_url: this._reportData?.pdfUrl || this._reportData?.url || 'N/A',
+      reason,
+      note,
+      timestamp: new Date().toISOString()
+    };
+
+    Analytics.trackEngagement('report_document_issue', payload);
+
+    const waNum = window.SGOU_CONFIG?.WHATSAPP_SUPPORT_NUMBER || '917994273297';
+    const waText = [
+      'SGOU Syllabus Database — Document Issue Report',
+      '────────────────────────────',
+      'Course Code : ' + payload.course_code,
+      'Course Name : ' + payload.course_name,
+      'Programme   : ' + payload.programme + ' (' + payload.level + ')',
+      'Category    : ' + payload.material_type,
+      'Issue       : ' + payload.reason,
+      payload.note ? 'User Note   : ' + payload.note : null,
+      'Document URL: ' + payload.pdf_url,
+      '────────────────────────────',
+      'Reported via SGOU Open Academic Database'
+    ].filter(Boolean).join('\n');
+
+    const waUrl = 'https://wa.me/' + waNum + '?text=' + encodeURIComponent(waText);
+    const win = window.open(waUrl, '_blank', 'noopener,noreferrer');
+    if (!win) {
+      window.location.href = waUrl;
+    }
+
+    this.closeReport();
+    this.ui.showToast('Issue report submitted. Opening WhatsApp…', 3200);
+  }
+
+  buildPrefilledGFormUrl(item) {
+    const base = window.SGOU_CONFIG?.GFORM_REPORT_BASE_URL || '';
+    if (!base) return '';
+    const params = new URLSearchParams();
+    if (window.SGOU_CONFIG?.GFORM_ENTRY_COURSE_CODE && item.code) {
+      params.set(window.SGOU_CONFIG.GFORM_ENTRY_COURSE_CODE, item.code);
+    }
+    if (window.SGOU_CONFIG?.GFORM_ENTRY_COURSE_NAME && item.name) {
+      params.set(window.SGOU_CONFIG.GFORM_ENTRY_COURSE_NAME, item.name);
+    }
+    if (window.SGOU_CONFIG?.GFORM_ENTRY_URL && (item.pdfUrl || item.url)) {
+      params.set(window.SGOU_CONFIG.GFORM_ENTRY_URL, item.pdfUrl || item.url);
+    }
+    const qs = params.toString();
+    return qs ? `${base}?${qs}` : base;
+  }
+
+  // --- Support Community Modal ---
+  openSupport(options = {}) {
+    const modal = $('supportModal');
+    if (!modal) return;
+    this._lastFocusBeforeSupport = document.activeElement;
+
+    const source = options.source || 'header_heart';
+    Analytics.event('modal_open', { modal: 'support', source });
+    Analytics.trackEngagement('support_modal_open', { source });
+
+    const defaultAmt = options.amount || 50;
+    this._activeSupportAmount = defaultAmt;
+    this.renderSupportQr(defaultAmt);
+
+    modal.classList.add('visible');
+    this._supportTrapCleanup = trapFocus(modal);
+    const closeBtn = $('supportModalClose');
+    setTimeout(() => closeBtn?.focus(), 50);
+  }
+
+  closeSupport() {
+    const modal = $('supportModal');
+    if (modal) {
+      modal.classList.remove('visible');
+      Analytics.event('modal_close', { modal: 'support' });
+      if (this._supportTrapCleanup) {
+        this._supportTrapCleanup();
+        this._supportTrapCleanup = null;
+      }
+      if (this._lastFocusBeforeSupport && typeof this._lastFocusBeforeSupport.focus === 'function') {
+        this._lastFocusBeforeSupport.focus();
+        this._lastFocusBeforeSupport = null;
+      }
+    }
+  }
+
+  buildSupportUpiUri(amount = 50) {
+    const vpa = window.SGOU_CONFIG?.SUPPORT_UPI_VPA || 'athul.sgou@oksbi';
+    const payeeName = window.SGOU_CONFIG?.SUPPORT_PAYEE_NAME || 'SGOU Student Portal';
+    const amtStr = Number(amount).toFixed(2);
+    const note = 'SGOU Student Database Contribution';
+    return `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(payeeName)}&am=${amtStr}&cu=INR&tn=${encodeURIComponent(note)}`;
+  }
+
+  renderSupportQr(amount = 50) {
+    const qrContainer = $('supportQrBox');
+    if (!qrContainer) return;
+    qrContainer.innerHTML = '';
+    const uri = this.buildSupportUpiUri(amount);
+    this._activeSupportUpiUri = uri;
+
+    const payBtn = $('supportPayPrimaryBtn');
+    if (payBtn) {
+      payBtn.setAttribute('href', uri);
+      const span = payBtn.querySelector('.support-pay-amt');
+      if (span) span.textContent = `₹${amount}`;
+    }
+
+    if (typeof QRCode !== 'undefined') {
+      try {
+        new QRCode(qrContainer, {
+          text: uri,
+          width: 172,
+          height: 172,
+          colorDark: '#181512',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {
+        qrContainer.innerHTML = '<div style="font-size:12px;color:var(--ink-muted);padding:1rem;">Scan with any UPI app</div>';
+      }
+    }
+  }
+
+  copySupportVpa() {
+    const vpa = window.SGOU_CONFIG?.SUPPORT_UPI_VPA || 'athul.sgou@oksbi';
+    Analytics.event('support_copy_upi', { vpa });
+    if (typeof window.copyTextToClipboard === 'function') {
+      window.copyTextToClipboard(vpa, 'UPI ID copied to clipboard');
+    } else {
+      navigator.clipboard?.writeText(vpa).then(() => {
+        this.ui.showToast('UPI ID copied to clipboard!');
+      }).catch(() => {
+        this.ui.showToast(vpa);
+      });
+    }
+  }
+
+  // --- Update Modal ---
+  openUpdate() {
+    const modal = $('updateModal');
+    if (modal) {
+      this._lastFocusBeforeUpdate = document.activeElement;
+      modal.classList.add('visible');
+      Analytics.event('modal_open', { modal: 'update' });
+      this._updateTrapCleanup = trapFocus(modal);
+      const closeBtn = $('updateModalClose');
+      setTimeout(() => closeBtn?.focus(), 50);
+    }
+  }
+
+  closeUpdate() {
+    const modal = $('updateModal');
+    if (modal) {
+      modal.classList.remove('visible');
+      Analytics.event('modal_close', { modal: 'update' });
+      if (this._updateTrapCleanup) {
+        this._updateTrapCleanup();
+        this._updateTrapCleanup = null;
+      }
+      if (this._lastFocusBeforeUpdate && typeof this._lastFocusBeforeUpdate.focus === 'function') {
+        this._lastFocusBeforeUpdate.focus();
+        this._lastFocusBeforeUpdate = null;
+      }
+    }
+  }
+}
+
+// ============================================================================
+//  7C. CARD ACCORDION (S.O.L.I.D: FLIP Transitions & Lazy Card Rendering)
+// ============================================================================
+
+/**
+ * CardAccordion handles expandable programme cards, FLIP animated transitions,
+ * deferred card-body HTML rendering, and accordion batch toggling.
+ */
+class CardAccordion {
+  /**
+   * @param {UIController} ui - The orchestrating UIController instance
+   */
+  constructor(ui) {
+    this.ui = ui;
+  }
+
+  /**
+   * Compiles the full inner HTML for a single programme card's body
+   * (semester tabs, course items, PYQs, and assignment booklets).
+   * @param {Object} prog
+   * @param {number} idx
+   * @param {string} [query='']
+   * @param {string} [activeType=this.ui.activeType]
+   * @returns {string}
+   */
+  _renderCardBodyHTML(prog, idx, query = '', activeType = this.ui.activeType) {
+    let sems;
+    if (activeType === 'ASSIGNMENT') {
+      sems = prog.semesters.filter(s => s.assignments && s.assignments.length > 0);
+    } else if (activeType === 'PYQ') {
+      sems = prog.semesters.filter(s => (s.courses && s.courses.some(c => c.pyqs && c.pyqs.length > 0)) || (s.generalPyqs && s.generalPyqs.length > 0));
+    } else if (activeType === 'SLM') {
+      sems = prog.semesters.filter(s => s.courses && s.courses.some(c => c.slm_url || c.drive_url || c.url));
+    } else {
+      sems = prog.semesters;
+    }
+
+    if (!sems.length) {
+      const typeLabel = activeType === 'PYQ' ? 'previous question papers' : activeType === 'ASSIGNMENT' ? 'assignment booklets' : 'course textbooks';
+      return `
+        <div class="empty-semesters-notice">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>No official ${typeLabel} currently uploaded for this programme.</div>
+        </div>`;
+    }
+
+    const tabsHtml = sems.map((s, sIdx) => `
+      <button class="sem-tab${sIdx === 0 ? ' active' : ''}" data-sem="${s.sem_num}" aria-selected="${sIdx === 0 ? 'true' : 'false'}" role="tab">
+        Sem ${s.sem_num}
+      </button>
+    `).join('');
+
+    const panesHtml = sems.map((s, sIdx) => {
+      let contentHtml = '';
+      if (activeType === 'ASSIGNMENT') {
+        const asgns = s.assignments || [];
+        contentHtml = asgns.map(a => `
+          <div class="course-item assignment-item">
+            <div class="course-info">
+              <div class="course-code-row">
+                <span class="course-code">${esc(a.code || 'ASGN')}</span>
+                <span class="tag asgn-tag">Assignment</span>
+              </div>
+              <div class="course-title">${hl(a.title || 'Assignment Booklet', query)}</div>
+            </div>
+            <div class="course-actions">
+              <a href="${ea(a.url)}" target="_blank" rel="noopener noreferrer" class="action-btn download-btn" download title="Download assignment">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download</span>
+              </a>
+            </div>
+          </div>
+        `).join('');
+      } else if (activeType === 'PYQ') {
+        const courses = s.courses || [];
+        const generalPyqs = s.generalPyqs || [];
+        const coursesHtml = courses.map(c => {
+          const pyqs = c.pyqs || [];
+          if (!pyqs.length) return '';
+          return `
+            <div class="course-item">
+              <div class="course-info">
+                <div class="course-code-row">
+                  <span class="course-code">${esc(c.course_code)}</span>
+                  <span class="tag pyq-tag">${pyqs.length} PYQ${pyqs.length > 1 ? 's' : ''}</span>
+                </div>
+                <div class="course-title">${hl(c.course_title, query)}</div>
+              </div>
+              <div class="course-actions">
+                <button class="action-btn view-pyq-btn" data-code="${ea(c.course_code)}" data-title="${ea(c.course_title)}" title="View question papers">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span>Papers</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        const generalHtml = generalPyqs.map(g => `
+          <div class="course-item general-pyq-item">
+            <div class="course-info">
+              <div class="course-code-row">
+                <span class="course-code">${esc(g.exam_date || 'General')}</span>
+                <span class="tag pyq-tag">Semester Paper</span>
+              </div>
+              <div class="course-title">${hl(g.title || 'Semester Question Paper', query)}</div>
+            </div>
+            <div class="course-actions">
+              <a href="${ea(g.url)}" target="_blank" rel="noopener noreferrer" class="action-btn download-btn" download>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download</span>
+              </a>
+            </div>
+          </div>
+        `).join('');
+
+        contentHtml = coursesHtml + generalHtml;
+      } else {
+        // SLM mode
+        const courses = (s.courses || []).filter(c => c.slm_url || c.drive_url || c.url);
+        contentHtml = courses.map(c => {
+          const pdfUrl = c.slm_url || c.drive_url || c.url || '';
+          return `
+            <div class="course-item">
+              <div class="course-info">
+                <div class="course-code-row">
+                  <span class="course-code copyable-code" data-copy="${ea(c.course_code)}" title="Click to copy code">${esc(c.course_code)}</span>
+                  ${c.credits ? `<span class="tag">${c.credits} Credits</span>` : ''}
+                </div>
+                <div class="course-title">${hl(c.course_title, query)}</div>
+              </div>
+              <div class="course-actions">
+                <button class="action-btn preview-btn" data-url="${ea(pdfUrl)}" data-code="${ea(c.course_code)}" data-name="${ea(c.course_title)}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" title="Read document">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                  <span>Read</span>
+                </button>
+                <a href="${ea(pdfUrl)}" target="_blank" rel="noopener noreferrer" class="action-btn download-btn" download data-code="${ea(c.course_code)}" title="Download PDF">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  <span>Download</span>
+                </a>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      return `
+        <div class="sem-pane${sIdx === 0 ? ' active' : ''}" data-sem="${s.sem_num}" role="tabpanel">
+          <div class="course-list">${contentHtml}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="sem-tabs-header" role="tablist">${tabsHtml}</div>
+      <div class="sem-tabs-body">${panesHtml}</div>
+    `;
+  }
+
+  ensureCardBodyRendered(card) {
+    if (!card) return null;
+    const body = card.querySelector('.card-body');
+    if (!body) return null;
+    if (body.dataset.rendered === 'true') return body;
+
+    const idx = parseInt(card.dataset.idx, 10);
+    const progName = card.dataset.prog;
+    const prog = (this.ui._renderedProgrammes && this.ui._renderedProgrammes[idx] && this.ui._renderedProgrammes[idx].programme_name === progName)
+      ? this.ui._renderedProgrammes[idx]
+      : (Catalog.programmes ? Catalog.programmes.find(p => p.programme_name === progName) : null);
+
+    if (prog) {
+      body.innerHTML = this._renderCardBodyHTML(prog, idx, '', this.ui.activeType);
+      body.dataset.rendered = 'true';
+    }
+    return body;
+  }
+
+  toggleCard(card) {
+    const body = this.ensureCardBodyRendered(card);
+    if (!body) return;
+
+    if (card.classList.contains('open')) {
+      body.style.maxHeight = body.scrollHeight + 'px';
+      void body.offsetHeight; // force reflow
+      body.style.maxHeight = '0px';
+      card.classList.remove('open');
+      card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
+      body.setAttribute('aria-hidden', 'true');
+    } else {
+      card.classList.add('open');
+      body.setAttribute('aria-hidden', 'false');
+      body.style.maxHeight = body.scrollHeight + 'px';
+      card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
+      const onEnd = () => {
+        if (card.classList.contains('open')) body.style.maxHeight = 'none';
+        body.removeEventListener('transitionend', onEnd);
+      };
+      body.addEventListener('transitionend', onEnd);
+
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const rect = card.getBoundingClientRect();
+          const stickyEl = document.querySelector('.sticky-controls');
+          const stickyH = (stickyEl ? stickyEl.offsetHeight : 0) + 16;
+          if (rect.top < stickyH || rect.bottom > window.innerHeight + 40) {
+            window.scrollTo({
+              top: Math.max(0, window.scrollY + rect.top - stickyH),
+              behavior: 'smooth'
+            });
+          }
+        }, 320);
+      });
+    }
+  }
+
+  expandAll() {
+    Analytics.trackEngagement('expand_all');
+    document.querySelectorAll('.programme-card:not(.open)').forEach((card, i) => {
+      const body = this.ensureCardBodyRendered(card);
+      if (!body) return;
+      setTimeout(() => {
+        card.classList.add('open');
+        body.setAttribute('aria-hidden', 'false');
+        body.style.maxHeight = body.scrollHeight + 'px';
+        card.querySelector('.card-header')?.setAttribute('aria-expanded', 'true');
+        const onEnd = () => {
+          if (card.classList.contains('open')) body.style.maxHeight = 'none';
+          body.removeEventListener('transitionend', onEnd);
+        };
+        body.addEventListener('transitionend', onEnd);
+      }, i * 40);
+    });
+  }
+
+  collapseAll() {
+    Analytics.trackEngagement('collapse_all');
+    document.querySelectorAll('.programme-card.open').forEach(card => {
+      const body = card.querySelector('.card-body');
+      if (!body) return;
+      body.style.maxHeight = body.scrollHeight + 'px';
+      void body.offsetHeight;
+      body.style.maxHeight = '0px';
+      card.classList.remove('open');
+      body.setAttribute('aria-hidden', 'true');
+      card.querySelector('.card-header')?.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  toggleAll() {
+    const openCards = document.querySelectorAll('.programme-card.open');
+    if (openCards.length > 0) {
+      this.collapseAll();
+      this.updateToggleBtn(false);
+    } else {
+      this.expandAll();
+      this.updateToggleBtn(true);
+    }
+  }
+
+  updateToggleBtn(isExpanded) {
+    const btn = $('toggleAll');
+    if (!btn) return;
+    btn.dataset.state = isExpanded ? 'expanded' : 'collapsed';
+    const text = btn.querySelector('.toggle-text');
+    const icon = btn.querySelector('.toggle-icon');
+    if (text) text.textContent = isExpanded ? 'Collapse' : 'Expand';
+    if (icon) {
+      icon.innerHTML = isExpanded
+        ? '<polyline points="17 11 12 6 7 11" /><polyline points="17 18 12 13 7 18" />'
+        : '<polyline points="7 13 12 18 17 13" /><polyline points="7 6 12 11 17 6" />';
+    }
+  }
+}
+
+// ============================================================================
 //  8. UI CONTROLLER (S.O.L.I.D: DOM & Interaction Orchestration)
 // ============================================================================
 
@@ -1687,8 +2494,11 @@ const Router = new RouterService();
  */
 class UIController {
   constructor() {
-    this.activeLevel = 'ALL';
-    this.activeType = 'SLM';
+    // S.O.L.I.D: Delegate specialized domains to single-responsibility services
+    this.filters = new FilterService(this);
+    this.modals = new ModalService(this);
+    this.accordion = new CardAccordion(this);
+
     this.toastTimer = null;
     this.navLock = false;
     this.revealObserver = null;
@@ -1696,6 +2506,12 @@ class UIController {
     this.analyticsTimer = null;
     this._viewerOpenedInSession = false;
   }
+
+  // Transparent getters and setters to maintain S.O.L.I.D backward-compatibility
+  get activeLevel() { return this.filters ? this.filters.activeLevel : (this._activeLevel || 'ALL'); }
+  set activeLevel(v) { if (this.filters) this.filters.activeLevel = v; else this._activeLevel = v; }
+  get activeType() { return this.filters ? this.filters.activeType : (this._activeType || 'SLM'); }
+  set activeType(v) { if (this.filters) this.filters.activeType = v; else this._activeType = v; }
 
   init() {
     this.initTheme();
@@ -1801,7 +2617,17 @@ class UIController {
 
   // --- Feedback & Notifications ---
 
+  /**
+   * Displays non-blocking, accessible toast feedback.
+   * Leverages shared window.Toast component with resilient local DOM fallback.
+   * @param {string} message
+   * @param {number} [durationMs=2400]
+   */
   showToast(message, durationMs = 2400) {
+    if (typeof window.Toast !== 'undefined' && typeof window.Toast.show === 'function') {
+      window.Toast.show(message, 'info', durationMs);
+      return;
+    }
     const toast = $('toast');
     if (!toast) return;
     clearTimeout(this.toastTimer);
@@ -1898,12 +2724,14 @@ class UIController {
         const q = input.value.trim();
         if (q.length >= 2) {
           Storage.addRecentSearch(q);
+          Analytics.trackSearch(q, document.querySelectorAll('.search-result-item').length);
           input.blur();
         }
       }
     });
 
     clear?.addEventListener('click', () => {
+      Analytics.event('clear_search', { previous_term: input.value });
       input.value = '';
       clear.classList.remove('visible');
       const kbdHint = $('searchKbdHint');
@@ -4187,6 +5015,7 @@ class UIController {
         supportChip.classList.add('active');
         const rawAmt = supportChip.getAttribute('data-amount');
         this._supportActiveAmount = (rawAmt === 'custom') ? null : Number(rawAmt);
+        Analytics.event('support_amount_select', { amount: this._supportActiveAmount || 'custom' });
         this.renderSupportQr(this._supportActiveAmount);
         return;
       }
@@ -4196,10 +5025,12 @@ class UIController {
         if (qrSec) {
           const isShown = qrSec.classList.toggle('show');
           if (toggleTxt) toggleTxt.textContent = isShown ? 'Hide QR Code' : 'Show QR Code';
+          Analytics.event('support_qr_toggle', { is_shown: isShown });
         }
         return;
       }
       if (e.target.closest('#supportCopyVpaBtn')) {
+        Analytics.event('support_copy_upi');
         this.copySupportVpa();
         return;
       }
@@ -4235,6 +5066,7 @@ class UIController {
       // Reset Category Filter from Empty Notice
       if (e.target.closest('#resetCategoryFilterBtn')) {
         this.activeLevel = 'ALL';
+        Analytics.event('reset_filter', { filter_type: 'level' });
         this.executeSearch();
         this.syncUrlFromState();
         return;
@@ -4244,16 +5076,18 @@ class UIController {
       const pyqToggle = e.target.closest('.course-pyq-toggle');
       if (pyqToggle) {
         e.preventDefault();
-        pyqToggle.classList.toggle('open');
+        const isOpen = pyqToggle.classList.toggle('open');
         const drawer = pyqToggle.nextElementSibling;
         if (drawer && drawer.classList.contains('course-pyq-drawer')) {
           drawer.classList.toggle('open');
         }
+        Analytics.event('toggle_pyq_drawer', { is_open: isOpen });
         return;
       }
 
       // Viewer Back: reliably closes viewer panel without exiting the application
       if (e.target.closest('#viewerBack')) {
+        Analytics.event('viewer_close', { item_id: $('viewerPanel')?._data?.code || '' });
         this.hideViewerPanel(true);
         return;
       }
@@ -4292,16 +5126,19 @@ class UIController {
         $('downloadProgressCard')?.classList.remove('visible');
         this.renderMyDownloads();
         $('myDownloadsDrawer')?.classList.add('visible');
+        Analytics.event('drawer_open', { drawer_name: 'my_downloads' });
         return;
       }
       if (e.target.closest('#myDownloadsClose')) {
         $('myDownloadsDrawer')?.classList.remove('visible');
+        Analytics.event('drawer_close', { drawer_name: 'my_downloads' });
         return;
       }
       if (e.target.closest('#myDownloadsClearBtn')) {
         Storage.clearDownloadHistory();
         this.updateDownloadStats();
         this.renderMyDownloads();
+        Analytics.event('clear_download_history');
         this.showToast('Download history cleared');
         return;
       }
@@ -4313,6 +5150,12 @@ class UIController {
         const name = myDlViewBtn.dataset.name;
         const code = myDlViewBtn.dataset.code;
         const type = myDlViewBtn.dataset.type || 'SLM';
+        Analytics.event('select_content', {
+          content_type: 'downloaded_item_view',
+          item_id: code,
+          item_name: name,
+          item_category: type
+        });
         $('myDownloadsDrawer')?.classList.remove('visible');
         this._viewerOpenedInSession = true;
         const vParams = new URLSearchParams();
@@ -4329,16 +5172,19 @@ class UIController {
       if (e.target.closest('#storageHelpBtn') || e.target.closest('#drawerStorageHelpBtn')) {
         $('myDownloadsDrawer')?.classList.remove('visible');
         $('storageHelpModal')?.classList.add('visible');
+        Analytics.event('modal_open', { modal_name: 'storage_help' });
         return;
       }
       if (e.target.closest('#storageHelpClose') || e.target.closest('#storageHelpDoneBtn')) {
         $('storageHelpModal')?.classList.remove('visible');
+        Analytics.event('modal_close', { modal_name: 'storage_help' });
         return;
       }
 
       // App Update Modal (Triggerable from drawer footer or header)
       if (e.target.closest('#appUpdateBtn') || e.target.closest('#drawerUpdateBtn')) {
         $('myDownloadsDrawer')?.classList.remove('visible');
+        Analytics.event('modal_open', { modal_name: 'app_update' });
         PWAService.openUpdateModal();
         return;
       }
@@ -4349,6 +5195,7 @@ class UIController {
         guideTab.classList.add('active');
         const target = document.getElementById(guideTab.dataset.tab);
         if (target) target.classList.add('active');
+        Analytics.event('guide_tab_switch', { tab_id: guideTab.dataset.tab });
         return;
       }
 
@@ -4399,6 +5246,19 @@ class UIController {
         const examDate = viewBtn.dataset.examdate || '';
         const url = viewBtn.dataset.url || '';
 
+        Analytics.event('select_content', {
+          content_type: 'document_view',
+          item_id: code,
+          item_name: name,
+          item_category: type,
+          programme: prog,
+          level: level,
+          exam_date: examDate
+        });
+        if (window.SGOU_TELEMETRY) {
+          window.SGOU_TELEMETRY.recordConsumptionChoice(code, 'canvas_reader');
+        }
+
         this._viewerOpenedInSession = true;
         if (href) {
           Router.navigate(href);
@@ -4436,6 +5296,10 @@ class UIController {
         if (!card || !grid) return;
 
         const isNowPinned = Storage.togglePinProgramme(progName);
+        Analytics.event('pin_programme', {
+          programme: progName,
+          is_pinned: isNowPinned
+        });
         this.showToast(isNowPinned ? `★ Pinned ${formatProgName(progName)} to top` : `Unpinned ${formatProgName(progName)}`);
 
         // Update star state and card styling immediately
@@ -4514,6 +5378,10 @@ class UIController {
       if (sfBtn && sfBtn.dataset.target) {
         e.preventDefault();
         const nextType = sfBtn.dataset.target;
+        Analytics.event('search_category_switch', {
+          target_category: nextType,
+          search_term: $('searchInput')?.value || ''
+        });
         this.setMaterialType(nextType);
         return;
       }
@@ -4522,6 +5390,12 @@ class UIController {
       const cardHeader = e.target.closest('.card-header');
       if (cardHeader && cardHeader.closest('.programme-card')) {
         const card = cardHeader.closest('.programme-card');
+        const isCurrentlyOpen = card.classList.contains('open');
+        Analytics.event('select_content', {
+          content_type: 'programme_card',
+          item_id: card.dataset.prog || '',
+          action: isCurrentlyOpen ? 'collapse' : 'expand'
+        });
         this.toggleCard(card);
         return;
       }
@@ -4536,6 +5410,11 @@ class UIController {
         semTab.classList.add('active');
         const content = document.getElementById(semTab.dataset.content);
         if (content) content.classList.add('active');
+        Analytics.event('select_content', {
+          content_type: 'semester_tab',
+          item_id: semTab.dataset.content || '',
+          programme: card.dataset.prog || ''
+        });
         return;
       }
 
@@ -4586,6 +5465,7 @@ class UIController {
       const codeChip = e.target.closest('.search-result-code[data-code]');
       if (codeChip) {
         copyToClipboard(codeChip.dataset.code);
+        Analytics.event('copy_course_code', { course_code: codeChip.dataset.code });
         this.showToast('Code copied: ' + codeChip.dataset.code);
         return;
       }
@@ -4596,6 +5476,7 @@ class UIController {
         const input = $('searchInput');
         if (input) {
           input.value = recentPill.dataset.q;
+          Analytics.event('quick_search_pill_click', { search_term: recentPill.dataset.q });
           this.executeSearch();
           this.syncUrlFromState();
         }
@@ -4605,6 +5486,7 @@ class UIController {
       // Clear Recent Searches
       if (e.target.closest('#clearRecentBtn')) {
         Storage.clearRecentSearches();
+        Analytics.event('clear_recent_searches');
         this.hideRecentSearches();
         this.showToast('Search history cleared');
         return;
@@ -4619,7 +5501,7 @@ class UIController {
           p.classList.toggle('active', isActive);
           p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
-        Analytics.trackFilter(this.activeLevel);
+        Analytics.trackFilter(this.activeLevel, 'level');
         this.executeSearch();
         this.syncUrlFromState();
         return;
@@ -4627,6 +5509,10 @@ class UIController {
 
       // Load more search results
       if (e.target.closest('#loadMoreSearchBtn')) {
+        Analytics.event('load_more_search_results', {
+          search_term: $('searchInput')?.value || '',
+          rendered_count: document.querySelectorAll('.search-result-item').length
+        });
         this.loadRemainingSearchResults();
         return;
       }
@@ -4800,10 +5686,16 @@ const PWAService = {
     }
 
     // Manual check button
-    $('btnCheckUpdate')?.addEventListener('click', () => this.checkManualUpdate());
+    $('btnCheckUpdate')?.addEventListener('click', () => {
+      Analytics.event('manual_check_update');
+      this.checkManualUpdate();
+    });
 
     // Force hard update button
-    $('btnForceUpdate')?.addEventListener('click', () => this.forceHardUpdate());
+    $('btnForceUpdate')?.addEventListener('click', () => {
+      Analytics.event('force_hard_update');
+      this.forceHardUpdate();
+    });
 
     // Escape key
     document.addEventListener('keydown', (e) => {

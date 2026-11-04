@@ -19,6 +19,16 @@ const ALLOWED_ORIGINS = new Set([
   'https://www.sgou.ac.in'
 ]);
 
+function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  let out = 0;
+  for (let i = 0; i < a.length; i++) {
+    out |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return out === 0;
+}
+
 function getCorsOrigin(request) {
   const origin = request.headers.get('Origin');
   if (!origin) return '*'; // Direct browser navigation or non-browser client
@@ -117,6 +127,9 @@ export default {
           const dbBatch = [sessionStmt];
 
           for (const evt of events) {
+            // Filter non-actionable passive events from SQLite storage (GA4 already captures 100% of these)
+            if (evt.t === 'section_in_view') continue;
+
             const d = evt.d || {};
             dbBatch.push(eventStmt.bind(
               sid,
@@ -155,6 +168,9 @@ export default {
             }
           }
 
+          // Safety guard: cap batch size to 30 statements per request to prevent D1 row write exhaustion
+          if (dbBatch.length > 30) dbBatch.length = 30;
+
           if (ctx && ctx.waitUntil) {
             ctx.waitUntil(env.DB.batch(dbBatch));
           } else {
@@ -178,12 +194,21 @@ export default {
     // 3. DASHBOARD QUERY ROUTE: /api/analytics/query (GET or POST)
     // ========================================================================
     if (pathname === '/api/analytics/query') {
-      // Validate Authorization token
-      const authHeader = request.headers.get('Authorization') || '';
-      const token = authHeader.replace(/^Bearer\s+/i, '') || urlObj.searchParams.get('token');
-      const expectedToken = (env && env.ADMIN_SECRET) || 'sgou_telemetry_secret';
+      // Validate Authorization token strictly via Cloudflare Environment Variable
+      const configuredSecret = (env && (env.ADMIN_SECRET || env.ADMIN_SECRET_TOKEN || '')).trim();
+      if (!configuredSecret) {
+        return new Response(JSON.stringify({ 
+          error: 'Server authentication misconfigured: ADMIN_SECRET environment variable is not configured in Cloudflare Worker settings.' 
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
 
-      if (!token || token !== expectedToken) {
+      const authHeader = request.headers.get('Authorization') || '';
+      const token = (authHeader.replace(/^Bearer\s+/i, '') || urlObj.searchParams.get('token') || '').trim();
+
+      if (!token || !timingSafeEqual(token, configuredSecret)) {
         return new Response(JSON.stringify({ error: 'Unauthorized: Invalid or missing token' }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -193,14 +218,17 @@ export default {
       const action = urlObj.searchParams.get('action') || 'overview';
 
       if (!env || !env.DB) {
-        // Mock payload if D1 not yet bound in environment
         return new Response(JSON.stringify({
-          status: 'd1_unbound_mock',
-          overview: { total_sessions: 1420, today_sessions: 185, active_last_hour: 28, zero_searches_count: 14, rage_clicks_count: 8 },
-          geo: [{ region: 'Kerala', city: 'Kollam', count: 540 }, { region: 'Kerala', city: 'Thiruvananthapuram', count: 320 }, { region: 'Kerala', city: 'Ernakulam', count: 210 }, { region: 'Kerala', city: 'Kozhikode', count: 180 }],
-          zero_searches: [{ query: 'fyug semester 3 syllabus', category: 'FYUG', hit_count: 42 }, { query: 'bca cloud computing', category: 'UG', hit_count: 28 }, { query: 'mcom project guide', category: 'PG', hit_count: 19 }],
-          rage_clicks: [{ element_selector: 'button#viewerClose', text_sample: 'Close', rage_count: 34 }, { element_selector: 'div.badge-pill', text_sample: 'FYUG 2024', rage_count: 19 }],
-          devices: { mobile: 78, desktop: 22, network_4g: 74, network_3g: 21, network_broadband: 5 }
+          status: 'awaiting_d1_binding',
+          message: 'Cloudflare D1 binding [DB] not detected. Run `npx wrangler d1 create sgou-telemetry` to initialize.',
+          overview: { total_sessions: 0, today_sessions: 0, zero_searches_count: 0, rage_clicks_count: 0, avg_dwell_seconds: 0 },
+          geo: [],
+          zero_searches: [],
+          rage_clicks: [],
+          devices: [],
+          networks: [],
+          recent_events: [],
+          funnel: { landing: 0, searched: 0, inspected: 0, completed: 0, pct_searched: 0, pct_inspected: 0, pct_completed: 0 }
         }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -208,6 +236,24 @@ export default {
       }
 
       try {
+        if (action === 'funnel') {
+          const landing = await env.DB.prepare('SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions').first('total') || 0;
+          const searched = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE event_type IN ('search', 'search_focused', 'search_hesitation')").first('total') || 0;
+          const inspected = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE event_type = 'click' AND (selector LIKE '%card%' OR selector LIKE '%item%' OR details_json LIKE '%card%')").first('total') || 0;
+          const completed = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE event_type IN ('document_download', 'reader_page_dwell', 'consumption_choice')").first('total') || 0;
+
+          return new Response(JSON.stringify({
+            funnel: {
+              landing,
+              searched,
+              inspected,
+              completed,
+              pct_searched: landing ? Math.round((searched / landing) * 100) : 0,
+              pct_inspected: landing ? Math.round((inspected / landing) * 100) : 0,
+              pct_completed: landing ? Math.round((completed / landing) * 100) : 0
+            }
+          }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
         if (action === 'overview') {
           const sessionsCount = await env.DB.prepare('SELECT COUNT(*) as total FROM telemetry_sessions').first('total');
           const todayCount = await env.DB.prepare("SELECT COUNT(*) as today FROM telemetry_sessions WHERE start_time >= date('now', 'start of day')").first('today');
@@ -269,6 +315,207 @@ export default {
             GROUP BY network_type
           `).all();
           return new Response(JSON.stringify({ devices: devices.results, networks: networks.results }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'realtime') {
+          const active5m = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-5 minutes')").first('total') || 0;
+          const active30m = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-30 minutes')").first('total') || 0;
+          const topPages = (await env.DB.prepare("SELECT page_url, COUNT(*) as hits FROM telemetry_events WHERE created_at >= datetime('now', '-30 minutes') GROUP BY page_url ORDER BY hits DESC LIMIT 5").all()).results || [];
+          return new Response(JSON.stringify({ realtime: { active_5m: active5m, active_30m: active30m, top_pages: topPages } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'timeseries') {
+          const daily = (await env.DB.prepare("SELECT date(start_time) as date_label, COUNT(DISTINCT session_id) as sessions FROM telemetry_sessions GROUP BY date_label ORDER BY date_label DESC LIMIT 14").all()).results || [];
+          const hourlyToday = (await env.DB.prepare("SELECT strftime('%H:00', start_time) as hour_label, COUNT(DISTINCT session_id) as sessions FROM telemetry_sessions WHERE start_time >= date('now', 'start of day') GROUP BY hour_label ORDER BY hour_label ASC").all()).results || [];
+          return new Response(JSON.stringify({ timeseries: { daily: daily.reverse(), hourly: hourlyToday } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'heatmatrix') {
+          const matrix = (await env.DB.prepare("SELECT cast(strftime('%w', start_time) as integer) as day_of_week, case when cast(strftime('%H', start_time) as integer) between 6 and 11 then 'Morning' when cast(strftime('%H', start_time) as integer) between 12 and 16 then 'Afternoon' when cast(strftime('%H', start_time) as integer) between 17 and 21 then 'Evening' else 'Night' end as time_block, COUNT(*) as session_count FROM telemetry_sessions GROUP BY day_of_week, time_block").all()).results || [];
+          return new Response(JSON.stringify({ heatmatrix: matrix }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'comparison') {
+          const period = urlObj.searchParams.get('period') || 'today';
+          let curFilter = "start_time >= date('now', 'start of day')";
+          let prevFilter = "start_time >= date('now', '-1 day', 'start of day') AND start_time < date('now', 'start of day')";
+          let curEventFilter = "created_at >= date('now', 'start of day')";
+          let prevEventFilter = "created_at >= date('now', '-1 day', 'start of day') AND created_at < date('now', 'start of day')";
+
+          if (period === '7d') {
+            curFilter = "start_time >= date('now', '-7 days')";
+            prevFilter = "start_time >= date('now', '-14 days') AND start_time < date('now', '-7 days')";
+            curEventFilter = "created_at >= date('now', '-7 days')";
+            prevEventFilter = "created_at >= date('now', '-14 days') AND created_at < date('now', '-7 days')";
+          }
+
+          const curSessions = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE ${curFilter}`).first('total') || 0;
+          const prevSessions = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE ${prevFilter}`).first('total') || 0;
+
+          const curSearches = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type IN ('search', 'zero_search') AND ${curEventFilter}`).first('total') || 0;
+          const prevSearches = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type IN ('search', 'zero_search') AND ${prevEventFilter}`).first('total') || 0;
+
+          const curRages = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type = 'rage_click' AND ${curEventFilter}`).first('total') || 0;
+          const prevRages = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type = 'rage_click' AND ${prevEventFilter}`).first('total') || 0;
+
+          const curDownloads = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type = 'document_download' AND ${curEventFilter}`).first('total') || 0;
+          const prevDownloads = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type = 'document_download' AND ${prevEventFilter}`).first('total') || 0;
+
+          const calcDelta = (cur, prev) => {
+            if (!prev) return cur > 0 ? 100 : 0;
+            return Math.round(((cur - prev) / prev) * 100);
+          };
+
+          return new Response(JSON.stringify({
+            period,
+            metrics: {
+              sessions: { current: curSessions, previous: prevSessions, delta_pct: calcDelta(curSessions, prevSessions) },
+              searches: { current: curSearches, previous: prevSearches, delta_pct: calcDelta(curSearches, prevSearches) },
+              rage_clicks: { current: curRages, previous: prevRages, delta_pct: calcDelta(curRages, prevRages) },
+              downloads: { current: curDownloads, previous: prevDownloads, delta_pct: calcDelta(curDownloads, prevDownloads) }
+            }
+          }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'possibilities') {
+          const possibilities = [];
+          const topRage = await env.DB.prepare('SELECT element_selector, text_sample, rage_count FROM rage_click_ledger ORDER BY rage_count DESC LIMIT 5').all();
+          (topRage.results || []).forEach(item => {
+            if (item.rage_count >= 1) {
+              possibilities.push({
+                category: 'UI/UX Friction',
+                severity: item.rage_count >= 10 ? 'HIGH' : 'MEDIUM',
+                target: item.element_selector,
+                evidence: `${item.rage_count} rage clicks logged on "${item.text_sample || item.element_selector}".`,
+                recommendation: `Inspect click listener and visual feedback on ${item.element_selector}.`,
+                potential_gain: 'Reduces student cognitive friction and eliminates click dead-ends.'
+              });
+            }
+          });
+
+          const topZeros = await env.DB.prepare('SELECT query, category, hit_count FROM zero_search_ledger ORDER BY hit_count DESC LIMIT 5').all();
+          if ((topZeros.results || []).length > 0) {
+            const queriesList = topZeros.results.map(z => `"${z.query}" (${z.hit_count} hits)`).join(', ');
+            possibilities.push({
+              category: 'Syllabus Demand & Search Gap',
+              severity: topZeros.results[0].hit_count >= 5 ? 'HIGH' : 'MEDIUM',
+              target: 'Course Index & Search Aliases',
+              evidence: `Students repeatedly searched for missing content: ${queriesList}.`,
+              recommendation: 'Map alternative search synonyms in js/config.js or prioritize scraping/ingesting new materials for these topics.',
+              potential_gain: `Instantly resolves unmet search queries for student search sessions.`
+            });
+          }
+
+          const lowEndCount = await env.DB.prepare("SELECT COUNT(*) as total FROM telemetry_sessions WHERE ram_gb <= 4 OR device_type = 'mobile'").first('total') || 0;
+          const totalSessions = await env.DB.prepare('SELECT COUNT(*) as total FROM telemetry_sessions').first('total') || 1;
+          const lowEndPct = Math.round((lowEndCount / totalSessions) * 100);
+
+          if (lowEndPct >= 30) {
+            possibilities.push({
+              category: 'Mobile / Low-RAM Optimization',
+              severity: 'MEDIUM',
+              target: 'Canvas PDF Reader & Asset Delivery',
+              evidence: `${lowEndPct}% of student sessions run on mobile devices or hardware with <= 4GB RAM.`,
+              recommendation: 'Cap getOptimalRasterScale() at 1.0x on low-memory smartphones and enforce canvas buffer cleanup on page change.',
+              potential_gain: 'Eliminates mobile browser tab crashes and reduces canvas memory overhead by ~45%.'
+            });
+          }
+
+          return new Response(JSON.stringify({
+            possibilities,
+            total_analyzed: possibilities.length,
+            generated_at: new Date().toISOString()
+          }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'export') {
+          const format = urlObj.searchParams.get('format') || 'json';
+          const sessions = (await env.DB.prepare('SELECT * FROM telemetry_sessions ORDER BY start_time DESC LIMIT 1000').all()).results || [];
+          const events = (await env.DB.prepare('SELECT id, session_id, event_type, page_url, selector, text_snippet, details_json, created_at FROM telemetry_events ORDER BY id DESC LIMIT 500').all()).results || [];
+          const zeroSearches = (await env.DB.prepare('SELECT query, category, hit_count, last_searched FROM zero_search_ledger ORDER BY hit_count DESC').all()).results || [];
+          const frictions = (await env.DB.prepare('SELECT element_selector, text_sample, rage_count, last_rage FROM rage_click_ledger ORDER BY rage_count DESC').all()).results || [];
+
+          if (format === 'json') {
+            return new Response(JSON.stringify({
+              export_timestamp: new Date().toISOString(),
+              platform: 'SGOU Academic Database Telemetry (Cloudflare D1)',
+              sessions_count: sessions.length,
+              events_count: events.length,
+              zero_searches_count: zeroSearches.length,
+              frictions_count: frictions.length,
+              data: { sessions, events, zero_searches: zeroSearches, frictions }
+            }, null, 2), {
+              status: 200,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'application/json; charset=utf-8',
+                'Content-Disposition': 'attachment; filename="sgou_telemetry_export_' + Date.now() + '.json"'
+              }
+            });
+          }
+
+          if (format === 'csv') {
+            let csv = '--- ZERO SEARCH LEDGER ---\r\nQuery,Category,Hit Count,Last Searched\r\n';
+            zeroSearches.forEach(z => {
+              csv += `"${(z.query || '').replace(/"/g, '""')}","${z.category || ''}",${z.hit_count},"${z.last_searched}"\r\n`;
+            });
+            csv += '\r\n--- FRICTION RAGE CLICK LEDGER ---\r\nSelector,Text Snippet,Rage Count,Last Rage\r\n';
+            frictions.forEach(f => {
+              csv += `"${(f.element_selector || '').replace(/"/g, '""')}","${(f.text_sample || '').replace(/"/g, '""')}",${f.rage_count},"${f.last_rage}"\r\n`;
+            });
+            csv += '\r\n--- STUDENT SESSIONS ---\r\nSession ID,Country,Region,City,Device,Network,RAM GB,Cores,Start Time\r\n';
+            sessions.forEach(s => {
+              csv += `"${s.session_id}","${s.country || ''}","${s.region || ''}","${s.city || ''}","${s.device_type || ''}","${s.network_type || ''}",${s.ram_gb || 0},${s.cpu_cores || 0},"${s.start_time}"\r\n`;
+            });
+
+            return new Response(csv, {
+              status: 200,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'text/csv; charset=utf-8',
+                'Content-Disposition': 'attachment; filename="sgou_telemetry_export_' + Date.now() + '.csv"'
+              }
+            });
+          }
+
+          if (format === 'ai_prompt') {
+            let md = '# SGOU Academic Database — AI UX Optimization Brief\n\n';
+            md += '**Export Date:** ' + new Date().toISOString() + '\n';
+            md += '**Total Analyzed Sessions:** ' + sessions.length + '\n\n';
+            md += '## 1. System Overview\n';
+            md += '- **Total Zero-Result Searches:** ' + zeroSearches.length + '\n';
+            md += '- **Primary Friction Points:** ' + frictions.length + '\n\n';
+
+            md += '## 2. Top Unmet Student Search Queries (Syllabus Gaps)\n';
+            zeroSearches.slice(0, 10).forEach((z, i) => {
+              md += (i + 1) + '. `' + z.query + '` [' + z.category + '] — ' + z.hit_count + ' failed attempts (Last: ' + z.last_searched + ')\n';
+            });
+
+            md += '\n## 3. UI Friction Hotspots (Rage Clicks)\n';
+            frictions.slice(0, 10).forEach((f, i) => {
+              md += (i + 1) + '. Selector: `' + f.element_selector + '` ("' + (f.text_sample || '') + '") — ' + f.rage_count + ' rage clicks\n';
+            });
+
+            md += '\n## 4. Hardware & Network Environmental Profile\n';
+            const mobileCount = sessions.filter(s => s.device_type === 'mobile').length;
+            const lowRamCount = sessions.filter(s => (s.ram_gb || 0) <= 4).length;
+            md += '- **Mobile Users:** ' + Math.round((mobileCount / (sessions.length || 1)) * 100) + '% (' + mobileCount + ' sessions)\n';
+            md += '- **Low RAM Devices (<=4GB):** ' + Math.round((lowRamCount / (sessions.length || 1)) * 100) + '% (' + lowRamCount + ' sessions)\n\n';
+
+            md += '## 5. AI Prompt Directive\n';
+            md += '> "Act as a Lead UI/UX Engineer and Educational Platform Architect. Review the telemetry data above from the SGOU Academic Database. Propose a concrete, prioritized redesign plan that solves the top rage click friction points, improves discovery for the unmet search queries, and optimizes the canvas reader for the detected mobile hardware profile. Provide exact CSS, HTML layout patterns, and JavaScript event optimizations."\n';
+
+            return new Response(md, {
+              status: 200,
+              headers: {
+                ...corsHeaders,
+                'Content-Type': 'text/markdown; charset=utf-8',
+                'Content-Disposition': 'attachment; filename="sgou_telemetry_ai_brief_' + Date.now() + '.md"'
+              }
+            });
+          }
+
+          return new Response(JSON.stringify({ error: 'Unsupported format' }), { status: 400, headers: corsHeaders });
         }
 
         if (action === 'recent_events') {

@@ -108,7 +108,7 @@
     </script>
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20261009_01">
+    <link rel="manifest" href="/manifest.json?v=20261104_01">
     <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png?v=20260904_10">
@@ -120,8 +120,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261009_01">
-    <link rel="stylesheet" href="/css/components/toast.css?v=20261009_01">
+    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261104_01">
+    <link rel="stylesheet" href="/css/components/toast.css?v=20261104_01">
     <style>
         @view-transition {
             navigation: auto;
@@ -1917,12 +1917,12 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="/js/utils/clipboard.js?v=20261009_01"></script>
-    <script src="/js/components/toast.js?v=20261009_01"></script>
-    <script src="/js/components/theme.js?v=20261009_01"></script>
-    <script src="/js/qrcode.min.js?v=20261009_01"></script>
-    <script src="/js/components/support-modal.js?v=20261009_01"></script>
-    <script src="/js/telemetry/analytics-core.js?v=20261103_01"></script>
+    <script src="/js/utils/clipboard.js?v=20261104_01"></script>
+    <script src="/js/components/toast.js?v=20261104_01"></script>
+    <script src="/js/components/theme.js?v=20261104_01"></script>
+    <script src="/js/qrcode.min.js?v=20261104_01"></script>
+    <script src="/js/components/support-modal.js?v=20261104_01"></script>
+    <script src="js/telemetry/analytics-core.js?v=20261103_01"></script>
     <script>
         (function () {
             var params = new URLSearchParams(window.location.search);
@@ -2216,6 +2216,19 @@
                     if (code) {
                         codeEl.textContent = code;
                         codeEl.style.display = 'inline-flex';
+                        codeEl.title = 'Click to copy course code (' + code + ')';
+                        codeEl.style.cursor = 'pointer';
+                        codeEl.onclick = function () {
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText(code).then(function () {
+                                    var t = document.getElementById('toast');
+                                    if (t) { t.textContent = 'Course code copied: ' + code; t.classList.add('visible'); setTimeout(function () { t.classList.remove('visible'); }, 2000); }
+                                    if (typeof gtag === 'function') {
+                                        gtag('event', 'copy_course_code', { course_code: code });
+                                    }
+                                });
+                            }
+                        };
                     } else {
                         codeEl.style.display = 'none';
                     }

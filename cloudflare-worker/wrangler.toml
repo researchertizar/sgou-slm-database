@@ -1,0 +1,26 @@
+name = "sgou-pdf-proxy"
+main = "worker.js"
+compatibility_date = "2026-11-04"
+
+# ==============================================================================
+# Cloudflare Worker Configuration — SGOU Academic Database Edge Gateway
+# Provides:
+# 1. Zero-Cost PDF Streaming & Download Proxy
+# 2. High-Precision UX Telemetry Ingestion (/api/telemetry -> D1)
+# 3. Analytics Dashboard Query API (/api/analytics/query -> D1 SQLite)
+# ==============================================================================
+
+# D1 Database Binding for High-Precision Telemetry & Analytics
+# To initialize your production D1 database:
+# 1. Run: npx wrangler d1 create sgou-telemetry
+# 2. Paste the returned database_id below
+# 3. Apply schema: npx wrangler d1 execute sgou-telemetry --file=./schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "sgou-telemetry"
+database_id = "your-d1-database-uuid"
+
+# Cloudflare Worker Secrets
+# Do NOT store secrets in plain text in this file.
+# Configure your secret via Cloudflare Web Dashboard (Settings -> Variables -> ADMIN_SECRET)
+# Or run: npx wrangler secret put ADMIN_SECRET

@@ -51,6 +51,13 @@
         }
       }
 
+      // Mirror to Google Analytics (gtag) if available
+      try {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'theme_change', { new_theme: theme });
+        }
+      } catch (_) {}
+
       // Custom DOM event
       var evt;
       if (typeof CustomEvent === 'function') {

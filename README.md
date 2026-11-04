@@ -4,9 +4,11 @@
 > Engineered with pure vanilla web standards, modular component architecture, S.O.L.I.D principles, cognitive UX ergonomics, sub-100ms startup hydration, zero-cost edge streaming, and 60fps FLIP animations.  
 > **Designed and Developed by Ahayas**
 
-[![Version](https://img.shields.io/badge/version-v3.1.0-emerald.svg)](#overview)
-[![Test Suite](https://img.shields.io/badge/tests-71%2F71%20passing-brightgreen.svg)](#automated-verification-suite)
-[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v157)-blue.svg)](#offline-pwa--service-worker-lifecycle)
+[![Version](https://img.shields.io/badge/version-v3.3.0-emerald.svg)](#overview)
+[![Verification Suite](https://img.shields.io/badge/verification-73%2F73%20checks%20passing-brightgreen.svg)](#automated-verification-suite)
+[![Test Suite](https://img.shields.io/badge/tests-18%2F18%20passing-brightgreen.svg)](#automated-verification-suite)
+[![PWA](https://img.shields.io/badge/PWA-offline--first%20(v158)-blue.svg)](#offline-pwa--service-worker-lifecycle)
+[![Storage Footprint](https://img.shields.io/badge/storage-4.28%20MB%20(-95%25)-purple.svg)](#startup--runtime-performance-engineering)
 [![Architecture](https://img.shields.io/badge/architecture-Modular%20Components%20%26%20S.O.L.I.D-purple.svg)](#solid-system-architecture)
 [![Edge CDN](https://img.shields.io/badge/bandwidth-zero--cost%20CloudFront-orange.svg)](#zero-cost-edge-architecture--bandwidth-protection)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](#license--acknowledgments)
@@ -101,13 +103,16 @@ The client application within [script.js](file:///d:/Apps/sgou-database/js/scrip
 | :--- | :--- | :--- |
 | **`Utilities & Sanitizers`** | Functional Sanitization | Strict XSS escaping (`esc`, `ea`), query token normalization, clipboard fallbacks. |
 | **`StorageService`** | Single Responsibility (SRP) | Resilient `localStorage` wrapper with automated in-memory store fallback for private browsing. |
-| **`TelemetryService`** | Observer Pattern | Privacy-first Google Analytics 4 event dispatcher with silent error suppression. |
-| **`CatalogService`** | Open/Closed Principle (OCP) | Multi-dataset ingestion, schema validation, $O(1)$ code mapping, and idle-scheduled tokenization. |
+| **`AnalyticsService`** | Observer & Dual-Telemetry | Dispatches to Google Analytics 4 (`gtag`) and edge D1 ingestion (`/api/telemetry`). |
+| **`CatalogService`** | Open/Closed & Zero-Crash | 10s AbortController timeout, CacheStorage fallback, and offline localStorage mirror. |
 | **`SearchEngine`** | Strategy & Memoization | Multi-token fuzzy-subset matcher, chunked result virtualization, and LRU query cache. |
 | **`DownloadManager`** | Strategy Pattern | File System Access API (Chromium) $\rightarrow$ Direct CDN $\rightarrow$ Edge Proxy Stream fallbacks. |
 | **`RouterService`** | Interface Segregation (ISP) | Pure URL hash/query-string state management with bidirectional sync. |
-| **`UIController`** | Mediator / Facade | Event delegation, DOM rendering, FLIP pinning animation, and accessible state management. |
-| **`Global Error Boundary`** | Fault Tolerance | Catches unhandled promises and runtime exceptions with non-blocking user notifications. |
+| **`FilterService`** | Single Responsibility (SRP) | Category (`SLM`, `PYQ`, `ASSIGNMENT`) and academic level filter pills and state sync. |
+| **`ModalService`** | Lifecycle & Focus Isolation | TrapFocus, Escape dismissal, backdrop lifecycle, and modal analytics. |
+| **`CardAccordion`** | Presentation & FLIP | 60fps FLIP animated transitions, lazy card-body rendering, and batch toggling. |
+| **`UIController`** | Orchestrator & Facade | High-level DOM delegation, theme coordination, and view initialization. |
+| **`Global Error Boundary`** | Fault Tolerance | Catches unhandled promises and canvas runtime exceptions with non-blocking user recovery. |
 
 ```
 +-------------------------------------------------------------+

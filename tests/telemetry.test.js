@@ -1,3 +1,4 @@
+process.env.SGOU_ADMIN_SECRET = 'test_telemetry_secret_suite_2026';
 // ============================================================================
 // SGOU Telemetry & Dashboard Automated Test Suite
 // Verifies client sensor integrity, worker endpoints, and dashboard markup
@@ -60,6 +61,9 @@ test('Management Dashboard: admin/dashboard.html interface integrity', () => {
   assert.ok(content.includes('id="rageClickTableBody"'), 'Must have rage click table');
   assert.ok(content.includes('id="geoBars"'), 'Must have geographic visualizer');
   assert.ok(content.includes('id="adminTokenInput"'), 'Must have token authentication input');
+  assert.ok(content.includes('id="possibilitiesContainer"'), 'Must have AI possibilities radar container');
+  assert.ok(content.includes('id="exportDropdown"'), 'Must have export center dropdown');
+  assert.ok(content.includes('id="btnPeriodToday"'), 'Must have comparative period controls');
 });
 
 test('Local Dev Server: Telemetry Ingestion & Query APIs', async () => {
@@ -99,9 +103,20 @@ test('Local Dev Server: Telemetry Ingestion & Query APIs', async () => {
     assert.strictEqual(postRes.status, 200, 'POST /api/telemetry should return 200');
     assert.strictEqual(postRes.data.ok, true, 'Telemetry response should indicate ok: true');
 
-    // 2. Test GET /api/analytics/query
-    const getRes = await new Promise((resolve, reject) => {
+    // 2. Test GET /api/analytics/query without token (should be 401 Unauthorized)
+    const unauthRes = await new Promise((resolve, reject) => {
       http.get(`http://localhost:${port}/api/analytics/query?action=overview`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(unauthRes.status, 401, 'GET /api/analytics/query without token should return 401 Unauthorized');
+
+    // 3. Test GET /api/analytics/query with valid token (should be 200 OK)
+    const token = 'test_telemetry_secret_suite_2026';
+    const getRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=overview&token=${encodeURIComponent(token)}`, res => {
         let data = '';
         res.on('data', chunk => data += chunk);
         res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
@@ -111,6 +126,62 @@ test('Local Dev Server: Telemetry Ingestion & Query APIs', async () => {
     assert.strictEqual(getRes.status, 200, 'GET /api/analytics/query should return 200');
     assert.ok(getRes.data.overview, 'Should return overview object');
     assert.ok(getRes.data.overview.zero_searches_count >= 1, 'Should reflect zero searches');
+
+    // 4. Test GET /api/analytics/query?action=funnel with token
+    const funnelRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=funnel&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+
+    assert.strictEqual(funnelRes.status, 200, 'GET /api/analytics/query?action=funnel should return 200');
+    assert.ok(funnelRes.data.funnel, 'Should return funnel object');
+    assert.strictEqual(funnelRes.data.funnel.landing >= 1, true, 'Funnel should record landing session');
+
+    // 5. Test GET /api/analytics/query?action=comparison
+    const compRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=comparison&period=today&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(compRes.status, 200, 'GET /api/analytics/query?action=comparison should return 200');
+    assert.ok(compRes.data.metrics, 'Should return comparison metrics');
+
+    // 6. Test GET /api/analytics/query?action=possibilities
+    const possRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=possibilities&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(possRes.status, 200, 'GET /api/analytics/query?action=possibilities should return 200');
+    assert.ok(Array.isArray(possRes.data.possibilities), 'Should return possibilities array');
+
+    // 7. Test Export formats: JSON, CSV, and AI Prompt
+    const exportJsonRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=export&format=json&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(exportJsonRes.status, 200, 'Export JSON should return 200');
+    assert.ok(exportJsonRes.data.data.sessions, 'Export JSON should contain sessions');
+
+    const exportAiRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=export&format=ai_prompt&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, data }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(exportAiRes.status, 200, 'Export AI prompt should return 200');
+    assert.ok(exportAiRes.data.includes('AI UX Optimization Brief'), 'Export AI prompt should contain markdown header');
   } finally {
     await new Promise(resolve => devServer.close(resolve));
   }

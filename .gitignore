@@ -27,6 +27,10 @@ scratch/
 __pycache__/
 *.pyc
 *.pyo
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
 
 # Screen recordings and media captures
 sr/
@@ -38,3 +42,5 @@ sr/
 *.mp3
 sr_frames*/
 
+
+.playwright-mcp/

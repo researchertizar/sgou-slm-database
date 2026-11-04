@@ -52,7 +52,7 @@
       --surface-subtle: #f5f0e8;
       --surface-border: #d4cdc0;
       --text: #181512;
-      --text-muted: #6b6357;
+      --text-muted: #4a433a;
       --accent: #b43d28;
       --accent-hover: #96311e;
       --toolbar-bg: rgba(245, 240, 232, 0.94);
@@ -106,7 +106,21 @@
       display: flex;
       flex-direction: column;
       height: 100%;
+      height: 100dvh;
       position: relative;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      .reading-progress-bar {
+        transition: none !important;
+      }
     }
 
     /* Top Reading Progress Bar */
@@ -1859,11 +1873,10 @@
       function getOptimalRasterScale(scale) {
         var dpr = window.devicePixelRatio || 1;
         var isMobile = (window.innerWidth <= 768) || ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 1);
-        // Guarantee 100% uncompromising, crystal-clear vector sharpness at any magnification.
-        // Effective density scales with zoom level * DPR, up to a safe 3.2x ceiling on mobile (4.0x on desktop)
-        // to prevent GPU memory crashes while maintaining print-grade typography even at high zoom.
-        var maxScale = isMobile ? 3.2 : 4.0;
-        var targetScale = Math.min(scale * Math.min(dpr, 2.5), maxScale);
+        // Low-memory device safeguard: cap density on devices with <= 3GB RAM to eliminate GPU canvas crashes
+        var isLowMem = typeof navigator !== 'undefined' && navigator.deviceMemory && navigator.deviceMemory <= 3;
+        var maxScale = isLowMem ? 1.0 : (isMobile ? 3.2 : 4.0);
+        var targetScale = Math.min(scale * Math.min(dpr, isLowMem ? 1.0 : 2.5), maxScale);
         return Math.max(targetScale, 0.75);
       }
 
@@ -1966,6 +1979,19 @@
           }
           console.warn('Page render error for page', num, e);
           pageRenders[num] = false;
+
+          // Zero-Crash Circuit Breaker: display accessible recovery card
+          if (wrap && (num === 1 || Object.keys(pageRenders).filter(function(k){ return !pageRenders[k]; }).length >= 2)) {
+            var directBtn = document.getElementById('directBtn');
+            var rawPdfUrl = directBtn ? (directBtn.getAttribute('data-href') || directBtn.getAttribute('href') || '') : '';
+            if (!wrap.querySelector('.render-fallback-card')) {
+              wrap.innerHTML = '<div class="render-fallback-card" style="padding:2rem;text-align:center;background:var(--surface);border:1px solid var(--surface-border);border-radius:12px;margin:1rem auto;max-width:440px;">' +
+                '<p style="font-weight:600;margin-bottom:0.5rem;color:var(--text);">Display Limited on Device</p>' +
+                '<p style="font-size:13px;color:var(--text-muted);margin-bottom:1rem;">Your browser reached memory limits rendering this canvas. You can read the document directly:</p>' +
+                '<a href="' + (rawPdfUrl || '#') + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:500;">Open Direct PDF</a>' +
+              '</div>';
+            }
+          }
         }
       }
 
@@ -2277,18 +2303,63 @@
       }
 
       // Toolbar Controls
-      document.getElementById('prevBtn').addEventListener('click', function () { scrollToPage(currentPage - 1); });
-      document.getElementById('nextBtn').addEventListener('click', function () { scrollToPage(currentPage + 1); });
+      document.getElementById('prevBtn').addEventListener('click', function () {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_page_nav', {
+            to_page: Math.max(1, currentPage - 1),
+            from_page: currentPage,
+            total_pages: totalPages,
+            method: 'prev_btn',
+            item_id: courseCode || ''
+          });
+        }
+        scrollToPage(currentPage - 1);
+      });
+      document.getElementById('nextBtn').addEventListener('click', function () {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_page_nav', {
+            to_page: Math.min(totalPages, currentPage + 1),
+            from_page: currentPage,
+            total_pages: totalPages,
+            method: 'next_btn',
+            item_id: courseCode || ''
+          });
+        }
+        scrollToPage(currentPage + 1);
+      });
       document.getElementById('zoomInBtn').addEventListener('click', function () {
         applySmoothScale(currentScale * 1.2, null, null, false);
         showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_zoom_change', {
+            zoom_level: Math.round(currentScale * 100),
+            method: 'zoom_in',
+            item_id: courseCode || ''
+          });
+        }
       });
       document.getElementById('zoomOutBtn').addEventListener('click', function () {
         applySmoothScale(currentScale * 0.833, null, null, false);
         showToast('Zoom: ' + Math.round(currentScale * 100) + '%');
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_zoom_change', {
+            zoom_level: Math.round(currentScale * 100),
+            method: 'zoom_out',
+            item_id: courseCode || ''
+          });
+        }
       });
       if (zoomPresetBtn) {
-        zoomPresetBtn.addEventListener('click', toggleFitZoom);
+        zoomPresetBtn.addEventListener('click', function () {
+          toggleFitZoom();
+          if (typeof window.gtag === 'function') {
+            window.gtag('event', 'reader_zoom_change', {
+              zoom_level: Math.round(currentScale * 100),
+              method: 'preset_toggle',
+              item_id: courseCode || ''
+            });
+          }
+        });
       }
 
       var activeFocusCleanup = null;
@@ -2390,6 +2461,15 @@
         var val = parseInt(jumpPageInput.value, 10);
         if (!isNaN(val) && val >= 1 && val <= totalPages) {
           jumpModal.classList.remove('active');
+          if (typeof window.gtag === 'function') {
+            window.gtag('event', 'reader_page_nav', {
+              to_page: val,
+              from_page: currentPage,
+              total_pages: totalPages,
+              method: 'jump_input',
+              item_id: courseCode || ''
+            });
+          }
           scrollToPage(val, true); // Instant jump!
         }
       }
@@ -2399,7 +2479,14 @@
         else if (e.key === 'Escape') jumpModal.classList.remove('active');
       });
 
-      document.getElementById('retryBtn').addEventListener('click', loadDocument);
+      document.getElementById('retryBtn').addEventListener('click', function () {
+        if (typeof window.gtag === 'function') {
+          window.gtag('event', 'reader_error_retry', {
+            item_id: courseCode || ''
+          });
+        }
+        loadDocument();
+      });
 
       // --- Document Issue Report & Mismatch Warning System ---
       window.SGOU_REPORT_FORM = window.SGOU_REPORT_FORM || {
@@ -2827,6 +2914,14 @@
             applySmoothScale(defScale);
           }
         }, 200);
+      });
+
+      // Zero-Crash Global Error Boundaries
+      window.addEventListener('error', function (e) {
+        console.warn('[SGOU Reader Boundary] Recovered from error:', e.error || e.message);
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        console.warn('[SGOU Reader Boundary] Handled unhandled rejection:', e.reason);
       });
 
       loadDocument();
