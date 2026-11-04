@@ -296,6 +296,7 @@
 
     try {
       let clsValue = 0;
+      let clsReported = false;
       const clsObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           if (!entry.hadRecentInput) {
@@ -305,7 +306,8 @@
       });
       clsObserver.observe({ type: 'layout-shift', buffered: true });
       window.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
+        if (document.visibilityState === 'hidden' && !clsReported && clsValue > 0) {
+          clsReported = true;
           log('cwv_cls', { score: Math.round(clsValue * 1000) / 1000 });
         }
       });

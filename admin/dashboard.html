@@ -1679,7 +1679,7 @@
             '<td><code>' + escapeHtml(item.query) + '</code></td>' +
             '<td><span class="badge badge-accent">' + escapeHtml(item.category || 'ALL') + '</span></td>' +
             '<td><strong>' + item.hit_count + '</strong></td>' +
-            '<td style="color:var(--ink-muted); font-size:0.75rem;">' + new Date(item.last_searched || Date.now()).toLocaleTimeString() + '</td>' +
+            '<td style="font-size:0.75rem;">' + formatEventTime(item.last_searched) + '</td>' +
           '</tr>'
         ).join('');
 
@@ -1695,7 +1695,7 @@
                 '<div>Queried: <strong>"' + escapeHtml(item.query) + '"</strong></div>' +
                 '<div style="margin-top:0.3rem;">Category: <strong>' + escapeHtml(item.category || 'ALL') + '</strong></div>' +
                 '<div>Frequency: <strong>' + item.hit_count + ' times</strong></div>' +
-                '<div>Last Attempt: <strong>' + new Date(item.last_searched || Date.now()).toLocaleString() + '</strong></div>' +
+                '<div>Last Attempt: <strong>' + parseUtcDate(item.last_searched).toLocaleString() + '</strong></div>' +
                 '<div style="margin-top:0.8rem; font-size:0.78rem; color:var(--ink-muted);">Check if this topic needs an alias mapping in pyq_overrides.json or syllabus catalog.</div>' +
               '</div>'
             );
@@ -1714,7 +1714,7 @@
             '<td><code>' + escapeHtml(item.element_selector) + '</code></td>' +
             '<td>' + escapeHtml(item.text_sample || '—') + '</td>' +
             '<td><span class="badge badge-danger">' + item.rage_count + '</span></td>' +
-            '<td style="color:var(--ink-muted); font-size:0.75rem;">' + new Date(item.last_rage || Date.now()).toLocaleTimeString() + '</td>' +
+            '<td style="font-size:0.75rem;">' + formatEventTime(item.last_rage) + '</td>' +
           '</tr>'
         ).join('');
 
@@ -1730,7 +1730,7 @@
                 '<div>Target Selector: <code>' + escapeHtml(item.element_selector) + '</code></div>' +
                 '<div style="margin-top:0.3rem;">Snippet: <strong>' + escapeHtml(item.text_sample || 'N/A') + '</strong></div>' +
                 '<div>Rage Tap Count: <strong style="color:var(--danger);">' + item.rage_count + '</strong></div>' +
-                '<div>Last Occurrence: <strong>' + new Date(item.last_rage || Date.now()).toLocaleString() + '</strong></div>' +
+                '<div>Last Occurrence: <strong>' + parseUtcDate(item.last_rage).toLocaleString() + '</strong></div>' +
               '</div>'
             );
           });
@@ -1749,7 +1749,7 @@
               '<span class="badge badge-accent">' + escapeHtml(e.event_type) + '</span>' +
               '<span style="font-family:var(--font-mono); font-size:0.75rem;">' + escapeHtml(e.selector || e.text_snippet || e.page_url || '/') + '</span>' +
             '</div>' +
-            '<span style="color:var(--ink-muted); font-size:0.72rem;">' + new Date(e.created_at || Date.now()).toLocaleTimeString() + '</span>' +
+            '<span>' + formatEventTime(e.created_at) + '</span>' +
           '</div>'
         ).join('');
 
@@ -1760,11 +1760,42 @@
             if (!item) return;
             openDrilldown(
               'Event: ' + item.event_type,
-              'Session: ' + (item.session_id || 'N/A'),
+              'Logged: ' + parseUtcDate(item.created_at).toLocaleString() + ' | Session: ' + (item.session_id || 'N/A'),
               '<pre style="background:var(--surface-elevated); padding:1rem; border-radius:8px; font-family:var(--font-mono); font-size:0.75rem; overflow-x:auto;">' + escapeHtml(JSON.stringify(item, null, 2)) + '</pre>'
             );
           });
         });
+      }
+
+      
+      // UTC Timezone Normalization & Relative Time Formatting
+      function parseUtcDate(val) {
+        if (!val) return new Date();
+        if (typeof val === 'number') return new Date(val);
+        if (typeof val === 'string') {
+          // If SQLite format: YYYY-MM-DD HH:MM:SS
+          if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/.test(val)) {
+            return new Date(val.replace(' ', 'T') + 'Z');
+          }
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(val)) {
+            return new Date(val + 'Z');
+          }
+        }
+        return new Date(val);
+      }
+
+      function formatEventTime(val) {
+        const d = parseUtcDate(val);
+        const diffSec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+        let rel = '';
+        if (diffSec < 5) rel = 'just now';
+        else if (diffSec < 60) rel = diffSec + 's ago';
+        else if (diffSec < 3600) rel = Math.floor(diffSec / 60) + 'm ago';
+        else if (diffSec < 86400) rel = Math.floor(diffSec / 3600) + 'h ago';
+        else rel = Math.floor(diffSec / 86400) + 'd ago';
+
+        return '<span style="font-weight:600; color:var(--ink); font-size:0.73rem;">' + rel + '</span> ' +
+          '<span style="color:var(--ink-muted); font-size:0.7rem; font-family:var(--font-mono);">(' + d.toLocaleTimeString() + ')</span>';
       }
 
       function escapeHtml(str) {
