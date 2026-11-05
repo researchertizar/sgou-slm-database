@@ -34,13 +34,13 @@
    */
   var CONTEXT_MESSAGES = {
     // 1. Post-Download: Triggered after syllabus PDF download
-    download: 'Downloaded! Maintained by <strong>' + CONFIG.payee + '</strong> as a free utility. Contributions fund cloud servers & updates.',
+    download: 'Downloaded! Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution directly funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
     // 2. Document Reader / Standalone Viewer: Triggered from reader topbar or canvas dwell
-    reader: 'Preparing for exams? Maintained by <strong>' + CONFIG.payee + '</strong> as a free utility. Contributions fund cloud servers & updates.',
+    reader: 'Preparing for exams? Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
     // 3. Home Page / Catalog / Header / Footer: Direct exploration
-    home: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Contributions fund cloud servers & updates.',
+    home: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
     // 4. Default fallback
-    default: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Contributions fund cloud servers & updates.'
+    default: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.'
   };
 
   function sendTelemetry(name, params) {
@@ -158,18 +158,36 @@
           '</div>' +
 
           '<div class="support-modal-body">' +
-            '<!-- Situation-aware minimal impact text -->' +
-            '<p class="support-intro-text" id="supportIntroText">' +
-              'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Contributions fund cloud servers & updates.' +
-            '</p>' +
+            '<!-- Situation-aware highlighted impact card -->' +
+            '<div class="support-intro-card">' +
+              '<p class="support-intro-text" id="supportIntroText">' +
+                'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.' +
+              '</p>' +
+            '</div>' +
 
             '<!-- Contribution Amount Selection -->' +
             '<div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">' +
-              '<button type="button" class="amount-chip" data-amount="15">₹15</button>' +
-              '<button type="button" class="amount-chip active" data-amount="25">₹25</button>' +
-              '<button type="button" class="amount-chip" data-amount="50">₹50</button>' +
-              '<button type="button" class="amount-chip" data-amount="100">₹100</button>' +
-              '<button type="button" class="amount-chip chip-custom" data-amount="custom">Custom</button>' +
+              '<button type="button" class="amount-chip" data-amount="15">' +
+                '<span class="chip-val">₹15</span>' +
+                '<span class="chip-sub">Chai</span>' +
+              '</button>' +
+              '<button type="button" class="amount-chip popular active" data-amount="25">' +
+                '<span class="chip-badge">Popular</span>' +
+                '<span class="chip-val">₹25</span>' +
+                '<span class="chip-sub">Server</span>' +
+              '</button>' +
+              '<button type="button" class="amount-chip" data-amount="50">' +
+                '<span class="chip-val">₹50</span>' +
+                '<span class="chip-sub">Hero</span>' +
+              '</button>' +
+              '<button type="button" class="amount-chip" data-amount="100">' +
+                '<span class="chip-val">₹100</span>' +
+                '<span class="chip-sub">Patron</span>' +
+              '</button>' +
+              '<button type="button" class="amount-chip chip-custom" data-amount="custom">' +
+                '<span class="chip-val">Custom</span>' +
+                '<span class="chip-sub">Any ₹</span>' +
+              '</button>' +
             '</div>' +
 
             '<!-- Mobile 1-Tap Action Section (Primary on Mobile) -->' +
