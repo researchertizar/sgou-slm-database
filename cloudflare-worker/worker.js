@@ -73,7 +73,7 @@ export default {
     if (pathname === '/api/telemetry' && request.method === 'POST') {
       try {
         const payload = await request.json();
-        const { sid, profile = {}, events = [] } = payload;
+        const { sid, uid = null, is_returning = 0, visit_count = 1, is_active = 0, profile = {}, events = [] } = payload;
         if (!sid) {
           return new Response(JSON.stringify({ error: 'Missing session ID' }), { status: 400, headers: corsHeaders });
         }
@@ -84,18 +84,27 @@ export default {
         if (env && env.DB) {
           const sessionStmt = env.DB.prepare(`
             INSERT INTO telemetry_sessions (
-              session_id, country, region, city, postal_code, latitude, longitude,
+              session_id, user_id, is_returning, visit_count, is_active,
+              country, region, city, postal_code, latitude, longitude,
               isp, colo, device_type, screen_res, viewport, dpr, ram_gb, cpu_cores,
               touch, is_pwa, network_type, downlink_mbps, rtt_ms, save_data, theme, last_active
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(session_id) DO UPDATE SET
               last_active = CURRENT_TIMESTAMP,
+              user_id = COALESCE(excluded.user_id, telemetry_sessions.user_id),
+              is_returning = MAX(telemetry_sessions.is_returning, excluded.is_returning),
+              visit_count = MAX(telemetry_sessions.visit_count, excluded.visit_count),
+              is_active = MAX(telemetry_sessions.is_active, excluded.is_active),
               network_type = excluded.network_type,
               downlink_mbps = excluded.downlink_mbps,
               rtt_ms = excluded.rtt_ms,
               theme = excluded.theme
           `).bind(
             sid,
+            uid,
+            is_returning ? 1 : 0,
+            visit_count,
+            is_active ? 1 : 0,
             cf.country || 'IN',
             cf.region || 'Unknown',
             cf.city || 'Unknown',
@@ -119,12 +128,35 @@ export default {
             profile.theme || 'dark'
           );
 
+          const dbBatch = [sessionStmt];
+
+          // Upsert into persistent user ledger if uid is provided
+          if (uid) {
+            dbBatch.push(env.DB.prepare(`
+              INSERT INTO telemetry_users (
+                user_id, first_seen, last_seen, total_sessions, country, region, city, device_type
+              ) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
+              ON CONFLICT(user_id) DO UPDATE SET
+                last_seen = CURRENT_TIMESTAMP,
+                total_sessions = MAX(telemetry_users.total_sessions, excluded.total_sessions),
+                country = COALESCE(excluded.country, telemetry_users.country),
+                region = COALESCE(excluded.region, telemetry_users.region),
+                city = COALESCE(excluded.city, telemetry_users.city),
+                device_type = COALESCE(excluded.device_type, telemetry_users.device_type)
+            `).bind(
+              uid,
+              visit_count,
+              cf.country || 'IN',
+              cf.region || 'Unknown',
+              cf.city || 'Unknown',
+              profile.touch ? 'mobile' : 'desktop'
+            ));
+          }
+
           const eventStmt = env.DB.prepare(`
             INSERT INTO telemetry_events (session_id, event_type, page_url, time_offset_ms, selector, text_snippet, details_json)
             VALUES (?, ?, ?, ?, ?, ?, ?)
           `);
-
-          const dbBatch = [sessionStmt];
 
           for (const evt of events) {
             // Filter non-actionable passive events from SQLite storage (GA4 already captures 100% of these)
@@ -255,8 +287,12 @@ export default {
           }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         if (action === 'overview') {
-          const sessionsCount = await env.DB.prepare('SELECT COUNT(*) as total FROM telemetry_sessions').first('total');
-          const todayCount = await env.DB.prepare("SELECT COUNT(*) as today FROM telemetry_sessions WHERE start_time >= date('now', 'start of day')").first('today');
+          const sessionsCount = await env.DB.prepare('SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions').first('total');
+          const todayCount = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as today FROM telemetry_sessions WHERE start_time >= date('now', 'start of day')").first('today');
+          const liveSessions = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-3 minutes')").first('total');
+          const activeSessions = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE is_active = 1").first('total');
+          const totalUsers = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE user_id IS NOT NULL AND user_id != ''").first('total');
+          const returningUsers = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE is_returning = 1 OR visit_count > 1").first('total');
           const zeroCount = await env.DB.prepare('SELECT COUNT(*) as total FROM zero_search_ledger').first('total');
           const rageCount = await env.DB.prepare('SELECT SUM(rage_count) as total FROM rage_click_ledger').first('total');
           const avgDwell = await env.DB.prepare('SELECT AVG(dwell_seconds) as avg FROM reading_dwell_ledger').first('avg');
@@ -265,6 +301,10 @@ export default {
             overview: {
               total_sessions: sessionsCount || 0,
               today_sessions: todayCount || 0,
+              live_sessions: liveSessions || 0,
+              active_sessions: activeSessions || 0,
+              total_users: totalUsers || 0,
+              returning_users: returningUsers || 0,
               zero_searches_count: zeroCount || 0,
               rage_clicks_count: rageCount || 0,
               avg_dwell_seconds: Math.round(avgDwell || 0)
@@ -318,10 +358,30 @@ export default {
         }
 
         if (action === 'realtime') {
-          const active5m = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-5 minutes')").first('total') || 0;
-          const active30m = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-30 minutes')").first('total') || 0;
+          const liveSessions = (await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-3 minutes')").first('total')) || 0;
+          const liveUsers = (await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-3 minutes') AND user_id IS NOT NULL AND user_id != ''").first('total')) || 0;
+          const active30m = (await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-30 minutes')").first('total')) || 0;
           const topPages = (await env.DB.prepare("SELECT page_url, COUNT(*) as hits FROM telemetry_events WHERE created_at >= datetime('now', '-30 minutes') GROUP BY page_url ORDER BY hits DESC LIMIT 5").all()).results || [];
-          return new Response(JSON.stringify({ realtime: { active_5m: active5m, active_30m: active30m, top_pages: topPages } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          return new Response(JSON.stringify({ realtime: { live_sessions: liveSessions, active_5m: liveSessions, active_30m: active30m, live_users: liveUsers, top_pages: topPages } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'users') {
+          const userSummary = await env.DB.prepare(`
+            SELECT
+              (SELECT COUNT(*) FROM telemetry_users) as total_users,
+              (SELECT COUNT(*) FROM telemetry_users WHERE total_sessions > 1) as returning_users,
+              (SELECT COUNT(*) FROM telemetry_users WHERE total_sessions = 1) as new_users,
+              (SELECT COALESCE(SUM(total_downloads), 0) FROM telemetry_users) as total_user_downloads,
+              (SELECT COALESCE(SUM(total_reads), 0) FROM telemetry_users) as total_user_reads
+          `).first();
+          const topCohorts = (await env.DB.prepare(`
+            SELECT total_sessions, COUNT(*) as user_count
+            FROM telemetry_users
+            GROUP BY total_sessions
+            ORDER BY total_sessions ASC
+            LIMIT 10
+          `).all()).results || [];
+          return new Response(JSON.stringify({ users: { summary: userSummary, cohorts: topCohorts } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
 
         if (action === 'timeseries') {

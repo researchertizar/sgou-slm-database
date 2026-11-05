@@ -6,6 +6,10 @@
 -- 1. Master Sessions Table (Enriched with Cloudflare Edge Geolocation)
 CREATE TABLE IF NOT EXISTS telemetry_sessions (
     session_id TEXT PRIMARY KEY,
+    user_id TEXT,
+    is_returning INTEGER DEFAULT 0,
+    visit_count INTEGER DEFAULT 1,
+    is_active INTEGER DEFAULT 0,
     country TEXT,
     region TEXT,
     city TEXT,
@@ -30,9 +34,27 @@ CREATE TABLE IF NOT EXISTS telemetry_sessions (
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_sess_user ON telemetry_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sess_active ON telemetry_sessions(last_active);
 CREATE INDEX IF NOT EXISTS idx_sess_region ON telemetry_sessions(region);
 CREATE INDEX IF NOT EXISTS idx_sess_city ON telemetry_sessions(city);
 CREATE INDEX IF NOT EXISTS idx_sess_time ON telemetry_sessions(start_time);
+
+-- 1b. Persistent User Identification Ledger
+CREATE TABLE IF NOT EXISTS telemetry_users (
+    user_id TEXT PRIMARY KEY,
+    first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    total_sessions INTEGER DEFAULT 1,
+    total_downloads INTEGER DEFAULT 0,
+    total_reads INTEGER DEFAULT 0,
+    country TEXT,
+    region TEXT,
+    city TEXT,
+    device_type TEXT,
+    preferred_programme TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_usr_last_seen ON telemetry_users(last_seen);
 
 -- 2. Chronological Interaction Event Stream
 CREATE TABLE IF NOT EXISTS telemetry_events (

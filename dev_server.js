@@ -53,6 +53,21 @@ const MIME_TYPES = {
 const DB_PATH = path.join(__dirname, 'data', 'telemetry.db');
 const db = new DatabaseSync(DB_PATH);
 
+// Ensure backward-compatible migrations for existing SQLite telemetry database
+try {
+  const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='telemetry_sessions'").get();
+  if (tableCheck) {
+    const tableInfo = db.prepare("PRAGMA table_info(telemetry_sessions)").all();
+    const colNames = tableInfo.map(c => c.name);
+    if (!colNames.includes('user_id')) db.exec("ALTER TABLE telemetry_sessions ADD COLUMN user_id TEXT");
+    if (!colNames.includes('is_returning')) db.exec("ALTER TABLE telemetry_sessions ADD COLUMN is_returning INTEGER DEFAULT 0");
+    if (!colNames.includes('visit_count')) db.exec("ALTER TABLE telemetry_sessions ADD COLUMN visit_count INTEGER DEFAULT 1");
+    if (!colNames.includes('is_active')) db.exec("ALTER TABLE telemetry_sessions ADD COLUMN is_active INTEGER DEFAULT 0");
+  }
+} catch (e) {
+  console.warn('[DB Migration]', e);
+}
+
 // Initialize schema from cloudflare-worker/schema.sql
 const schemaPath = path.join(__dirname, 'cloudflare-worker', 'schema.sql');
 if (fs.existsSync(schemaPath)) {
@@ -128,28 +143,37 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const payload = JSON.parse(body);
-        const { sid, profile = {}, events = [] } = payload;
+        const { sid, uid = null, is_returning = 0, visit_count = 1, is_active = 0, profile = {}, events = [] } = payload;
         if (!sid) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           if (!res.headersSent) res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-        return res.end(JSON.stringify({ error: 'Missing session ID' }));
+          return res.end(JSON.stringify({ error: 'Missing session ID' }));
         }
 
         // Upsert real session into SQLite
         db.prepare(`
           INSERT INTO telemetry_sessions (
-            session_id, country, region, city, isp, device_type, screen_res,
+            session_id, user_id, is_returning, visit_count, is_active,
+            country, region, city, isp, device_type, screen_res,
             viewport, dpr, ram_gb, cpu_cores, touch, is_pwa, network_type,
             downlink_mbps, rtt_ms, save_data, theme, last_active
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
           ON CONFLICT(session_id) DO UPDATE SET
             last_active = CURRENT_TIMESTAMP,
+            user_id = COALESCE(excluded.user_id, telemetry_sessions.user_id),
+            is_returning = MAX(telemetry_sessions.is_returning, excluded.is_returning),
+            visit_count = MAX(telemetry_sessions.visit_count, excluded.visit_count),
+            is_active = MAX(telemetry_sessions.is_active, excluded.is_active),
             network_type = excluded.network_type,
             downlink_mbps = excluded.downlink_mbps,
             rtt_ms = excluded.rtt_ms,
             theme = excluded.theme
         `).run(
           sid,
+          uid,
+          is_returning ? 1 : 0,
+          visit_count,
+          is_active ? 1 : 0,
           'IN',
           'Kerala',
           'Kollam',
@@ -168,6 +192,22 @@ const server = http.createServer((req, res) => {
           profile.save_data ? 1 : 0,
           profile.theme || 'dark'
         );
+
+        // Upsert user identification record if uid provided
+        if (uid) {
+          db.prepare(`
+            INSERT INTO telemetry_users (
+              user_id, first_seen, last_seen, total_sessions, country, region, city, device_type
+            ) VALUES (?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
+            ON CONFLICT(user_id) DO UPDATE SET
+              last_seen = CURRENT_TIMESTAMP,
+              total_sessions = MAX(telemetry_users.total_sessions, excluded.total_sessions),
+              country = COALESCE(excluded.country, telemetry_users.country),
+              region = COALESCE(excluded.region, telemetry_users.region),
+              city = COALESCE(excluded.city, telemetry_users.city),
+              device_type = COALESCE(excluded.device_type, telemetry_users.device_type)
+          `).run(uid, visit_count, 'IN', 'Kerala', 'Kollam', profile.touch ? 'mobile' : 'desktop');
+        }
 
         // Insert real events into SQLite
         const insertEvt = db.prepare(`
@@ -254,6 +294,10 @@ const server = http.createServer((req, res) => {
           SELECT 
             (SELECT COUNT(DISTINCT session_id) FROM telemetry_sessions) as total_sessions,
             (SELECT COUNT(DISTINCT session_id) FROM telemetry_sessions WHERE start_time >= date('now', 'start of day')) as today_sessions,
+            (SELECT COUNT(DISTINCT session_id) FROM telemetry_sessions WHERE last_active >= datetime('now', '-3 minutes')) as live_sessions,
+            (SELECT COUNT(DISTINCT session_id) FROM telemetry_sessions WHERE is_active = 1) as active_sessions,
+            (SELECT COUNT(DISTINCT user_id) FROM telemetry_sessions WHERE user_id IS NOT NULL AND user_id != '') as total_users,
+            (SELECT COUNT(DISTINCT user_id) FROM telemetry_sessions WHERE is_returning = 1 OR visit_count > 1) as returning_users,
             (SELECT COUNT(*) FROM zero_search_ledger) as zero_searches_count,
             (SELECT COALESCE(SUM(rage_count), 0) FROM rage_click_ledger) as rage_clicks_count,
             (SELECT COALESCE(ROUND(AVG(dwell_seconds)), 0) FROM reading_dwell_ledger) as avg_dwell_seconds
@@ -332,11 +376,32 @@ const server = http.createServer((req, res) => {
       }
 
       if (action === 'realtime') {
-        const active5m = db.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-5 minutes')").get().total || 0;
+        const liveSessions = db.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-3 minutes')").get().total || 0;
+        const liveUsers = db.prepare("SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-3 minutes') AND user_id IS NOT NULL AND user_id != ''").get().total || 0;
         const active30m = db.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-30 minutes')").get().total || 0;
         const topPages = db.prepare("SELECT page_url, COUNT(*) as hits FROM telemetry_events WHERE created_at >= datetime('now', '-30 minutes') GROUP BY page_url ORDER BY hits DESC LIMIT 5").all();
         if (!res.headersSent) res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-        return res.end(JSON.stringify({ realtime: { active_5m: active5m, active_30m: active30m, top_pages: topPages } }));
+        return res.end(JSON.stringify({ realtime: { live_sessions: liveSessions, active_5m: liveSessions, active_30m: active30m, live_users: liveUsers, top_pages: topPages } }));
+      }
+
+      if (action === 'users') {
+        const userSummary = db.prepare(`
+          SELECT
+            (SELECT COUNT(*) FROM telemetry_users) as total_users,
+            (SELECT COUNT(*) FROM telemetry_users WHERE total_sessions > 1) as returning_users,
+            (SELECT COUNT(*) FROM telemetry_users WHERE total_sessions = 1) as new_users,
+            (SELECT COALESCE(SUM(total_downloads), 0) FROM telemetry_users) as total_user_downloads,
+            (SELECT COALESCE(SUM(total_reads), 0) FROM telemetry_users) as total_user_reads
+        `).get();
+        const topCohorts = db.prepare(`
+          SELECT total_sessions, COUNT(*) as user_count
+          FROM telemetry_users
+          GROUP BY total_sessions
+          ORDER BY total_sessions ASC
+          LIMIT 10
+        `).all();
+        if (!res.headersSent) res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        return res.end(JSON.stringify({ users: { summary: userSummary, cohorts: topCohorts } }));
       }
 
       if (action === 'timeseries') {

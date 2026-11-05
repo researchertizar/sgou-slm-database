@@ -23,6 +23,9 @@ test('Client Sensor: analytics-core.js integrity & capabilities', () => {
   assert.ok(content.includes('reader_page_dwell'), 'Must implement reader page dwell observer');
   assert.ok(content.includes('recordZeroSearch'), 'Must expose recordZeroSearch API');
   assert.ok(content.includes('sendBeacon'), 'Must use navigator.sendBeacon for zero-bloat delivery');
+  assert.ok(content.includes('sgou_telemetry_uid'), 'Must generate and store persistent user ID');
+  assert.ok(content.includes('isReturningUser'), 'Must track returning learner identification');
+  assert.ok(content.includes('isActiveSession'), 'Must track active interaction state');
 });
 
 test('Edge Worker: Cloudflare Worker telemetry and query endpoints', () => {
@@ -35,6 +38,7 @@ test('Edge Worker: Cloudflare Worker telemetry and query endpoints', () => {
   assert.ok(content.includes('zero_search_ledger'), 'Must update zero_search_ledger in D1');
   assert.ok(content.includes('rage_click_ledger'), 'Must update rage_click_ledger in D1');
   assert.ok(content.includes('cf.city'), 'Must extract Cloudflare edge geolocation');
+  assert.ok(content.includes('telemetry_users'), 'Must update telemetry_users in D1');
 });
 
 test('Database Schema: Cloudflare D1 SQL schema completeness', () => {
@@ -43,6 +47,8 @@ test('Database Schema: Cloudflare D1 SQL schema completeness', () => {
 
   const content = fs.readFileSync(schemaPath, 'utf8');
   assert.ok(content.includes('CREATE TABLE IF NOT EXISTS telemetry_sessions'), 'Must define telemetry_sessions table');
+  assert.ok(content.includes('user_id TEXT'), 'Must include user_id in telemetry_sessions');
+  assert.ok(content.includes('CREATE TABLE IF NOT EXISTS telemetry_users'), 'Must define telemetry_users table');
   assert.ok(content.includes('CREATE TABLE IF NOT EXISTS telemetry_events'), 'Must define telemetry_events table');
   assert.ok(content.includes('CREATE TABLE IF NOT EXISTS zero_search_ledger'), 'Must define zero_search_ledger table');
   assert.ok(content.includes('CREATE TABLE IF NOT EXISTS rage_click_ledger'), 'Must define rage_click_ledger table');
@@ -54,9 +60,11 @@ test('Management Dashboard: admin/dashboard.html interface integrity', () => {
   assert.ok(fs.existsSync(dashPath), 'admin/dashboard.html must exist');
 
   const content = fs.readFileSync(dashPath, 'utf8');
+  assert.ok(content.includes('id="kpiLiveSessions"'), 'Must have live sessions KPI');
+  assert.ok(content.includes('id="kpiActiveSessions"'), 'Must have active sessions KPI');
+  assert.ok(content.includes('id="kpiReturningUsers"'), 'Must have returning users KPI');
   assert.ok(content.includes('id="kpiTotalSessions"'), 'Must have total sessions KPI');
   assert.ok(content.includes('id="kpiZeroSearches"'), 'Must have zero searches KPI');
-  assert.ok(content.includes('id="kpiRageClicks"'), 'Must have rage clicks KPI');
   assert.ok(content.includes('id="zeroSearchTableBody"'), 'Must have zero search demand table');
   assert.ok(content.includes('id="rageClickTableBody"'), 'Must have rage click table');
   assert.ok(content.includes('id="geoBars"'), 'Must have geographic visualizer');
@@ -73,9 +81,13 @@ test('Local Dev Server: Telemetry Ingestion & Query APIs', async () => {
   await new Promise(resolve => devServer.listen(port, resolve));
 
   try {
-    // 1. Test POST /api/telemetry
+    // 1. Test POST /api/telemetry with User Identification
     const postPayload = JSON.stringify({
       sid: 'test_session_123',
+      uid: 'test_user_789',
+      is_returning: 1,
+      visit_count: 3,
+      is_active: 1,
       profile: { touch: true, screen: '390x844' },
       events: [
         { t: 'zero_search', ts: 1200, url: '/', d: { q: 'bca cloud security', tab: 'UG' } },
@@ -125,6 +137,10 @@ test('Local Dev Server: Telemetry Ingestion & Query APIs', async () => {
 
     assert.strictEqual(getRes.status, 200, 'GET /api/analytics/query should return 200');
     assert.ok(getRes.data.overview, 'Should return overview object');
+    assert.ok('live_sessions' in getRes.data.overview, 'Should return live_sessions in overview');
+    assert.ok('active_sessions' in getRes.data.overview, 'Should return active_sessions in overview');
+    assert.ok('total_users' in getRes.data.overview, 'Should return total_users in overview');
+    assert.ok('returning_users' in getRes.data.overview, 'Should return returning_users in overview');
     assert.ok(getRes.data.overview.zero_searches_count >= 1, 'Should reflect zero searches');
 
     // 4. Test GET /api/analytics/query?action=funnel with token

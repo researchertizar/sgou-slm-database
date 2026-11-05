@@ -26,16 +26,63 @@
   const MAX_QUEUE_SIZE = 25;
   const eventQueue = [];
 
-  // 1. Session ID (Anonymous, per-tab session lifetime)
+  // 1. User & Session Identification (Anonymous, privacy-preserving, durable across visits)
+  let userId = '';
+  let isReturningUser = false;
+  let visitCount = 1;
+
+  try {
+    userId = localStorage.getItem('sgou_telemetry_uid');
+    if (!userId) {
+      userId = 'u_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+      localStorage.setItem('sgou_telemetry_uid', userId);
+      localStorage.setItem('sgou_telemetry_first_seen', new Date().toISOString());
+      localStorage.setItem('sgou_telemetry_visits', '1');
+      visitCount = 1;
+      isReturningUser = false;
+    } else {
+      isReturningUser = true;
+    }
+  } catch (_) {
+    userId = 'u_incognito_' + Math.random().toString(36).substring(2, 10);
+  }
+
   let sessionId = '';
   try {
     sessionId = sessionStorage.getItem('sgou_telemetry_sid');
     if (!sessionId) {
       sessionId = 's_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
       sessionStorage.setItem('sgou_telemetry_sid', sessionId);
+
+      // Increment visit count for a new session
+      if (isReturningUser) {
+        try {
+          const prevVisits = parseInt(localStorage.getItem('sgou_telemetry_visits') || '1', 10);
+          visitCount = prevVisits + 1;
+          localStorage.setItem('sgou_telemetry_visits', String(visitCount));
+          localStorage.setItem('sgou_telemetry_last_seen', new Date().toISOString());
+        } catch (_) {}
+      }
+    } else {
+      try {
+        visitCount = parseInt(localStorage.getItem('sgou_telemetry_visits') || '1', 10);
+      } catch (_) {}
     }
   } catch (_) {
     sessionId = 's_incognito_' + Math.random().toString(36).substring(2, 10);
+  }
+
+  // Active Session Flag (transitions to 1 when user executes meaningful interactions)
+  let isActiveSession = false;
+  try {
+    isActiveSession = sessionStorage.getItem('sgou_telemetry_active') === '1';
+  } catch (_) {}
+
+  function markSessionActive() {
+    if (!isActiveSession) {
+      isActiveSession = true;
+      try { sessionStorage.setItem('sgou_telemetry_active', '1'); } catch (_) {}
+    }
   }
 
   // 2. Hardware, Screen & Environmental Profiling
@@ -59,6 +106,16 @@
 
   // 3. Central Event Logger (Dual Telemetry: SQLite/D1 + Google Analytics)
   function log(eventType, details = {}) {
+    // Categorize active user engagement events
+    const activeEventTypes = [
+      'click', 'search_focused', 'search_hesitation', 'zero_search',
+      'document_download', 'consumption_choice', 'text_selected',
+      'reader_page_dwell', 'rage_click', 'section_in_view'
+    ];
+    if (activeEventTypes.includes(eventType)) {
+      markSessionActive();
+    }
+
     eventQueue.push({
       t: eventType,
       ts: Math.round(performance.now()),
@@ -72,6 +129,10 @@
         const gaPayload = {
           event_category: 'telemetry',
           page_location: window.location.href,
+          user_id: userId,
+          session_id: sessionId,
+          is_returning: isReturningUser,
+          visit_count: visitCount,
           ...details
         };
         window.gtag('event', eventType, gaPayload);
@@ -85,16 +146,25 @@
 
   // 4. Transmission Engine (Batched sendBeacon with fetch keepalive fallback)
   let isFlushing = false;
-  function flush() {
-    if (eventQueue.length === 0 || isFlushing) return;
+  let lastFlushTimestamp = Date.now();
+
+  function flush(isHeartbeat = false) {
+    if ((eventQueue.length === 0 && !isHeartbeat) || isFlushing) return;
     isFlushing = true;
 
     const eventsToDeliver = eventQueue.splice(0, eventQueue.length);
     const payload = JSON.stringify({
       sid: sessionId,
+      uid: userId,
+      is_returning: isReturningUser ? 1 : 0,
+      visit_count: visitCount,
+      is_active: isActiveSession ? 1 : 0,
+      is_heartbeat: isHeartbeat,
       profile: getEnvironmentProfile(),
       events: eventsToDeliver
     });
+
+    lastFlushTimestamp = Date.now();
 
     try {
       const endpoint = getTelemetryEndpoint();
@@ -116,12 +186,22 @@
     }
   }
 
+  // Real-Time Heartbeat: Keep live session timestamp fresh while tab is actively in view
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      const timeSinceLastFlush = Date.now() - lastFlushTimestamp;
+      if (timeSinceLastFlush >= 40000) {
+        flush(true); // Lightweight heartbeat
+      }
+    }
+  }, 30000);
+
   // Idle Schedule & Unload Triggers
   setInterval(() => {
     if (window.requestIdleCallback) {
-      window.requestIdleCallback(flush);
+      window.requestIdleCallback(() => flush(false));
     } else {
-      flush();
+      flush(false);
     }
   }, BATCH_INTERVAL_MS);
 

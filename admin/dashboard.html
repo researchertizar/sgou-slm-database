@@ -714,8 +714,18 @@
           </div>
         </div>
 
-        <button class="btn" id="themeToggleBtn" title="Toggle theme">🌓</button>
-        <button class="btn" id="refreshBtn" title="Refresh data">🔄</button>
+        <button class="btn" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+        <button class="btn" id="refreshBtn" title="Refresh data" aria-label="Refresh data">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
       </div>
     </header>
 
@@ -735,23 +745,51 @@
     <div class="ticker-ribbon">
       <div style="display:flex; align-items:center; gap:0.6rem;">
         <div class="pulse-dot"></div>
-        <span style="font-size:0.84rem; font-weight:700;">Live Student Activity</span>
+        <span style="font-size:0.84rem; font-weight:700;">Live Realtime Activity</span>
       </div>
       <div style="display:flex; gap:1.5rem; font-size:0.8rem;">
-        <div>Last 5m: <strong id="rtActive5m" style="color:var(--success);">0</strong></div>
-        <div>Last 30m: <strong id="rtActive30m" style="color:var(--info);">0</strong></div>
+        <div>Live Now (&lt;3m): <strong id="rtActive5m" style="color:var(--success);">0</strong></div>
+        <div>Active (30m): <strong id="rtActive30m" style="color:var(--info);">0</strong></div>
+        <div>Live Learners: <strong id="rtLiveUsers" style="color:var(--accent);">0</strong></div>
       </div>
     </div>
 
-    <!-- 4 Core High-Level Metric Cards -->
+    <!-- 6 Core High-Level Metric Cards -->
     <section class="kpi-grid">
+      <div class="kpi-card" id="cardLiveSessions" title="Real-time concurrent connected learners (< 3 min)">
+        <div class="kpi-top">
+          <span class="kpi-label">Live Sessions</span>
+          <span class="kpi-delta delta-pos" id="deltaLive">Realtime</span>
+        </div>
+        <div class="kpi-value" id="kpiLiveSessions" style="color:var(--success);">0</div>
+        <div class="kpi-hint">Live learners: <span id="kpiLiveUsersCard">0</span></div>
+      </div>
+
+      <div class="kpi-card" id="cardActiveSessions" title="Sessions with active interaction: search, reading, downloads">
+        <div class="kpi-top">
+          <span class="kpi-label">Active Sessions</span>
+          <span class="kpi-delta delta-neutral" id="deltaActive">—</span>
+        </div>
+        <div class="kpi-value" id="kpiActiveSessions" style="color:var(--info);">0</div>
+        <div class="kpi-hint">Engaged student interactions</div>
+      </div>
+
+      <div class="kpi-card" id="cardReturningUsers" title="Learners returning across multiple visits">
+        <div class="kpi-top">
+          <span class="kpi-label">Returning Learners</span>
+          <span class="kpi-delta delta-pos" id="deltaReturning">—</span>
+        </div>
+        <div class="kpi-value" id="kpiReturningUsers" style="color:var(--accent);">0%</div>
+        <div class="kpi-hint"><span id="kpiReturningCount">0</span> of <span id="kpiTotalUsers">0</span> total learners</div>
+      </div>
+
       <div class="kpi-card" id="cardTotalSessions" title="Click to inspect session breakdown">
         <div class="kpi-top">
-          <span class="kpi-label">Active Window Sessions</span>
+          <span class="kpi-label">Total Sessions</span>
           <span class="kpi-delta delta-neutral" id="deltaSessions">—</span>
         </div>
-        <div class="kpi-value" id="kpiPeriodSessions" style="color:var(--success);">0</div>
-        <div class="kpi-hint">Total: <span id="kpiTotalSessions">0</span> sessions</div>
+        <div class="kpi-value" id="kpiTotalSessions">0</div>
+        <div class="kpi-hint">Today: <span id="kpiPeriodSessions">0</span> sessions</div>
       </div>
 
       <div class="kpi-card" id="cardZeroSearches" title="Click to view unmet syllabus searches">
@@ -761,15 +799,6 @@
         </div>
         <div class="kpi-value" id="kpiZeroSearches" style="color:var(--warning);">0</div>
         <div class="kpi-hint">Zero-result query signals</div>
-      </div>
-
-      <div class="kpi-card" id="cardRageClicks" title="Click to view UI friction hot spots">
-        <div class="kpi-top">
-          <span class="kpi-label">UI Rage Taps</span>
-          <span class="kpi-delta delta-neutral" id="deltaRageClicks">—</span>
-        </div>
-        <div class="kpi-value" id="kpiRageClicks" style="color:var(--danger);">0</div>
-        <div class="kpi-hint">Friction &amp; confusion hot spots</div>
       </div>
 
       <div class="kpi-card" id="cardAvgDwell" title="Click to view textbook reading times">
@@ -785,22 +814,22 @@
     <!-- Progressive Disclosure Navigation Tabs -->
     <nav class="perspective-tabs" role="tablist">
       <button class="p-tab active" data-tab="tabPulse" role="tab" aria-selected="true">
-        📊 Pulse &amp; Traffic
+        Pulse &amp; Traffic
       </button>
       <button class="p-tab" data-tab="tabSearches" role="tab" aria-selected="false">
-        🔍 Unmet Demand (<span id="tabZeroCount">0</span>)
+        Unmet Demand (<span id="tabZeroCount">0</span>)
       </button>
       <button class="p-tab" data-tab="tabFriction" role="tab" aria-selected="false">
-        ⚡ UI Friction (<span id="tabRageCount">0</span>)
+        UI Friction (<span id="tabRageCount">0</span>)
       </button>
       <button class="p-tab" data-tab="tabGeo" role="tab" aria-selected="false">
-        🗺️ Kerala Geo &amp; Cohorts
+        Regional Demand
       </button>
       <button class="p-tab" data-tab="tabRadar" role="tab" aria-selected="false">
-        🤖 AI Optimization Radar
+        Optimization Radar
       </button>
       <button class="p-tab" data-tab="tabEvents" role="tab" aria-selected="false">
-        🔴 Live Event Log
+        Live Event Stream
       </button>
     </nav>
 
@@ -1000,8 +1029,8 @@
       if (dsContainer) {
         if (isLocalHost) {
           dsContainer.innerHTML = '<div class="datasource-group" title="Select telemetry data source">' +
-            '<button class="ds-btn ' + (activeDataSource === 'local' ? 'active' : '') + '" id="dsLocalBtn">💻 Local DB (.db)</button>' +
-            '<button class="ds-btn ' + (activeDataSource === 'cloudflare' ? 'active' : '') + '" id="dsCloudflareBtn">☁️ Cloudflare Live (D1)</button>' +
+            '<button class="ds-btn ' + (activeDataSource === 'local' ? 'active' : '') + '" id="dsLocalBtn">Local SQLite (.db)</button>' +
+            '<button class="ds-btn ' + (activeDataSource === 'cloudflare' ? 'active' : '') + '" id="dsCloudflareBtn">Cloudflare D1 Live</button>' +
           '</div>';
 
           document.getElementById('dsLocalBtn')?.addEventListener('click', () => {
@@ -1267,13 +1296,15 @@
       async function loadAllData() {
         if (!currentToken) {
           if (authStatusBadge) {
-            authStatusBadge.innerHTML = '<span class="badge badge-warning">🔑 Enter Admin Secret Token to authenticate</span>';
+            authStatusBadge.innerHTML = '<span class="badge badge-warning">Enter Admin Secret Token to authenticate</span>';
           }
           if (lastUpdatedEl) lastUpdatedEl.textContent = 'Awaiting credentials';
+          document.getElementById('kpiLiveSessions').textContent = '—';
+          document.getElementById('kpiActiveSessions').textContent = '—';
+          document.getElementById('kpiReturningUsers').textContent = '—';
           document.getElementById('kpiTotalSessions').textContent = '—';
           document.getElementById('kpiPeriodSessions').textContent = '—';
           document.getElementById('kpiZeroSearches').textContent = '—';
-          document.getElementById('kpiRageClicks').textContent = '—';
           document.getElementById('kpiAvgDwell').textContent = '—';
           return;
         }
@@ -1284,22 +1315,45 @@
           const overviewData = await fetchApi('overview');
           lastOverviewData = overviewData;
           const ov = overviewData.overview || {};
+
+          // Live Sessions (real-time original data)
+          const liveSessionsCount = ov.live_sessions || 0;
+          document.getElementById('kpiLiveSessions').textContent = liveSessionsCount.toLocaleString?.() || '0';
+
+          // Active Sessions (sessions with actual user actions)
+          const activeSessionsCount = ov.active_sessions || ov.today_sessions || 0;
+          document.getElementById('kpiActiveSessions').textContent = activeSessionsCount.toLocaleString?.() || '0';
+
+          // Returning Learners & Total Learners
+          const totalUsersCount = ov.total_users || 0;
+          const returningUsersCount = ov.returning_users || 0;
+          const returningPct = totalUsersCount > 0 ? Math.round((returningUsersCount / totalUsersCount) * 100) : 0;
+          document.getElementById('kpiReturningUsers').textContent = returningPct + '%';
+          document.getElementById('kpiReturningCount').textContent = returningUsersCount.toLocaleString?.() || '0';
+          document.getElementById('kpiTotalUsers').textContent = totalUsersCount.toLocaleString?.() || '0';
+
+          // Total Sessions & Today Sessions
           document.getElementById('kpiTotalSessions').textContent = ov.total_sessions?.toLocaleString?.() || '0';
           document.getElementById('kpiPeriodSessions').textContent = ov.today_sessions?.toLocaleString?.() || '0';
+
+          // Secondary KPIs
           document.getElementById('kpiZeroSearches').textContent = ov.zero_searches_count?.toLocaleString?.() || '0';
-          document.getElementById('kpiRageClicks').textContent = ov.rage_clicks_count?.toLocaleString?.() || '0';
           document.getElementById('kpiAvgDwell').textContent = ov.avg_dwell_seconds ? (Math.round(ov.avg_dwell_seconds / 60) + 'm') : '0m';
 
           // Update tab counters
           document.getElementById('tabZeroCount').textContent = ov.zero_searches_count || 0;
           document.getElementById('tabRageCount').textContent = ov.rage_clicks_count || 0;
 
-          // 2. Real-Time Active Users
+          // 2. Real-Time Active Users & Live Learners
           try {
             const rtData = await fetchApi('realtime');
             const rt = rtData.realtime || {};
-            document.getElementById('rtActive5m').textContent = (rt.active_5m || 0).toLocaleString();
+            const liveNow = rt.live_sessions || rt.active_5m || 0;
+            const liveUsers = rt.live_users || 0;
+            document.getElementById('rtActive5m').textContent = liveNow.toLocaleString();
             document.getElementById('rtActive30m').textContent = (rt.active_30m || 0).toLocaleString();
+            document.getElementById('rtLiveUsers').textContent = liveUsers.toLocaleString();
+            document.getElementById('kpiLiveUsersCard').textContent = liveUsers.toLocaleString();
           } catch (_) {}
 
           // 3. Time Series Traffic Curve
