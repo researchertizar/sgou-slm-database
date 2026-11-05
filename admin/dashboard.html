@@ -816,6 +816,9 @@
       <button class="p-tab active" data-tab="tabPulse" role="tab" aria-selected="true">
         Pulse &amp; Traffic
       </button>
+      <button class="p-tab" data-tab="tabMonetization" role="tab" aria-selected="false">
+        Monetization &amp; UX Cockpit
+      </button>
       <button class="p-tab" data-tab="tabSearches" role="tab" aria-selected="false">
         Unmet Demand (<span id="tabZeroCount">0</span>)
       </button>
@@ -832,6 +835,158 @@
         Live Event Stream
       </button>
     </nav>
+
+    <!-- Perspective: Monetization & UX Cockpit -->
+    <div class="perspective-panel" id="tabMonetization">
+      <!-- 4 Monetization KPI Cards -->
+      <section class="kpi-grid" style="margin-bottom:1rem;">
+        <div class="kpi-card" id="cardModalImpressions" title="Total times Support Modal was displayed to students">
+          <div class="kpi-top">
+            <span class="kpi-label">Modal Impressions</span>
+            <span class="badge badge-accent">Triggers</span>
+          </div>
+          <div class="kpi-value" id="kpiModalImpressions" style="color:var(--accent);">0</div>
+          <div class="kpi-hint">Post-download, reader, catalog triggers</div>
+        </div>
+
+        <div class="kpi-card" id="cardConversionRate" title="Percentage of modal impressions converted to payment intent">
+          <div class="kpi-top">
+            <span class="kpi-label">Intent Conversion</span>
+            <span class="badge badge-success" id="badgeConversionRate">0%</span>
+          </div>
+          <div class="kpi-value" id="kpiConversionRate" style="color:var(--success);">0%</div>
+          <div class="kpi-hint"><span id="kpiTotalIntents">0</span> total payment actions</div>
+        </div>
+
+        <div class="kpi-card" id="cardGrossIntent" title="Total gross contribution value initiated via UPI">
+          <div class="kpi-top">
+            <span class="kpi-label">Gross Intent Value</span>
+            <span class="badge badge-info">₹ INR</span>
+          </div>
+          <div class="kpi-value" id="kpiGrossIntent" style="color:var(--info);">₹0</div>
+          <div class="kpi-hint">Voluntary student contributions</div>
+        </div>
+
+        <div class="kpi-card" id="cardAvgDwellPay" title="Average seconds spent in modal before initiating payment vs bounce">
+          <div class="kpi-top">
+            <span class="kpi-label">Decision Dwell</span>
+            <span class="badge">Velocity</span>
+          </div>
+          <div class="kpi-value" id="kpiAvgDwellPay">0s</div>
+          <div class="kpi-hint">Pay: <span id="kpiDwellPaySec">0s</span> | Bounce: <span id="kpiDwellBounceSec">0s</span></div>
+        </div>
+      </section>
+
+      <!-- Row 1: Amount Chip Matrix & Payment Channels -->
+      <div class="grid-2col" style="margin-bottom:1rem;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Contribution Pricing &amp; Chip Distribution</h2>
+            <span class="badge badge-accent">Psychology</span>
+          </div>
+          <p style="font-size:0.75rem; color:var(--ink-muted); margin-bottom:0.75rem;">
+            Distribution of contribution amounts selected by students across ₹15 (Chai), ₹25 (Server/Popular), ₹50 (Hero), ₹100 (Patron), and Custom Any ₹.
+          </p>
+          <div id="chipDistributionContainer">
+            <!-- Dynamic chip bars inserted by JS -->
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Payment Method &amp; Triggers</h2>
+            <span class="badge">Channels</span>
+          </div>
+          <div id="channelDistributionContainer" style="display:flex; flex-direction:column; gap:0.6rem;">
+            <!-- Dynamic channel bars -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: SGOU Programme Traffic & B2B Sponsorship Valuation -->
+      <div class="panel" style="margin-bottom:1rem;">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">SGOU Academic Programme Traffic &amp; Sponsorship Valuation</h2>
+            <p style="font-size:0.75rem; color:var(--ink-muted); margin-top:2px;">
+              Audience density and calculated monthly B2B sponsorship value per academic department based on student reading hours and syllabus downloads.
+            </p>
+          </div>
+          <span class="badge badge-success">B2B Commercialization</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Programme Code</th>
+                <th>Academic Programme</th>
+                <th>Active Learners</th>
+                <th>Reading Hours</th>
+                <th>Downloads</th>
+                <th>Monthly Sponsorship Valuation</th>
+              </tr>
+            </thead>
+            <tbody id="programmeSponsorshipTableBody">
+              <tr><td colspan="6">Loading programme readership &amp; valuation ledger…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Row 3: UI Attention, Focus & Ignored Elements Matrix -->
+      <div class="grid-2col" style="margin-bottom:1rem;">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">UI Attention &amp; Click Hotspots</h2>
+            <span class="badge badge-info">Position (X/Y) &amp; Zone</span>
+          </div>
+          <p style="font-size:0.75rem; color:var(--ink-muted); margin-bottom:0.75rem;">
+            Ranked by interaction density with normalized viewport coordinates (% from left, % from top).
+          </p>
+          <div class="table-wrap" style="max-height:300px;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Element / Label</th>
+                  <th>Zone</th>
+                  <th>Clicks</th>
+                  <th>Viewport Pos</th>
+                </tr>
+              </thead>
+              <tbody id="uiAttentionTableBody">
+                <tr><td colspan="4">Loading interaction hotspots…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Ignored Elements &amp; Layout Friction</h2>
+            <span class="badge badge-warning">Optimization Signals</span>
+          </div>
+          <div id="ignoredElementsContainer" style="display:flex; flex-direction:column; gap:0.6rem;">
+            <!-- Dynamic ignored cards -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 4: Algorithmic Structural & UX Recommendations -->
+      <div class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Structural &amp; UI Optimization Radar</h2>
+            <p style="font-size:0.75rem; color:var(--ink-muted); margin-top:2px;">
+              Actionable diagnostic intelligence answering: which buttons perform best, what users focus on, and what UI changes will increase conversion.
+            </p>
+          </div>
+          <span class="badge badge-accent">Live Telemetry Heuristics</span>
+        </div>
+        <div id="monetizationHeuristicsContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:0.85rem; margin-top:0.75rem;">
+          <!-- Dynamic heuristics cards -->
+        </div>
+      </div>
+    </div>
 
     <!-- Perspective 1: Pulse & Traffic (Default Clean View) -->
     <div class="perspective-panel active" id="tabPulse">
@@ -1106,7 +1261,21 @@
         if (tabLoaded[tabId] && !force) return;
         tabLoaded[tabId] = true;
 
-        if (tabId === 'tabSearches') {
+        if (tabId === 'tabMonetization') {
+          try {
+            const monData = await fetchApi('monetization');
+            renderMonetization(monData.monetization || {});
+
+            const progData = await fetchApi('programme_leaderboard');
+            renderProgrammeSponsorship(progData.leaderboard || []);
+
+            const attData = await fetchApi('ui_attention');
+            renderUiAttention(attData.ui_attention || {});
+
+            const heurData = await fetchApi('ui_heuristics');
+            renderMonetizationHeuristics(heurData.ui_heuristics || []);
+          } catch (e) { console.warn(e); }
+        } else if (tabId === 'tabSearches') {
           try {
             const zeroData = await fetchApi('zero_searches');
             zeroSearchCache = zeroData.zero_searches || [];
@@ -1643,6 +1812,168 @@
             );
           });
         });
+      }
+
+      function renderMonetization(mon) {
+        if (!mon) return;
+        const imps = mon.impressions || 0;
+        const intents = mon.total_intents || 0;
+        const rate = mon.conversion_rate || 0;
+        const gross = mon.gross_intent_inr || 0;
+        const dwellPay = mon.avg_dwell_pay_seconds || 0;
+        const dwellBounce = mon.avg_dwell_bounce_seconds || 0;
+
+        const kpiImpsEl = document.getElementById('kpiModalImpressions');
+        if (kpiImpsEl) kpiImpsEl.textContent = imps.toLocaleString();
+        const kpiRateEl = document.getElementById('kpiConversionRate');
+        if (kpiRateEl) kpiRateEl.textContent = rate + '%';
+        const badgeRateEl = document.getElementById('badgeConversionRate');
+        if (badgeRateEl) badgeRateEl.textContent = rate + '% Intent';
+        const kpiIntentsEl = document.getElementById('kpiTotalIntents');
+        if (kpiIntentsEl) kpiIntentsEl.textContent = intents.toLocaleString();
+        const kpiGrossEl = document.getElementById('kpiGrossIntent');
+        if (kpiGrossEl) kpiGrossEl.textContent = '₹' + gross.toLocaleString();
+        const kpiAvgPayEl = document.getElementById('kpiAvgDwellPay');
+        if (kpiAvgPayEl) kpiAvgPayEl.textContent = dwellPay + 's';
+        const kpiDwellPayEl = document.getElementById('kpiDwellPaySec');
+        if (kpiDwellPayEl) kpiDwellPayEl.textContent = dwellPay + 's';
+        const kpiDwellBounceEl = document.getElementById('kpiDwellBounceSec');
+        if (kpiDwellBounceEl) kpiDwellBounceEl.textContent = dwellBounce + 's';
+
+        // Chip Distribution
+        const chipContainer = document.getElementById('chipDistributionContainer');
+        if (chipContainer) {
+          const chips = [
+            { label: '₹15 Chai', key: '15', sub: 'Micro-support' },
+            { label: '₹25 Server [POPULAR]', key: '25', sub: 'Infrastructure anchor' },
+            { label: '₹50 Hero', key: '50', sub: 'Semester champion' },
+            { label: '₹100 Patron', key: '100', sub: 'Academic sponsor' },
+            { label: 'Custom Any ₹', key: 'custom', sub: 'Flexible amount' }
+          ];
+          const chipCounts = mon.chip_breakdown || {};
+          const totalChips = Object.values(chipCounts).reduce((a, b) => a + b, 0) || 1;
+
+          chipContainer.innerHTML = chips.map(c => {
+            const count = chipCounts[c.key] || 0;
+            const pct = Math.round((count / totalChips) * 100);
+            return '<div class="bar-row">' +
+              '<div class="bar-info">' +
+                '<span><strong>' + escapeHtml(c.label) + '</strong> <span style="font-size:0.72rem; color:var(--ink-muted);">(' + escapeHtml(c.sub) + ')</span></span>' +
+                '<span class="badge ' + (c.key === '25' ? 'badge-accent' : '') + '">' + count + ' clicks (' + pct + '%)</span>' +
+              '</div>' +
+              '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;' + (c.key === '25' ? 'background:var(--accent);' : 'background:var(--info);') + '"></div></div>' +
+            '</div>';
+          }).join('');
+        }
+
+        // Channel Distribution & Triggers
+        const chanContainer = document.getElementById('channelDistributionContainer');
+        if (chanContainer) {
+          const chans = mon.channel_breakdown || {};
+          const totalChans = (chans.upi_tap || 0) + (chans.qr_download || 0) + (chans.vpa_copy || 0) + (chans.qr_view || 0) || 1;
+          const methods = [
+            { label: '1-Tap Mobile UPI Intent', count: chans.upi_tap || 0, badge: 'Direct Native Launch' },
+            { label: 'Mobile QR Code Toggled/Viewed', count: chans.qr_view || 0, badge: 'Screen Toggle' },
+            { label: 'Direct UPI ID Copied', count: chans.vpa_copy || 0, badge: 'Clipboard VPA' },
+            { label: 'SVG QR Code Downloaded', count: chans.qr_download || 0, badge: 'Gallery File' }
+          ];
+
+          chanContainer.innerHTML = methods.map(m => {
+            const pct = Math.round((m.count / totalChans) * 100);
+            return '<div class="bar-row">' +
+              '<div class="bar-info">' +
+                '<span><strong>' + escapeHtml(m.label) + '</strong></span>' +
+                '<span class="badge badge-success">' + m.count + ' (' + pct + '%)</span>' +
+              '</div>' +
+              '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%; background:var(--success);"></div></div>' +
+            '</div>';
+          }).join('');
+        }
+      }
+
+      function renderProgrammeSponsorship(rows) {
+        const tbody = document.getElementById('programmeSponsorshipTableBody');
+        if (!tbody) return;
+        if (!rows || !rows.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="color:var(--ink-muted); padding:1rem;">Accumulating programme readership data…</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = rows.map((r, idx) => {
+          const progCode = r.tier || r.programme.split(' ')[0] || 'SGOU';
+          const fee = (r.session_count * 20) + (r.download_count * 15) + 1500;
+          return '<tr class="clickable" data-prog-idx="' + idx + '">' +
+            '<td><span class="badge badge-accent">' + escapeHtml(progCode) + '</span></td>' +
+            '<td><strong>' + escapeHtml(r.programme) + '</strong></td>' +
+            '<td>' + (r.session_count || 0) + ' students</td>' +
+            '<td>' + (Math.round((r.avg_dwell_sec || 120) * (r.session_count || 1) / 360) / 10) + ' hrs</td>' +
+            '<td>' + (r.download_count || 0) + ' PDFs</td>' +
+            '<td><span class="badge badge-success" style="font-weight:700;">₹' + fee.toLocaleString() + ' / mo</span></td>' +
+          '</tr>';
+        }).join('');
+      }
+
+      function renderUiAttention(att) {
+        const tableBody = document.getElementById('uiAttentionTableBody');
+        if (tableBody) {
+          const elements = att.top_clicked_elements || [];
+          if (!elements.length) {
+            tableBody.innerHTML = '<tr><td colspan="4" style="color:var(--ink-muted); padding:1rem;">Logging student interaction coordinates…</td></tr>';
+          } else {
+            tableBody.innerHTML = elements.map(el =>
+              '<tr>' +
+                '<td><code>' + escapeHtml(el.selector) + '</code><div style="font-size:0.72rem; color:var(--ink-muted);">' + escapeHtml(el.text || 'Element') + '</div></td>' +
+                '<td><span class="badge badge-info">' + escapeHtml(el.zone) + '</span></td>' +
+                '<td><strong>' + el.clicks + '</strong></td>' +
+                '<td><span class="badge">X: ' + el.avg_x_pct + '% | Y: ' + el.avg_y_pct + '%</span></td>' +
+              '</tr>'
+            ).join('');
+          }
+        }
+
+        const ignoredContainer = document.getElementById('ignoredElementsContainer');
+        if (ignoredContainer) {
+          const ignored = att.ignored_elements || [];
+          ignoredContainer.innerHTML = ignored.map(ig =>
+            '<div class="possibility-card" style="padding:0.75rem;">' +
+              '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                '<strong style="font-size:0.82rem; color:var(--warning);">' + escapeHtml(ig.label) + '</strong>' +
+                '<span class="badge badge-warning">Low Engagement</span>' +
+              '</div>' +
+              '<p style="font-size:0.74rem; color:var(--ink-muted); margin-top:2px;">' + escapeHtml(ig.reason) + '</p>' +
+              '<div style="font-size:0.73rem; color:var(--success); margin-top:4px; font-weight:600;">' +
+                'Recommendation: ' + escapeHtml(ig.recommendation) +
+              '</div>' +
+            '</div>'
+          ).join('');
+        }
+      }
+
+      function renderMonetizationHeuristics(heuristics) {
+        const container = document.getElementById('monetizationHeuristicsContainer');
+        if (!container) return;
+        if (!heuristics || !heuristics.length) {
+          container.innerHTML = '<p style="color:var(--ink-muted); padding:1rem 0;">Analyzing telemetry heuristics…</p>';
+          return;
+        }
+
+        container.innerHTML = heuristics.map(h =>
+          '<div class="possibility-card" style="border-left:4px solid var(--accent);">' +
+            '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem;">' +
+              '<strong style="font-size:0.86rem;">' + escapeHtml(h.headline) + '</strong>' +
+              '<span class="badge badge-accent" style="white-space:nowrap;">' + escapeHtml(h.impact) + '</span>' +
+            '</div>' +
+            '<p style="font-size:0.76rem; color:var(--ink-muted); margin-top:0.35rem;">' +
+              escapeHtml(h.evidence) +
+            '</p>' +
+            '<div style="background:var(--surface-elevated); padding:0.5rem 0.65rem; border-radius:6px; margin-top:0.45rem;">' +
+              '<div style="font-size:0.7rem; font-weight:700; color:var(--ink-muted); text-transform:uppercase;">Actionable Structural UI Advice</div>' +
+              '<div style="font-size:0.76rem; color:var(--ink); margin-top:2px; font-weight:600;">' +
+                escapeHtml(h.recommendation) +
+              '</div>' +
+            '</div>' +
+          '</div>'
+        ).join('');
       }
 
       function renderGeo(list) {

@@ -45,7 +45,10 @@
 
   function sendTelemetry(name, params) {
     try {
-      if (typeof window.gtag === 'function') {
+      if (typeof window !== 'undefined' && window.SGOU_TELEMETRY && typeof window.SGOU_TELEMETRY.log === 'function') {
+        window.SGOU_TELEMETRY.log(name, params || {});
+      }
+      if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
         window.gtag('event', name, params || {});
       }
     } catch (_) {}
@@ -64,7 +67,10 @@
     copyBtn: null,
     copyBtnText: null,
     qrPopover: null,
-    lastFocusedElement: null
+    lastFocusedElement: null,
+    modalOpenTimestamp: 0,
+    lastChipSelectTimestamp: 0,
+    hasEngagedPayment: false
   };
 
   var SupportModal = {
@@ -92,9 +98,12 @@
       var amt = typeof amount !== 'undefined' ? amount : state.activeAmount;
       var uri = SupportModal.buildUpiUri(amt);
 
+      state.hasEngagedPayment = true;
+      var dwellMs = state.modalOpenTimestamp ? Math.round(performance.now() - state.modalOpenTimestamp) : 0;
       sendTelemetry('support_upi_click', {
         app: app || 'upi',
-        amount: amt !== null ? amt : 'custom'
+        amount: amt !== null ? amt : 'custom',
+        dwell_ms: dwellMs
       });
 
       // Direct window location navigation triggers the Android/iOS UPI app chooser without popup blocks
@@ -121,8 +130,10 @@
         document.body.removeChild(link);
         URL.revokeObjectURL(svgUrl);
 
+        state.hasEngagedPayment = true;
         sendTelemetry('support_qr_download', {
-          amount: state.activeAmount !== null ? state.activeAmount : 'custom'
+          amount: state.activeAmount !== null ? state.activeAmount : 'custom',
+          format: 'svg'
         });
 
         if (Toast && typeof Toast.show === 'function') {
@@ -335,6 +346,7 @@
      * @param {number|string|null} amount
      */
     setAmount: function (amount) {
+      var prevAmt = state.activeAmount;
       if (amount === 'custom' || amount === null) {
         state.activeAmount = null;
       } else {
@@ -352,8 +364,13 @@
       }
 
       SupportModal.renderQr(state.activeAmount);
+      var dwellMs = state.lastChipSelectTimestamp ? Math.round(performance.now() - state.lastChipSelectTimestamp) : 0;
+      state.lastChipSelectTimestamp = performance.now();
+
       sendTelemetry('support_amount_select', {
-        amount: state.activeAmount !== null ? state.activeAmount : 'custom'
+        amount: state.activeAmount !== null ? state.activeAmount : 'custom',
+        prior_amount: prevAmt !== null ? prevAmt : 'custom',
+        dwell_ms: dwellMs
       });
     },
 
@@ -365,7 +382,9 @@
       var doFeedback = function () {
         if (state.copyBtn) state.copyBtn.classList.add('copied');
         if (state.copyBtnText) state.copyBtnText.textContent = 'Copied';
+        state.hasEngagedPayment = true;
         sendTelemetry('support_copy_upi', {
+          vpa: vpa,
           amount: state.activeAmount !== null ? state.activeAmount : 'custom'
         });
         if (Toast && typeof Toast.show === 'function') {
@@ -446,6 +465,10 @@
         state.modalEl.inert = false;
       }
 
+      state.modalOpenTimestamp = performance.now();
+      state.lastChipSelectTimestamp = performance.now();
+      state.hasEngagedPayment = false;
+
       sendTelemetry('support_modal_open', {
         amount: targetAmount,
         context: situation,
@@ -460,9 +483,18 @@
 
     /**
      * Close modal dialog
+     * @param {string} [reason='close_btn']
      */
-    close: function () {
+    close: function (reason) {
       if (state.modalEl) {
+        var totalDwellMs = state.modalOpenTimestamp ? Math.round(performance.now() - state.modalOpenTimestamp) : 0;
+        sendTelemetry('support_modal_dismiss', {
+          reason: reason || 'close_btn',
+          dwell_ms: totalDwellMs,
+          final_amount: state.activeAmount !== null ? state.activeAmount : 'custom',
+          has_engaged_payment: state.hasEngagedPayment ? 1 : 0
+        });
+
         if (state.modalEl.contains(document.activeElement)) {
           if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === 'function' && document.body.contains(state.lastFocusedElement) && !state.modalEl.contains(state.lastFocusedElement)) {
             try {
@@ -513,15 +545,16 @@
         if (!state.modalEl) return;
 
         // Close button or Done button
-        if (e.target.closest('#supportModalCloseBtn, #supportDoneBtn')) {
+        var closeTrigger = e.target.closest('#supportModalCloseBtn, #supportDoneBtn');
+        if (closeTrigger) {
           e.preventDefault();
-          SupportModal.close();
+          SupportModal.close(closeTrigger.id === 'supportDoneBtn' ? 'done_btn' : 'close_btn');
           return;
         }
 
         // Backdrop click
         if (e.target === state.modalEl) {
-          SupportModal.close();
+          SupportModal.close('backdrop');
           return;
         }
 
@@ -558,6 +591,7 @@
           if (popover) {
             var isShow = popover.classList.toggle('show');
             popover.setAttribute('aria-hidden', isShow ? 'false' : 'true');
+            sendTelemetry('support_advice_view', { is_shown: isShow });
           }
           return;
         } else if (!e.target.closest('#supportQrPopover')) {
@@ -601,7 +635,7 @@
 
         if (e.key === 'Escape') {
           e.preventDefault();
-          SupportModal.close();
+          SupportModal.close('escape_key');
           return;
         }
 

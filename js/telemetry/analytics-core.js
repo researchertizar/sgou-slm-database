@@ -272,18 +272,46 @@
     return s;
   }
 
+  function deriveZone(el) {
+    if (!el || !el.closest) return 'content';
+    if (el.closest('#supportModal, .support-modal')) return 'support_modal';
+    if (el.closest('header, .app-header, .cockpit-header')) return 'header';
+    if (el.closest('.search-container, #searchSection, #searchWrap, .search-box')) return 'search';
+    if (el.closest('.filter-group, .filter-chips, .programme-filters, .tag-filters, #quickFilters')) return 'filters';
+    if (el.closest('.programme-card, .card, .syllabus-card')) return 'course_card';
+    if (el.closest('#readerTopBar, .viewer-topbar, #readerToolbar')) return 'reader_toolbar';
+    if (el.closest('#viewerCanvas, #pdfCanvas, #readerPanel, .pdf-canvas-container')) return 'reader_canvas';
+    if (el.closest('footer, .footer')) return 'footer';
+    return 'content';
+  }
+
+  function deriveValue(el) {
+    if (!el) return null;
+    return el.getAttribute('data-amount') ||
+           el.getAttribute('data-price') ||
+           el.getAttribute('data-code') ||
+           el.getAttribute('data-programme') ||
+           (el.closest && el.closest('[data-amount]') ? el.closest('[data-amount]').getAttribute('data-amount') : null) ||
+           (el.closest && el.closest('[data-code]') ? el.closest('[data-code]').getAttribute('data-code') : null) ||
+           null;
+  }
+
   document.addEventListener('click', (e) => {
     const now = performance.now();
-    const target = e.target.closest('button, a, input, select, [role="button"], summary, [data-action], .programme-card, .search-result-item') || e.target;
-    const isInteractive = target.matches('button, a, input, select, [role="button"], summary, [data-action], input[type="text"]');
+    const target = e.target.closest('button, a, input, select, [role="button"], summary, [data-action], .programme-card, .search-result-item, .amount-chip, .filter-chip') || e.target;
+    const isInteractive = target.matches('button, a, input, select, [role="button"], summary, [data-action], input[type="text"], .amount-chip, .filter-chip');
     const selector = deriveSelector(target);
-    const textSnippet = (target.innerText || target.value || target.getAttribute('title') || '').trim().substring(0, 35);
+    const textSnippet = (target.innerText || target.value || target.getAttribute('title') || target.getAttribute('aria-label') || '').trim().substring(0, 35);
+    const zone = deriveZone(target);
+    const val = deriveValue(target);
+    const xPct = Math.round((e.clientX / (window.innerWidth || 1)) * 100);
+    const yPct = Math.round((e.clientY / (window.innerHeight || 1)) * 100);
 
     // Rage Click Detection: >= 3 rapid clicks on same element within 700ms
     if (target === lastClickTarget && (now - lastClickTimestamp < 700)) {
       clickCounter++;
       if (clickCounter >= 3) {
-        log('rage_click', { selector, text: textSnippet, count: clickCounter });
+        log('rage_click', { selector, text: textSnippet, zone, count: clickCounter, x_pct: xPct, y_pct: yPct });
         clickCounter = 0;
       }
     } else {
@@ -291,11 +319,13 @@
       lastClickTarget = target;
 
       if (isInteractive) {
-        log('click', { selector, text: textSnippet });
+        const clickDetails = { selector, text: textSnippet, zone, x_pct: xPct, y_pct: yPct };
+        if (val !== null) clickDetails.val = val;
+        log('click', clickDetails);
       } else if (['DIV', 'SPAN', 'P', 'H2', 'H3', 'SECTION'].includes(target.tagName)) {
         // Dead click detection on non-interactive elements with readable text
         if (textSnippet.length > 3) {
-          log('dead_click', { tag: target.tagName, text: textSnippet });
+          log('dead_click', { tag: target.tagName, text: textSnippet, zone, x_pct: xPct, y_pct: yPct });
         }
       }
     }

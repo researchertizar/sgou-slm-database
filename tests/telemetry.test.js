@@ -72,6 +72,14 @@ test('Management Dashboard: admin/dashboard.html interface integrity', () => {
   assert.ok(content.includes('id="possibilitiesContainer"'), 'Must have AI possibilities radar container');
   assert.ok(content.includes('id="exportDropdown"'), 'Must have export center dropdown');
   assert.ok(content.includes('id="btnPeriodToday"'), 'Must have comparative period controls');
+  assert.ok(content.includes('data-tab="tabMonetization"'), 'Must have Monetization Cockpit tab');
+  assert.ok(content.includes('id="kpiModalImpressions"'), 'Must have modal impressions KPI');
+  assert.ok(content.includes('id="kpiConversionRate"'), 'Must have intent conversion rate KPI');
+  assert.ok(content.includes('id="kpiGrossIntent"'), 'Must have gross intent value KPI');
+  assert.ok(content.includes('id="chipDistributionContainer"'), 'Must have contribution chip matrix');
+  assert.ok(content.includes('id="programmeSponsorshipTableBody"'), 'Must have programme readership & sponsorship table');
+  assert.ok(content.includes('id="uiAttentionTableBody"'), 'Must have UI attention table');
+  assert.ok(content.includes('id="monetizationHeuristicsContainer"'), 'Must have monetization heuristics container');
 });
 
 test('Local Dev Server: Telemetry Ingestion & Query APIs', async () => {
@@ -178,7 +186,44 @@ test('Local Dev Server: Telemetry Ingestion & Query APIs', async () => {
     assert.strictEqual(possRes.status, 200, 'GET /api/analytics/query?action=possibilities should return 200');
     assert.ok(Array.isArray(possRes.data.possibilities), 'Should return possibilities array');
 
-    // 7. Test Export formats: JSON, CSV, and AI Prompt
+    // 7. Test GET /api/analytics/query?action=monetization
+    const monRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=monetization&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(monRes.status, 200, 'GET /api/analytics/query?action=monetization should return 200');
+    assert.ok(monRes.data.monetization, 'Should return monetization object');
+    assert.ok('impressions' in monRes.data.monetization, 'Should have impressions');
+    assert.ok('conversion_rate' in monRes.data.monetization, 'Should have conversion_rate');
+    assert.ok('chip_breakdown' in monRes.data.monetization, 'Should have chip_breakdown');
+
+    // 8. Test GET /api/analytics/query?action=ui_attention
+    const attRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=ui_attention&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(attRes.status, 200, 'GET /api/analytics/query?action=ui_attention should return 200');
+    assert.ok(attRes.data.ui_attention, 'Should return ui_attention object');
+    assert.ok(Array.isArray(attRes.data.ui_attention.top_clicked_elements), 'Should have top_clicked_elements');
+
+    // 9. Test GET /api/analytics/query?action=ui_heuristics
+    const heurRes = await new Promise((resolve, reject) => {
+      http.get(`http://localhost:${port}/api/analytics/query?action=ui_heuristics&token=${encodeURIComponent(token)}`, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, data: JSON.parse(data) }));
+      }).on('error', reject);
+    });
+    assert.strictEqual(heurRes.status, 200, 'GET /api/analytics/query?action=ui_heuristics should return 200');
+    assert.ok(Array.isArray(heurRes.data.ui_heuristics), 'Should return ui_heuristics array');
+
+    // 10. Test Export formats: JSON, CSV, and AI Prompt
     const exportJsonRes = await new Promise((resolve, reject) => {
       http.get(`http://localhost:${port}/api/analytics/query?action=export&format=json&token=${encodeURIComponent(token)}`, res => {
         let data = '';
