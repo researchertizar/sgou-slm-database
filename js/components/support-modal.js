@@ -3,10 +3,11 @@
  * Universal component shared across index.html, view.html, reader.html
  * 
  * Features:
- * - Minimal, situation-aware student impact messaging
+ * - Dynamic situation-aware messaging (Download completion, Document reading, Home exploration)
  * - 1-tap mobile native UPI intent execution
- * - Clean desktop QR code with corner icon controls (download + info popover)
- * - Zero scrolling: strictly compact geometry (<= 360px content height)
+ * - Clean desktop QR code with corner icon controls (download + info popover) + caption
+ * - Labeled amount contribution chips (Chai, Server/Popular, Hero, Patron, Custom)
+ * - Zero scrolling: strictly compact geometry (<= 355px content height)
  * - Strict zero-emoji compliance with standard geometric SVGs
  */
 (function (root, factory) {
@@ -28,6 +29,20 @@
     amounts: [15, 25, 50, 100, 'custom']
   };
 
+  /**
+   * Situation-aware dynamic messages matched to the user's immediate action
+   */
+  var CONTEXT_MESSAGES = {
+    // 1. Post-Download: Triggered after syllabus PDF download
+    download: 'Your syllabus material is saved! If this saved your study time, consider supporting high-speed bandwidth and syllabus updates.',
+    // 2. Document Reader / Standalone Viewer: Triggered from reader topbar or canvas dwell
+    reader: 'Hope this study material helps your preparation! A voluntary contribution helps maintain ad-free access and syllabus updates for everyone.',
+    // 3. Home Page / Catalog / Header / Footer: Direct exploration
+    home: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
+    // 4. Default fallback
+    default: 'Keep SGOU study materials free, ad-free, and updated for every student.'
+  };
+
   function sendTelemetry(name, params) {
     try {
       if (typeof window.gtag === 'function') {
@@ -39,6 +54,7 @@
   var state = {
     activeAmount: CONFIG.defaultAmount,
     modalEl: null,
+    introText: null,
     qrContainer: null,
     payBtn: null,
     payBtnText: null,
@@ -145,24 +161,37 @@
           '</div>' +
 
           '<div class="support-modal-body">' +
-            '<!-- Situation-aware minimal impact note -->' +
+            '<!-- Situation-aware dynamic impact note -->' +
             '<div class="support-intro-card">' +
-              '<p class="support-intro-text">' +
-                'Keep SGOU study materials free, ad-free, and updated for every student.' +
+              '<p class="support-intro-text" id="supportIntroText">' +
+                'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.' +
               '</p>' +
             '</div>' +
 
             '<!-- Contribution Amount Selection -->' +
             '<div class="support-section-label">Select Contribution</div>' +
             '<div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">' +
-              '<button type="button" class="amount-chip" data-amount="15">₹15</button>' +
+              '<button type="button" class="amount-chip" data-amount="15">' +
+                '<span class="chip-val">₹15</span>' +
+                '<span class="chip-sub">Chai</span>' +
+              '</button>' +
               '<button type="button" class="amount-chip popular active" data-amount="25">' +
                 '<span class="chip-badge">Popular</span>' +
-                '₹25' +
+                '<span class="chip-val">₹25</span>' +
+                '<span class="chip-sub">Server</span>' +
               '</button>' +
-              '<button type="button" class="amount-chip" data-amount="50">₹50</button>' +
-              '<button type="button" class="amount-chip" data-amount="100">₹100</button>' +
-              '<button type="button" class="amount-chip" data-amount="custom">Custom</button>' +
+              '<button type="button" class="amount-chip" data-amount="50">' +
+                '<span class="chip-val">₹50</span>' +
+                '<span class="chip-sub">Hero</span>' +
+              '</button>' +
+              '<button type="button" class="amount-chip" data-amount="100">' +
+                '<span class="chip-val">₹100</span>' +
+                '<span class="chip-sub">Patron</span>' +
+              '</button>' +
+              '<button type="button" class="amount-chip" data-amount="custom">' +
+                '<span class="chip-val">Any</span>' +
+                '<span class="chip-sub">Custom</span>' +
+              '</button>' +
             '</div>' +
 
             '<!-- Mobile 1-Tap Action Section (Primary on Mobile) -->' +
@@ -210,6 +239,9 @@
                 '</div>' +
                 '<div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">' +
                   '<!-- SVG QR code rendered dynamically -->' +
+                '</div>' +
+                '<div class="support-qr-caption">' +
+                  '<span>Scan with camera or any UPI app</span>' +
                 '</div>' +
               '</div>' +
             '</div>' +
@@ -268,6 +300,7 @@
         }
       }
       state.modalEl = modal;
+      state.introText = document.getElementById('supportIntroText');
       state.qrContainer = document.getElementById('supportQrContainer');
       state.payBtn = document.getElementById('supportDirectPayBtn');
       state.payBtnText = document.getElementById('supportDirectPayBtnText');
@@ -290,7 +323,7 @@
           var qr = window.qrcode(0, 'M');
           qr.addData(uri);
           qr.make();
-          state.qrContainer.innerHTML = qr.createSvgTag(3.8, 1);
+          state.qrContainer.innerHTML = qr.createSvgTag(3.6, 1);
         } catch (err) {
           console.warn('[SupportModal] QR render failed:', err);
         }
@@ -365,8 +398,9 @@
      * Open modal dialog
      * @param {number} [amount=25]
      * @param {HTMLElement} [triggerEl=null]
+     * @param {string} [context=null]
      */
-    open: function (amount, triggerEl) {
+    open: function (amount, triggerEl, context) {
       SupportModal.ensureMounted();
       if (!state.modalEl) return;
 
@@ -374,6 +408,37 @@
       SupportModal.setAmount(targetAmount);
 
       state.lastFocusedElement = triggerEl || (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+
+      // Situation-aware dynamic context determination
+      var situation = context;
+      if (!situation && triggerEl) {
+        var tid = triggerEl.id || '';
+        if (tid === 'dpSupportBtn' || (triggerEl.closest && triggerEl.closest('#downloadProgressCard')) || triggerEl.hasAttribute('data-download-trigger')) {
+          situation = 'download';
+        } else if (tid === 'topbarSupport' || tid === 'readerSupportBtn' || (triggerEl.closest && (triggerEl.closest('#readerTopBar') || triggerEl.closest('.viewer-topbar')))) {
+          situation = 'reader';
+        } else if (tid === 'supportBtn' || tid === 'headerSupportBtn' || tid === 'footerSupportBtn' || tid === 'drawerSupportBtn') {
+          situation = 'home';
+        }
+      }
+
+      if (!situation) {
+        if (typeof window !== 'undefined' && window.location) {
+          var p = window.location.pathname || '';
+          if (p.includes('reader') || p.includes('view')) {
+            situation = 'reader';
+          } else {
+            situation = 'home';
+          }
+        } else {
+          situation = 'home';
+        }
+      }
+
+      var dynamicMsg = CONTEXT_MESSAGES[situation] || CONTEXT_MESSAGES.home || CONTEXT_MESSAGES.default;
+      if (state.introText) {
+        state.introText.innerHTML = dynamicMsg;
+      }
 
       if (state.qrSection) state.qrSection.classList.remove('show');
       if (state.qrToggleText) state.qrToggleText.textContent = 'Show QR Code';
@@ -387,6 +452,7 @@
 
       sendTelemetry('support_modal_open', {
         amount: targetAmount,
+        context: situation,
         source: triggerEl ? (triggerEl.id || triggerEl.getAttribute('aria-label') || 'trigger') : 'direct'
       });
 
