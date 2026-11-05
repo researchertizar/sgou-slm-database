@@ -147,23 +147,54 @@
   // 4. Transmission Engine (Batched sendBeacon with fetch keepalive fallback)
   let isFlushing = false;
   let lastFlushTimestamp = Date.now();
+  let userSyncedThisSession = false;
+  let lastUserActivityTimestamp = Date.now();
+  let sessionHeartbeatCount = 0;
+  const MAX_HEARTBEATS_PER_SESSION = 40; // Max 40 heartbeats per tab session to protect Worker limits
+
+  // Track passive student activity to detect idle tabs and avoid burning free quota
+  function recordUserActivity() {
+    lastUserActivityTimestamp = Date.now();
+    if (sessionHeartbeatCount >= MAX_HEARTBEATS_PER_SESSION) {
+      sessionHeartbeatCount = 0;
+    }
+  }
+
+  ['pointerdown', 'keydown', 'scroll', 'touchstart'].forEach(evtName => {
+    window.addEventListener(evtName, recordUserActivity, { passive: true, capture: true });
+  });
 
   function flush(isHeartbeat = false) {
     if ((eventQueue.length === 0 && !isHeartbeat) || isFlushing) return;
+
+    // Limit Protection: If sending a heartbeat, suppress if user is idle (> 2 minutes without interaction)
+    if (isHeartbeat) {
+      const isIdle = (Date.now() - lastUserActivityTimestamp > 120000);
+      if (isIdle || sessionHeartbeatCount >= MAX_HEARTBEATS_PER_SESSION) {
+        return; // Suppress heartbeat to protect Cloudflare Worker & D1 limits
+      }
+      sessionHeartbeatCount++;
+    }
+
     isFlushing = true;
 
     const eventsToDeliver = eventQueue.splice(0, eventQueue.length);
+    const hasMilestone = eventsToDeliver.some(e => e.t === 'document_download' || e.t === 'reader_page_dwell');
+    const shouldSyncUser = !userSyncedThisSession || hasMilestone;
+
     const payload = JSON.stringify({
       sid: sessionId,
       uid: userId,
       is_returning: isReturningUser ? 1 : 0,
       visit_count: visitCount,
       is_active: isActiveSession ? 1 : 0,
+      sync_user: shouldSyncUser ? 1 : 0,
       is_heartbeat: isHeartbeat,
       profile: getEnvironmentProfile(),
       events: eventsToDeliver
     });
 
+    userSyncedThisSession = true;
     lastFlushTimestamp = Date.now();
 
     try {
@@ -186,15 +217,16 @@
     }
   }
 
-  // Real-Time Heartbeat: Keep live session timestamp fresh while tab is actively in view
+  // Real-Time Heartbeat: Keep live session timestamp fresh while tab is actively in view and user is active
   setInterval(() => {
     if (document.visibilityState === 'visible') {
       const timeSinceLastFlush = Date.now() - lastFlushTimestamp;
-      if (timeSinceLastFlush >= 40000) {
+      const isIdle = (Date.now() - lastUserActivityTimestamp > 120000);
+      if (timeSinceLastFlush >= 80000 && !isIdle) {
         flush(true); // Lightweight heartbeat
       }
     }
-  }, 30000);
+  }, 45000);
 
   // Idle Schedule & Unload Triggers
   setInterval(() => {

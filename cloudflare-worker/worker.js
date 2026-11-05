@@ -130,8 +130,9 @@ export default {
 
           const dbBatch = [sessionStmt];
 
-          // Upsert into persistent user ledger if uid is provided
-          if (uid) {
+          // Upsert into persistent user ledger only when requested (milestone or first session flush)
+          const shouldSyncUser = payload.sync_user === 1 || events.some(e => e.t === 'document_download' || e.t === 'reader_page_dwell');
+          if (uid && shouldSyncUser) {
             dbBatch.push(env.DB.prepare(`
               INSERT INTO telemetry_users (
                 user_id, first_seen, last_seen, total_sessions, country, region, city, device_type

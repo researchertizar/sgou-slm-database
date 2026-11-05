@@ -193,8 +193,9 @@ const server = http.createServer((req, res) => {
           profile.theme || 'dark'
         );
 
-        // Upsert user identification record if uid provided
-        if (uid) {
+        // Upsert user identification record only when requested (milestone or first session flush)
+        const shouldSyncUser = payload.sync_user === 1 || events.some(e => e.t === 'document_download' || e.t === 'reader_page_dwell');
+        if (uid && shouldSyncUser) {
           db.prepare(`
             INSERT INTO telemetry_users (
               user_id, first_seen, last_seen, total_sessions, country, region, city, device_type

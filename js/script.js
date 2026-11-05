@@ -4274,7 +4274,7 @@ class UIController {
 
     const onSuccess = () => {
       if (copyBtn) copyBtn.classList.add('copied');
-      if (copyText) copyText.textContent = 'Copied! ✓';
+      if (copyText) copyText.textContent = 'Copied';
       this.showToast(`UPI ID copied: ${vpa}`, 2800);
       setTimeout(() => {
         if (copyBtn) copyBtn.classList.remove('copied');

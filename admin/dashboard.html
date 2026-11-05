@@ -1099,6 +1099,46 @@
       });
 
       // Perspective Tabs (Progressive Disclosure)
+      const tabLoaded = {};
+
+      async function loadTabData(tabId, force = false) {
+        if (!currentToken) return;
+        if (tabLoaded[tabId] && !force) return;
+        tabLoaded[tabId] = true;
+
+        if (tabId === 'tabSearches') {
+          try {
+            const zeroData = await fetchApi('zero_searches');
+            zeroSearchCache = zeroData.zero_searches || [];
+            renderZeroSearches(zeroSearchCache);
+          } catch (e) { console.warn(e); }
+        } else if (tabId === 'tabFriction') {
+          try {
+            const rageData = await fetchApi('frictions');
+            rageClickCache = rageData.rage_clicks || [];
+            renderRageClicks(rageClickCache);
+          } catch (e) { console.warn(e); }
+        } else if (tabId === 'tabGeo') {
+          try {
+            const geoData = await fetchApi('geo');
+            renderGeo(geoData.geo || []);
+            const heatData = await fetchApi('heatmatrix');
+            renderHeatMatrix(heatData.heatmatrix || []);
+          } catch (e) { console.warn(e); }
+        } else if (tabId === 'tabRadar') {
+          try {
+            const possData = await fetchApi('possibilities');
+            renderPossibilities(possData.possibilities || []);
+          } catch (e) { console.warn(e); }
+        } else if (tabId === 'tabEvents') {
+          try {
+            const eventsData = await fetchApi('recent_events');
+            eventsCache = eventsData.recent_events || [];
+            renderRecentEvents(eventsCache);
+          } catch (e) { console.warn(e); }
+        }
+      }
+
       document.querySelectorAll('.p-tab').forEach(tab => {
         tab.addEventListener('click', () => {
           document.querySelectorAll('.p-tab').forEach(t => {
@@ -1112,6 +1152,7 @@
           const targetId = tab.getAttribute('data-tab');
           const targetPanel = document.getElementById(targetId);
           if (targetPanel) targetPanel.classList.add('active');
+          loadTabData(targetId);
         });
       });
 
@@ -1381,15 +1422,7 @@
             console.warn('[Device Donut Error]', dErr);
           }
 
-          // 6. AI Possibilities Engine
-          try {
-            const possData = await fetchApi('possibilities');
-            renderPossibilities(possData.possibilities || []);
-          } catch (pErr) {
-            console.warn('[Possibilities Error]', pErr);
-          }
-
-          // 7. Traversal Funnel
+          // 6. Traversal Funnel
           try {
             const funnelData = await fetchApi('funnel');
             renderFunnel(funnelData.funnel || {});
@@ -1397,47 +1430,10 @@
             console.warn('[Funnel Error]', fErr);
           }
 
-          // 8. Geographic Distribution
-          try {
-            const geoData = await fetchApi('geo');
-            renderGeo(geoData.geo || []);
-          } catch (gErr) {
-            console.warn('[Geo Error]', gErr);
-          }
-
-          // 9. Time-of-Day Cohort Heatmap
-          try {
-            const heatData = await fetchApi('heatmatrix');
-            renderHeatMatrix(heatData.heatmatrix || []);
-          } catch (hErr) {
-            console.warn('[Heatmatrix Error]', hErr);
-          }
-
-          // 10. Zero-Search Table
-          try {
-            const zeroData = await fetchApi('zero_searches');
-            zeroSearchCache = zeroData.zero_searches || [];
-            renderZeroSearches(zeroSearchCache);
-          } catch (zErr) {
-            console.warn('[ZeroSearches Error]', zErr);
-          }
-
-          // 11. Rage Clicks Table
-          try {
-            const rageData = await fetchApi('frictions');
-            rageClickCache = rageData.rage_clicks || [];
-            renderRageClicks(rageClickCache);
-          } catch (rErr) {
-            console.warn('[RageClicks Error]', rErr);
-          }
-
-          // 12. Recent Events Stream
-          try {
-            const eventsData = await fetchApi('recent_events');
-            eventsCache = eventsData.recent_events || [];
-            renderRecentEvents(eventsCache);
-          } catch (eErr) {
-            console.warn('[RecentEvents Error]', eErr);
+          // 7. Load currently active perspective tab lazily
+          const activeTabId = document.querySelector('.p-tab.active')?.getAttribute('data-tab') || 'tabPulse';
+          if (activeTabId !== 'tabPulse') {
+            await loadTabData(activeTabId, true);
           }
 
           lastUpdatedEl.textContent = 'Synced: ' + new Date().toLocaleTimeString();
@@ -1858,9 +1854,27 @@
         })[m]);
       }
 
-      // Initial load & 30-second interval
+      // Initial load & smart lightweight poller (respects document visibility to preserve limits)
       loadAllData();
-      setInterval(loadAllData, 30000);
+      setInterval(() => {
+        if (!document.hidden) {
+          fetchJson('/api/analytics/query?action=realtime').then(data => {
+            if (data) {
+              const live = data.live_sessions || 0;
+              const active = data.active_30m || 0;
+              const users = data.live_users || 0;
+              const liveRibbonEl = document.getElementById('liveRibbonTicker');
+              if (liveRibbonEl) {
+                liveRibbonEl.innerHTML = '<span>Live: ' + live + '</span><span>Active (30m): ' + active + '</span><span>Learners: ' + users + '</span>';
+              }
+              const liveCard = document.getElementById('statLive');
+              if (liveCard) liveCard.textContent = live;
+              const activeCard = document.getElementById('statActive');
+              if (activeCard) activeCard.textContent = active;
+            }
+          }).catch(() => {});
+        }
+      }, 45000);
     })();
   </script>
 </body>
