@@ -111,36 +111,167 @@
     },
 
     /**
-     * Download QR code as SVG image file
+     * Generate high-resolution QR code HTML5 canvas with solid white background
+     * and ISO-compliant quiet zone (margin of 4 modules) for guaranteed gallery scanner decoding.
+     * @param {number|null} amount
+     * @param {number} [targetSize=512]
+     * @returns {HTMLCanvasElement}
      */
-    downloadQr: function () {
-      if (!state.qrContainer) return;
-      var svg = state.qrContainer.querySelector('svg');
-      if (!svg) return;
+    generateQrCanvas: function (amount, targetSize) {
+      var size = targetSize || 512;
+      var canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      var ctx = canvas.getContext('2d');
+      if (!ctx) return canvas;
+
+      // 1. Solid pure-white background for scanner contrast
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, size, size);
+
+      if (typeof window.qrcode !== 'function') return canvas;
 
       try {
-        var svgData = new XMLSerializer().serializeToString(svg);
-        var svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        var svgUrl = URL.createObjectURL(svgBlob);
-        var link = document.createElement('a');
-        link.href = svgUrl;
-        link.download = 'sgou-support-upi-qr.svg';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(svgUrl);
+        var uri = SupportModal.buildUpiUri(amount);
+        var qr = window.qrcode(0, 'M');
+        qr.addData(uri);
+        qr.make();
 
-        state.hasEngagedPayment = true;
-        sendTelemetry('support_qr_download', {
-          amount: state.activeAmount !== null ? state.activeAmount : 'custom',
-          format: 'svg'
-        });
+        var moduleCount = qr.getModuleCount();
+        var quietZoneModules = 4; // ISO/IEC 18004 standard quiet zone
+        var totalModules = moduleCount + (quietZoneModules * 2);
+        var moduleSize = Math.floor(size / totalModules);
+        var actualQrSize = moduleSize * totalModules;
+        var offset = Math.floor((size - actualQrSize) / 2) + (quietZoneModules * moduleSize);
 
-        if (Toast && typeof Toast.show === 'function') {
-          Toast.show('QR code downloaded');
+        // 2. Render black modules with crisp pixel alignment
+        ctx.fillStyle = '#000000';
+        for (var row = 0; row < moduleCount; row++) {
+          for (var col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+              ctx.fillRect(offset + (col * moduleSize), offset + (row * moduleSize), moduleSize, moduleSize);
+            }
+          }
         }
       } catch (err) {
-        console.warn('[SupportModal] Download QR failed:', err);
+        console.warn('[SupportModal] Canvas QR render failed:', err);
+      }
+
+      return canvas;
+    },
+
+    /**
+     * Download QR code as a high-resolution PNG image file
+     * Formatted with a 4-module quiet zone for PhonePe / GPay gallery scan compatibility.
+     */
+    downloadQr: function () {
+      try {
+        var canvas = SupportModal.generateQrCanvas(state.activeAmount, 600);
+
+        var triggerDownload = function (blob) {
+          var url = URL.createObjectURL(blob);
+          var link = document.createElement('a');
+          link.href = url;
+          link.download = 'sgou-support-upi-qr.png';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(function () {
+            URL.revokeObjectURL(url);
+          }, 1500);
+
+          state.hasEngagedPayment = true;
+          sendTelemetry('support_qr_download', {
+            amount: state.activeAmount !== null ? state.activeAmount : 'custom',
+            format: 'png'
+          });
+
+          if (Toast && typeof Toast.show === 'function') {
+            Toast.show('QR code image saved for Gallery scan');
+          }
+        };
+
+        if (canvas.toBlob) {
+          canvas.toBlob(function (blob) {
+            if (blob) {
+              triggerDownload(blob);
+            } else {
+              var dataUrl = canvas.toDataURL('image/png');
+              var link = document.createElement('a');
+              link.href = dataUrl;
+              link.download = 'sgou-support-upi-qr.png';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }
+          }, 'image/png');
+        } else {
+          var dataUrl = canvas.toDataURL('image/png');
+          var link = document.createElement('a');
+          link.href = dataUrl;
+          link.download = 'sgou-support-upi-qr.png';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      } catch (err) {
+        console.warn('[SupportModal] Download QR PNG failed:', err);
+      }
+    },
+
+    /**
+     * Share QR code image natively to PhonePe, GPay, WhatsApp, or system share sheet
+     * Falls back to downloadQr if Web Share API with files is unavailable.
+     */
+    shareQr: function () {
+      state.hasEngagedPayment = true;
+      try {
+        var canvas = SupportModal.generateQrCanvas(state.activeAmount, 600);
+
+        var onBlobReady = function (blob) {
+          var file = null;
+          try {
+            file = new File([blob], 'sgou-support-upi-qr.png', { type: 'image/png' });
+          } catch (_) {
+            file = null;
+          }
+
+          var shareData = {
+            title: 'Support SGOU Database',
+            text: 'Scan with PhonePe, Google Pay, or any UPI app to contribute'
+          };
+
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            shareData.files = [file];
+            navigator.share(shareData).then(function () {
+              sendTelemetry('support_qr_share', {
+                amount: state.activeAmount !== null ? state.activeAmount : 'custom',
+                method: 'native_file_share'
+              });
+            }).catch(function (err) {
+              if (err && err.name !== 'AbortError') {
+                SupportModal.downloadQr();
+              }
+            });
+          } else {
+            SupportModal.downloadQr();
+          }
+        };
+
+        if (canvas.toBlob) {
+          canvas.toBlob(function (blob) {
+            if (blob) {
+              onBlobReady(blob);
+            } else {
+              SupportModal.downloadQr();
+            }
+          }, 'image/png');
+        } else {
+          SupportModal.downloadQr();
+        }
+      } catch (err) {
+        console.warn('[SupportModal] Share QR failed, falling back to download:', err);
+        SupportModal.downloadQr();
       }
     },
 
@@ -196,8 +327,8 @@
                 '<span class="chip-sub">Patron</span>' +
               '</button>' +
               '<button type="button" class="amount-chip chip-custom" data-amount="custom">' +
-                '<span class="chip-val">Custom</span>' +
-                '<span class="chip-sub">Any ₹</span>' +
+                '<span class="chip-val">Any</span>' +
+                '<span class="chip-sub">Custom</span>' +
               '</button>' +
             '</div>' +
 
@@ -223,16 +354,25 @@
             '<!-- QR Code Display Box (Desktop always visible, Mobile toggled) -->' +
             '<div class="support-qr-section" id="supportQrSection">' +
               '<div class="support-qr-card">' +
-                '<!-- Corner Controls: Download + Advice Popover -->' +
+                '<!-- Corner Controls: Info + Share + Save (PNG) -->' +
                 '<div class="support-qr-corner-actions">' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Advice" aria-label="Advice">' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Payment advice" aria-label="Payment advice">' +
                     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                       '<circle cx="12" cy="12" r="10"></circle>' +
                       '<line x1="12" y1="16" x2="12" y2="12"></line>' +
                       '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
                     '</svg>' +
                   '</button>' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportSaveQrBtn" title="Download QR" aria-label="Download QR">' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportShareQrBtn" title="Share QR" aria-label="Share QR image">' +
+                    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                      '<circle cx="18" cy="5" r="3"></circle>' +
+                      '<circle cx="6" cy="12" r="3"></circle>' +
+                      '<circle cx="18" cy="19" r="3"></circle>' +
+                      '<line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>' +
+                      '<line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>' +
+                    '</svg>' +
+                  '</button>' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportSaveQrBtn" title="Save QR (PNG)" aria-label="Save QR image">' +
                     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                       '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
                       '<polyline points="7 10 12 15 17 10"></polyline>' +
@@ -241,15 +381,28 @@
                   '</button>' +
                 '</div>' +
                 '<div class="support-qr-popover" id="supportQrPopover" role="tooltip" aria-hidden="true">' +
-                  '<span>In GPay / PhonePe gallery scan, tap <strong>Dismiss</strong> on notice to pay.</span>' +
+                  '<span class="support-popover-title">PhonePe / Gallery Scan Help</span>' +
+                  '<span>1. Tap <strong>Share</strong> or <strong>Save</strong> for high-res PNG</span>' +
+                  '<span>2. In PhonePe / GPay scanner, pick from gallery</span>' +
+                  '<span>3. Or tap <strong>Copy</strong> below to pay via UPI ID</span>' +
                 '</div>' +
                 '<div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">' +
                   '<!-- SVG QR rendered dynamically -->' +
                 '</div>' +
                 '<div class="support-qr-caption">' +
-                  '<span>Scan with any UPI app</span>' +
+                  '<span>Scan with camera or any UPI app</span>' +
                 '</div>' +
               '</div>' +
+            '</div>' +
+
+            '<!-- PhonePe / Payment App Guidance Notice -->' +
+            '<div class="support-phonepe-notice" role="note">' +
+              '<svg class="support-notice-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<circle cx="12" cy="12" r="10"></circle>' +
+                '<line x1="12" y1="16" x2="12" y2="12"></line>' +
+                '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
+              '</svg>' +
+              '<span class="support-notice-text">PhonePe / Paytm loop? Tap <strong>Show QR</strong> to scan from gallery, or <strong>Copy UPI ID</strong>.</span>' +
             '</div>' +
 
             '<!-- UPI ID Copy Section -->' +
@@ -575,6 +728,14 @@
           return;
         }
 
+        // Share QR Button Click
+        var shareQrBtn = e.target.closest('#supportShareQrBtn');
+        if (shareQrBtn && state.modalEl.contains(shareQrBtn)) {
+          e.preventDefault();
+          SupportModal.shareQr();
+          return;
+        }
+
         // Download / Save QR Button Click
         var saveQrBtn = e.target.closest('#supportSaveQrBtn');
         if (saveQrBtn && state.modalEl.contains(saveQrBtn)) {
@@ -609,6 +770,8 @@
           var modalRoot = state.modalEl || document.getElementById('supportModal');
           if (modalRoot) {
             var isNowQrActive = modalRoot.classList.toggle('mobile-qr-active');
+            var innerModal = modalRoot.querySelector ? modalRoot.querySelector('.support-modal') : null;
+            if (innerModal) innerModal.classList.toggle('mobile-qr-active', isNowQrActive);
             if (state.qrSection) {
               state.qrSection.classList.toggle('show', isNowQrActive);
             }

@@ -507,9 +507,67 @@
   transform: translateY(0);
 }
 
+.support-popover-title {
+  display: block;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-bottom: 3px;
+  font-size: 11px;
+}
+
+.support-qr-popover span {
+  display: block;
+  margin-bottom: 2px;
+}
+
 .support-qr-popover strong {
   font-weight: 600;
   color: #38bdf8;
+}
+
+/* PhonePe / Payment App Guidance Notice */
+.support-phonepe-notice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-subtle, #f5f0e8);
+  border: 1px solid var(--border-light, #e8e2d8);
+  box-sizing: border-box;
+}
+
+[data-theme="dark"] .support-phonepe-notice {
+  background: var(--surface-subtle, #181512);
+  border-color: var(--border-light, #2a2520);
+}
+
+.support-notice-icon {
+  flex-shrink: 0;
+  color: var(--accent, #b8432f);
+}
+
+[data-theme="dark"] .support-notice-icon {
+  color: var(--accent, #e06b52);
+}
+
+.support-notice-text {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--ink-soft, #57534e);
+}
+
+[data-theme="dark"] .support-notice-text {
+  color: #a8a29e;
+}
+
+.support-notice-text strong {
+  color: var(--ink, #1c1917);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .support-notice-text strong {
+  color: #f5f5f4;
 }
 
 /* UPI ID Box */

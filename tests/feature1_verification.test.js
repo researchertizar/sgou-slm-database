@@ -93,3 +93,45 @@ test('Feature 1: Zero-Emoji Compliance across Support Components', () => {
   assert(templateMatch, 'getTemplate found');
   assert.strictEqual(emojiRegex.test(templateMatch[1]), false, 'support-modal template must have zero emojis');
 });
+
+test('Feature 1: High-Resolution PNG QR generation and PhonePe Gallery compatibility', () => {
+  const modalJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'components', 'support-modal.js'), 'utf8');
+
+  // Verify generateQrCanvas exists and implements ISO quiet zone with white background
+  assert(modalJs.includes('generateQrCanvas: function'), 'support-modal.js must provide generateQrCanvas method');
+  assert(modalJs.includes("ctx.fillStyle = '#FFFFFF'"), 'Canvas must render pure white background for optical contrast');
+  assert(modalJs.includes('quietZoneModules = 4'), 'Canvas must enforce ISO 4-module quiet zone');
+  assert(modalJs.includes("ctx.fillStyle = '#000000'"), 'Canvas must render pure black QR modules');
+
+  // Verify downloadQr outputs high-resolution PNG (not unreadable SVG)
+  assert(modalJs.includes('sgou-support-upi-qr.png'), 'Download filename must be sgou-support-upi-qr.png');
+  assert(modalJs.includes("'image/png'"), 'MIME type must be image/png for Android gallery barcode scanner compatibility');
+
+  // Verify shareQr implementation
+  assert(modalJs.includes('shareQr: function'), 'support-modal.js must provide shareQr method');
+  assert(modalJs.includes('navigator.share'), 'shareQr must utilize Web Share API');
+  assert(modalJs.includes('navigator.canShare'), 'shareQr must check file sharing capabilities');
+});
+
+test('Feature 1: Share QR Button, PhonePe Guidance Notice & Chip labels', () => {
+  const modalJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'components', 'support-modal.js'), 'utf8');
+  const modalCss = fs.readFileSync(path.join(__dirname, '..', 'css', 'components', 'support-modal.css'), 'utf8');
+
+  // Verify Share QR button in template and click binding
+  assert(modalJs.includes('id="supportShareQrBtn"'), 'Template must include #supportShareQrBtn');
+  assert(modalJs.includes('SupportModal.shareQr()'), 'Init must bind #supportShareQrBtn to SupportModal.shareQr()');
+
+  // Verify PhonePe guidance notice in template
+  assert(modalJs.includes('class="support-phonepe-notice"'), 'Template must contain .support-phonepe-notice banner');
+  assert(modalJs.includes('PhonePe / Paytm loop?'), 'Notice text must specifically address PhonePe / Paytm loop');
+  assert(modalJs.includes('support-qr-popover'), 'Template must include enhanced advice popover');
+
+  // Verify Chip 5 label matches Any / Custom
+  assert(modalJs.includes('<span class="chip-val">Any</span>'), 'Chip 5 main label must be Any');
+  assert(modalJs.includes('<span class="chip-sub">Custom</span>'), 'Chip 5 sub label must be Custom');
+
+  // Verify CSS contains classes
+  assert(modalCss.includes('.support-phonepe-notice'), 'CSS must style .support-phonepe-notice');
+  assert(modalCss.includes('.support-notice-icon'), 'CSS must style .support-notice-icon');
+  assert(modalCss.includes('.support-notice-text'), 'CSS must style .support-notice-text');
+});
