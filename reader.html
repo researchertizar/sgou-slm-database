@@ -2521,18 +2521,7 @@
       document.addEventListener('gesturechange', function (e) { e.preventDefault(); }, { passive: false });
       document.addEventListener('gestureend', function (e) { e.preventDefault(); }, { passive: false });
 
-      // When embedded in parent iframe, coordinate Android system Back gesture to close reader panel safely
-      if (window.parent && window.parent !== window) {
-        try {
-          history.replaceState({ readerInFrame: true, depth: 0 }, '', window.location.href);
-          history.pushState({ readerInFrame: true, depth: 1 }, '', window.location.href);
-          window.addEventListener('popstate', function () {
-            try {
-              window.parent.postMessage({ type: 'READER_BACK' }, '*');
-            } catch (_) {}
-          });
-        } catch (_) {}
-      }
+      // Joint browser history is coordinated cleanly by top-level parent router.
 
       // Toolbar Controls
       document.getElementById('prevBtn').addEventListener('click', function () {
@@ -2707,8 +2696,14 @@
       }
       jumpGoBtn.addEventListener('click', submitJump);
       jumpPageInput.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') submitJump();
-        else if (e.key === 'Escape') jumpModal.classList.remove('active');
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitJump();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          jumpModal.classList.remove('active');
+        }
       });
 
       document.getElementById('retryBtn').addEventListener('click', function () {
@@ -3061,30 +3056,56 @@
         });
       }
 
-      // Keyboard navigation
+      // Keyboard navigation & dismissal handling (Strict priority stack)
       window.addEventListener('keydown', function (e) {
-        if (window.SupportModal && typeof window.SupportModal.isOpen === 'function' && window.SupportModal.isOpen()) {
-          if (e.key === 'Escape') {
+        if (e.key === 'Escape') {
+          // Priority 1: Selection Action Pill or active text selection
+          var selectionPill = document.getElementById('selectionActionPill');
+          var sel = window.getSelection();
+          var hasSelection = sel && !sel.isCollapsed && sel.toString().trim().length > 0;
+          if ((selectionPill && selectionPill.style.display === 'flex') || hasSelection) {
             e.preventDefault();
+            e.stopPropagation();
+            if (selectionPill) selectionPill.style.display = 'none';
+            if (sel) sel.removeAllRanges();
+            return;
+          }
+
+          // Priority 2: Support Modal
+          if (window.SupportModal && typeof window.SupportModal.isOpen === 'function' && window.SupportModal.isOpen()) {
+            e.preventDefault();
+            e.stopPropagation();
             window.SupportModal.close();
             return;
           }
-          return;
-        }
-        if (reportModal && reportModal.classList.contains('active')) {
-          if (e.key === 'Escape') {
+
+          // Priority 3: Report Modal
+          if (reportModal && reportModal.classList.contains('active')) {
             e.preventDefault();
+            e.stopPropagation();
             closeReaderReport();
             return;
           }
-          return;
-        }
-        if (jumpModal.classList.contains('active')) return;
 
-        if (e.key === 'Escape' || e.key === 'Backspace') {
+          // Priority 4: Jump Modal
+          if (jumpModal && jumpModal.classList.contains('active')) {
+            e.preventDefault();
+            e.stopPropagation();
+            jumpModal.classList.remove('active');
+            return;
+          }
+
+          // Priority 5: Close Reader / Navigate Back
           e.preventDefault();
+          e.stopPropagation();
           if (window.parent && window.parent !== window) {
             window.parent.postMessage({ type: 'READER_BACK' }, '*');
+          } else {
+            if (window.history.length > 1 && document.referrer && document.referrer.includes(window.location.host)) {
+              window.history.back();
+            } else {
+              window.location.href = './';
+            }
           }
           return;
         }
@@ -3391,17 +3412,8 @@
         });
       }
 
-      // Keyboard support: Ctrl+C / Cmd+C feedback & Esc dismissal
+      // Keyboard support: Ctrl+C / Cmd+C feedback (Esc handled in priority listener)
       document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-          if (selectionPill && selectionPill.style.display === 'flex') {
-            selectionPill.style.display = 'none';
-            var sel = window.getSelection();
-            if (sel) sel.removeAllRanges();
-          }
-          return;
-        }
-
         if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
           var sel = window.getSelection();
           if (sel && !sel.isCollapsed && sel.toString().trim()) {

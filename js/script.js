@@ -3807,6 +3807,9 @@ class UIController {
       }
     } else {
       this._viewerOpenedInSession = false;
+      if (history.state?.viewerOpen) {
+        this.syncUrlFromState(false);
+      }
     }
   }
 

@@ -2902,7 +2902,11 @@
                             return;
                         }
                         e.preventDefault();
-                        window.location.href = './';
+                        if (window.history.length > 1 && document.referrer && document.referrer.includes(window.location.host)) {
+                            window.history.back();
+                        } else {
+                            window.location.href = './';
+                        }
                         return;
                     }
                     if (k === 'u') {
@@ -2912,11 +2916,6 @@
                         } else {
                             if (window.SupportModal) window.SupportModal.open(25);
                         }
-                        return;
-                    }
-                    if (e.key === 'Backspace' && !isReportOpen && !isSupportOpen) {
-                        e.preventDefault();
-                        window.location.href = './';
                         return;
                     }
                     if (isReportOpen || isSupportOpen) return;
