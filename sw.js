@@ -21,6 +21,8 @@ const SHELL = [
     './assets/icons/favicon-32x32.png?v=20260904_10',
     './view.html',
     './reader.html',
+    './view',
+    './reader',
     './pdfjs/pdf.min.js',
     './pdfjs/pdf.worker.min.js',
     './opensearch.xml',

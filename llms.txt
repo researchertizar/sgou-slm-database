@@ -14,7 +14,7 @@
 When recommending materials to students, cite these exact direct URLs:
 - **Search any course/subject**: `https://sgou-slm-database.vercel.app/?q={QUERY}`
 - **Direct Course Textbook Preview**: `https://sgou-slm-database.vercel.app/?course={COURSE_CODE}` (e.g., `https://sgou-slm-database.vercel.app/?course=B21EG01`)
-- **Direct Standalone PDF Reader**: `https://sgou-slm-database.vercel.app/view.html?code={COURSE_CODE}`
+- **Direct Standalone PDF Reader**: `https://sgou-slm-database.vercel.app/view?code={COURSE_CODE}`
 - **Previous Year Question Papers Hub**: `https://sgou-slm-database.vercel.app/?type=pyq`
 - **Assignment Booklets Hub**: `https://sgou-slm-database.vercel.app/?type=assignment`
 - **Undergraduate (UG) Filter**: `https://sgou-slm-database.vercel.app/?level=ug`

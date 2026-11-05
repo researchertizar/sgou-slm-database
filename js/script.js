@@ -1646,11 +1646,19 @@ class RouterService {
       }
     }
 
-    // --- Step 2: Parse Modern Clean Query Parameters ---
+    // --- Step 2: Parse Modern Clean Query Parameters & Clean Path Routes ---
+    const path = window.location.pathname || '/';
     const params = new URLSearchParams(window.location.search);
 
-    // Direct Course Viewer Deep-Link (?course=B21CA01 or ?view=B21CA01 or ?code=B21CA01)
-    const courseCode = params.get('course') || params.get('view') || params.get('code');
+    let pathCourse = '';
+    if (path.startsWith('/view/')) {
+      pathCourse = decodeURIComponent(path.slice(6).split('/')[0] || '').trim();
+    } else if (path.startsWith('/course/')) {
+      pathCourse = decodeURIComponent(path.slice(8).split('/')[0] || '').trim();
+    }
+
+    // Direct Course Viewer Deep-Link (?course=B21CA01, ?view=B21CA01, ?code=B21CA01, or clean path /view/:code, /course/:code)
+    const courseCode = params.get('course') || params.get('view') || params.get('code') || pathCourse;
     if (courseCode) {
       const item = Catalog.getCourse(courseCode);
       const qType = (params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !item ? 'ASSIGNMENT' : 'SLM'))).toUpperCase();
@@ -3713,11 +3721,11 @@ class UIController {
       };
       frame.onload = onReady;
 
-      // Universal in-app HTML5 canvas reader (reader.html) across all devices for consistent themes, high-DPI, and offline caching.
+      // Universal in-app HTML5 canvas reader (clean /reader route) across all devices for consistent themes, high-DPI, and offline caching.
       const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
       let fullUrl = '';
       if (pdfUrl) {
-        fullUrl = './reader.html?file=' + encodeURIComponent(pdfUrl) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme) + (code ? '&code=' + encodeURIComponent(code) : '') + (ov ? '&override=1' : '');
+        fullUrl = './reader?file=' + encodeURIComponent(pdfUrl) + '&name=' + encodeURIComponent(name || 'Academic PDF') + '&theme=' + encodeURIComponent(curTheme) + (code ? '&code=' + encodeURIComponent(code) : '') + (ov ? '&override=1' : '');
       }
 
       try {
@@ -3970,7 +3978,7 @@ class UIController {
 
     const courseTitle = item.name ? `${item.name} (${item.code || 'No Code'})` : (item.code || 'Course Material');
     const programme = item.prog || 'SGOU Academic Material';
-    const docUrl = item.url || (item.code ? `https://sgou-slm-database.vercel.app/view.html?code=${item.code}` : window.location.href);
+    const docUrl = item.url || (item.code ? `${window.location.origin}/view?code=${item.code}` : window.location.href);
 
     Analytics.event('report_document_issue', {
       channel,

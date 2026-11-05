@@ -6,6 +6,30 @@
             "destination": "/view.html?course=:course"
         },
         {
+            "source": "/course/:course",
+            "destination": "/view.html?course=:course"
+        },
+        {
+            "source": "/view",
+            "destination": "/view.html"
+        },
+        {
+            "source": "/course",
+            "destination": "/view.html"
+        },
+        {
+            "source": "/reader",
+            "destination": "/reader.html"
+        },
+        {
+            "source": "/dashboard",
+            "destination": "/admin/dashboard.html"
+        },
+        {
+            "source": "/admin",
+            "destination": "/admin/dashboard.html"
+        },
+        {
             "source": "/sgou_slm_data.json",
             "destination": "/data/sgou_slm_data.json"
         },
@@ -58,7 +82,7 @@
             "destination": "https://sgou-pdf-proxy.researcher-tizar.workers.dev/api/:path*"
         },
         {
-            "source": "/((?!view|.*\\.).*)",
+            "source": "/((?!view|course|reader|dashboard|admin|.*\\.).*)",
             "destination": "/index.html"
         }
     ],

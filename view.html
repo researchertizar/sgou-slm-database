@@ -18,7 +18,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SGOU Database">
     <meta name="application-name" content="SGOU Database">
-    <link rel="canonical" href="https://sgou-slm-database.vercel.app/view.html">
+    <link rel="canonical" href="https://sgou-slm-database.vercel.app/view">
     <title>Document Viewer — SGOU Academic Database</title>
     <script>
         (function(){try{var p=new URLSearchParams(location.search);var ut=p.get('theme');if(ut==='dark'||ut==='light'){document.documentElement.setAttribute('data-theme',ut);try{localStorage.setItem('sgou-theme-v2',ut);}catch(_){}}else{var t=localStorage.getItem('sgou-theme-v2');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}}catch(_){}})();
@@ -30,7 +30,7 @@
     <meta property="og:title" content="Document Viewer — SGOU Academic Database">
     <meta property="og:description"
         content="Preview, read, and download official SGOU SLM course textbooks, question papers, and assignments offline.">
-    <meta property="og:url" content="https://sgou-slm-database.vercel.app/view.html">
+    <meta property="og:url" content="https://sgou-slm-database.vercel.app/view">
     <meta property="og:type" content="article">
     <meta property="og:image" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_09">
     <meta property="og:image:secure_url" content="https://sgou-slm-database.vercel.app/assets/images/og-image.png?v=20261007_09">
@@ -63,8 +63,8 @@
       "@graph": [
         {
           "@type": "WebPage",
-          "@id": "https://sgou-slm-database.vercel.app/view.html#webpage",
-          "url": "https://sgou-slm-database.vercel.app/view.html",
+          "@id": "https://sgou-slm-database.vercel.app/view#webpage",
+          "url": "https://sgou-slm-database.vercel.app/view",
           "name": "SGOU Document Reader & Academic Viewer",
           "description": "Read, preview, and download official Self-Learning Material (SLM) textbooks, previous year question papers, and assignments for Sree Narayana Guru Open University (SNGOU).",
           "isPartOf": {
@@ -86,14 +86,14 @@
                 "@type": "ListItem",
                 "position": 2,
                 "name": "Document Viewer",
-                "item": "https://sgou-slm-database.vercel.app/view.html"
+                "item": "https://sgou-slm-database.vercel.app/view"
               }
             ]
           }
         },
         {
           "@type": "DigitalDocument",
-          "@id": "https://sgou-slm-database.vercel.app/view.html#document",
+          "@id": "https://sgou-slm-database.vercel.app/view#document",
           "name": "SGOU Course Academic Document",
           "encodingFormat": "application/pdf",
           "isAccessibleForFree": true,
@@ -1928,7 +1928,7 @@
             var params = new URLSearchParams(window.location.search);
             var hash = (window.location.hash || '').replace(/^#\/?/, '');
             var pathParts = (window.location.pathname || '').split('/');
-            var pathCode = (pathParts[1] === 'view' && pathParts[2]) ? decodeURIComponent(pathParts[2]) : '';
+            var pathCode = ((pathParts[1] === 'view' || pathParts[1] === 'course') && pathParts[2]) ? decodeURIComponent(pathParts[2]) : '';
             var rawCode = params.get('code') || params.get('course') || pathCode || decodeURIComponent(hash || '');
             var courseCode = rawCode.trim();
 
@@ -2475,7 +2475,7 @@
                         docSource = url;
                     }
                     var ovParam = activeOverride ? '&override=1' : '';
-                    fullTarget = './reader.html?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Document') + '&theme=' + encodeURIComponent(curTheme) + (code ? '&code=' + encodeURIComponent(code) : '') + ovParam;
+                    fullTarget = './reader?file=' + encodeURIComponent(docSource) + '&name=' + encodeURIComponent(name || 'Document') + '&theme=' + encodeURIComponent(curTheme) + (code ? '&code=' + encodeURIComponent(code) : '') + ovParam;
                 }
 
                 if (frame) {
@@ -2676,7 +2676,7 @@
                     var reasonText = reasonMap[reasonVal] || 'General Issue';
                     var courseTitle = name ? (name + (code ? ' (' + code + ')' : '')) : (code || 'Course Material');
                     var programme = prog || 'SGOU Academic Material';
-                    var docUrl = pdfUrl || (code ? ('https://sgou-slm-database.vercel.app/view.html?code=' + code) : window.location.href);
+                    var docUrl = pdfUrl || (code ? (window.location.origin + '/view?code=' + code) : window.location.href);
 
                     if (typeof gtag === 'function') {
                         gtag('event', 'report_document_issue', {

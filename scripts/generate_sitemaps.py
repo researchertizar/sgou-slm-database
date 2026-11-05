@@ -50,7 +50,7 @@ def generate_sitemaps():
         {"loc": f"{BASE_URL}/?level=fyug", "priority": "0.9", "changefreq": "weekly", "title": "SGOU Four Year Undergraduate Programmes (FYUG)"},
         {"loc": f"{BASE_URL}/?level=ug", "priority": "0.9", "changefreq": "weekly", "title": "SGOU Undergraduate Programmes (UG)"},
         {"loc": f"{BASE_URL}/?level=pg", "priority": "0.9", "changefreq": "weekly", "title": "SGOU Postgraduate Programmes (PG)"},
-        {"loc": f"{BASE_URL}/view.html", "priority": "0.8", "changefreq": "weekly", "title": "SGOU Document Reader & PDF Viewer"},
+        {"loc": f"{BASE_URL}/view", "priority": "0.8", "changefreq": "weekly", "title": "SGOU Document Reader & PDF Viewer"},
         {"loc": f"{BASE_URL}/llms.txt", "priority": "0.7", "changefreq": "monthly", "title": "SGOU Academic Database AI Machine-Readable Index"},
     ]
 

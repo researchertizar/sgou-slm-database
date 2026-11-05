@@ -704,8 +704,11 @@ const server = http.createServer((req, res) => {
     return res.end('Forbidden');
   }
 
-  // Rewrite /view/:course or clean /view to view.html
-  if (reqUrl.pathname === '/view' || reqUrl.pathname.startsWith('/view/')) {
+  // Rewrite /view/:course, /course/:course, or clean /view, /course to view.html
+  if (
+    reqUrl.pathname === '/view' || reqUrl.pathname.startsWith('/view/') ||
+    reqUrl.pathname === '/course' || reqUrl.pathname.startsWith('/course/')
+  ) {
     filePath = path.join(__dirname, 'view.html');
   }
 
