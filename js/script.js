@@ -5043,28 +5043,34 @@ class UIController {
       }
       const supportChip = e.target.closest('.amount-chip');
       if (supportChip && supportChip.closest('#supportModal')) {
-        const modal = $('supportModal');
-        modal?.querySelectorAll('.amount-chip').forEach(c => c.classList.remove('active'));
-        supportChip.classList.add('active');
-        const rawAmt = supportChip.getAttribute('data-amount');
-        this._supportActiveAmount = (rawAmt === 'custom') ? null : Number(rawAmt);
-        Analytics.event('support_amount_select', { amount: this._supportActiveAmount || 'custom' });
-        this.renderSupportQr(this._supportActiveAmount);
+        if (!window.SupportModal) {
+          const modal = $('supportModal');
+          modal?.querySelectorAll('.amount-chip').forEach(c => c.classList.remove('active'));
+          supportChip.classList.add('active');
+          const rawAmt = supportChip.getAttribute('data-amount');
+          this._supportActiveAmount = (rawAmt === 'custom') ? null : Number(rawAmt);
+          Analytics.event('support_amount_select', { amount: this._supportActiveAmount || 'custom' });
+          this.renderSupportQr(this._supportActiveAmount);
+        }
         return;
       }
       if (e.target.closest('#supportToggleQrBtn')) {
-        const qrSec = $('supportQrSection');
-        const toggleTxt = $('supportToggleQrText');
-        if (qrSec) {
-          const isShown = qrSec.classList.toggle('show');
-          if (toggleTxt) toggleTxt.textContent = isShown ? 'Hide QR Code' : 'Show QR Code';
-          Analytics.event('support_qr_toggle', { is_shown: isShown });
+        if (!window.SupportModal) {
+          const qrSec = $('supportQrSection');
+          const toggleTxt = $('supportToggleQrText');
+          if (qrSec) {
+            const isShown = qrSec.classList.toggle('show');
+            if (toggleTxt) toggleTxt.textContent = isShown ? 'Hide QR Code' : 'Show QR Code';
+            Analytics.event('support_qr_toggle', { is_shown: isShown });
+          }
         }
         return;
       }
       if (e.target.closest('#supportCopyVpaBtn')) {
-        Analytics.event('support_copy_upi');
-        this.copySupportVpa();
+        if (!window.SupportModal) {
+          Analytics.event('support_copy_upi');
+          this.copySupportVpa();
+        }
         return;
       }
 

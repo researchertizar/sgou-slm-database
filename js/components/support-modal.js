@@ -34,13 +34,13 @@
    */
   var CONTEXT_MESSAGES = {
     // 1. Post-Download: Triggered after syllabus PDF download
-    download: 'Your syllabus material is saved! If this saved your study time, consider supporting high-speed bandwidth and syllabus updates.',
+    download: 'Downloaded! Maintained by <strong>' + CONFIG.payee + '</strong> as a free utility. Contributions fund cloud servers & updates.',
     // 2. Document Reader / Standalone Viewer: Triggered from reader topbar or canvas dwell
-    reader: 'Hope this study material helps your preparation! A voluntary contribution helps maintain ad-free access and syllabus updates for everyone.',
+    reader: 'Preparing for exams? Maintained by <strong>' + CONFIG.payee + '</strong> as a free utility. Contributions fund cloud servers & updates.',
     // 3. Home Page / Catalog / Header / Footer: Direct exploration
-    home: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
+    home: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Contributions fund cloud servers & updates.',
     // 4. Default fallback
-    default: 'Keep SGOU study materials free, ad-free, and updated for every student.'
+    default: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Contributions fund cloud servers & updates.'
   };
 
   function sendTelemetry(name, params) {
@@ -143,16 +143,13 @@
           '<div class="support-modal-header">' +
             '<div class="support-header-left">' +
               '<div class="support-heart-badge" aria-hidden="true">' +
-                '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">' +
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">' +
                   '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' +
                 '</svg>' +
               '</div>' +
-              '<div>' +
-                '<h3 id="supportModalTitle" class="support-title">Support SGOU Database</h3>' +
-                '<p class="support-subtitle">Voluntary Student Contribution</p>' +
-              '</div>' +
+              '<h3 id="supportModalTitle" class="support-title">Support SGOU Database</h3>' +
             '</div>' +
-            '<button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">' +
+            '<button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog" title="Close" type="button">' +
               '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                 '<line x1="18" y1="6" x2="6" y2="18"></line>' +
                 '<line x1="6" y1="6" x2="18" y2="18"></line>' +
@@ -161,46 +158,27 @@
           '</div>' +
 
           '<div class="support-modal-body">' +
-            '<!-- Situation-aware dynamic impact note -->' +
-            '<div class="support-intro-card">' +
-              '<p class="support-intro-text" id="supportIntroText">' +
-                'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.' +
-              '</p>' +
-            '</div>' +
+            '<!-- Situation-aware minimal impact text -->' +
+            '<p class="support-intro-text" id="supportIntroText">' +
+              'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Contributions fund cloud servers & updates.' +
+            '</p>' +
 
             '<!-- Contribution Amount Selection -->' +
-            '<div class="support-section-label">Select Contribution</div>' +
             '<div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">' +
-              '<button type="button" class="amount-chip" data-amount="15">' +
-                '<span class="chip-val">₹15</span>' +
-                '<span class="chip-sub">Chai</span>' +
-              '</button>' +
-              '<button type="button" class="amount-chip popular active" data-amount="25">' +
-                '<span class="chip-badge">Popular</span>' +
-                '<span class="chip-val">₹25</span>' +
-                '<span class="chip-sub">Server</span>' +
-              '</button>' +
-              '<button type="button" class="amount-chip" data-amount="50">' +
-                '<span class="chip-val">₹50</span>' +
-                '<span class="chip-sub">Hero</span>' +
-              '</button>' +
-              '<button type="button" class="amount-chip" data-amount="100">' +
-                '<span class="chip-val">₹100</span>' +
-                '<span class="chip-sub">Patron</span>' +
-              '</button>' +
-              '<button type="button" class="amount-chip" data-amount="custom">' +
-                '<span class="chip-val">Any</span>' +
-                '<span class="chip-sub">Custom</span>' +
-              '</button>' +
+              '<button type="button" class="amount-chip" data-amount="15">₹15</button>' +
+              '<button type="button" class="amount-chip active" data-amount="25">₹25</button>' +
+              '<button type="button" class="amount-chip" data-amount="50">₹50</button>' +
+              '<button type="button" class="amount-chip" data-amount="100">₹100</button>' +
+              '<button type="button" class="amount-chip chip-custom" data-amount="custom">Custom</button>' +
             '</div>' +
 
             '<!-- Mobile 1-Tap Action Section (Primary on Mobile) -->' +
             '<div class="support-mobile-section" id="supportMobileSection">' +
               '<button type="button" id="supportDirectPayBtn" class="support-pay-primary-btn" data-app="upi">' +
-                '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">' +
                   '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>' +
                 '</svg>' +
-                '<span id="supportDirectPayBtnText">Pay ₹25 via UPI</span>' +
+                '<span id="supportDirectPayBtnText">Pay ₹25</span>' +
               '</button>' +
               '<button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn">' +
                 '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -216,44 +194,40 @@
             '<!-- QR Code Display Box (Desktop always visible, Mobile toggled) -->' +
             '<div class="support-qr-section" id="supportQrSection">' +
               '<div class="support-qr-card">' +
-                '<!-- Corner Icon Controls: Download + Info Popover -->' +
+                '<!-- Corner Controls: Download + Advice Popover -->' +
                 '<div class="support-qr-corner-actions">' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Payment advice" aria-label="Payment advice">' +
-                    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Advice" aria-label="Advice">' +
+                    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                       '<circle cx="12" cy="12" r="10"></circle>' +
                       '<line x1="12" y1="16" x2="12" y2="12"></line>' +
                       '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
                     '</svg>' +
                   '</button>' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportSaveQrBtn" title="Download QR Code" aria-label="Download QR Code">' +
-                    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportSaveQrBtn" title="Download QR" aria-label="Download QR">' +
+                    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                       '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
                       '<polyline points="7 10 12 15 17 10"></polyline>' +
                       '<line x1="12" y1="15" x2="12" y2="3"></line>' +
                     '</svg>' +
                   '</button>' +
                 '</div>' +
-                '<!-- Hidden popover for gallery notice advice -->' +
                 '<div class="support-qr-popover" id="supportQrPopover" role="tooltip" aria-hidden="true">' +
-                  '<span>If scanning via GPay / PhonePe gallery, tap <strong>Dismiss</strong> on their security notice to pay.</span>' +
+                  '<span>In GPay / PhonePe gallery scan, tap <strong>Dismiss</strong> on notice to pay.</span>' +
                 '</div>' +
                 '<div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">' +
-                  '<!-- SVG QR code rendered dynamically -->' +
+                  '<!-- SVG QR rendered dynamically -->' +
                 '</div>' +
                 '<div class="support-qr-caption">' +
-                  '<span>Scan with camera or any UPI app</span>' +
+                  '<span>Scan with any UPI app</span>' +
                 '</div>' +
               '</div>' +
             '</div>' +
 
             '<!-- UPI ID Copy Section -->' +
             '<div class="support-vpa-box">' +
-              '<div class="support-vpa-left">' +
-                '<span class="support-vpa-label">UPI ID</span>' +
-                '<code class="support-vpa-text" id="supportVpaText">' + CONFIG.vpa + '</code>' +
-              '</div>' +
+              '<code class="support-vpa-text" id="supportVpaText">' + CONFIG.vpa + '</code>' +
               '<button type="button" class="support-copy-btn" id="supportCopyVpaBtn" title="Copy UPI ID">' +
-                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                   '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>' +
                   '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>' +
                 '</svg>' +
@@ -268,7 +242,7 @@
                 '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>' +
                 '<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' +
               '</svg>' +
-              '0% platform fee &middot; Direct UPI' +
+              '0% fee &middot; Direct UPI' +
             '</span>' +
             '<button type="button" class="support-done-btn" id="supportDoneBtn">Done</button>' +
           '</div>' +
@@ -331,7 +305,7 @@
 
       if (state.payBtnText) {
         if (amount && Number(amount) > 0) {
-          state.payBtnText.textContent = 'Pay ₹' + amount + ' via UPI';
+          state.payBtnText.textContent = 'Pay ₹' + amount;
         } else {
           state.payBtnText.textContent = 'Pay via UPI';
         }
@@ -440,6 +414,10 @@
         state.introText.innerHTML = dynamicMsg;
       }
 
+      var modalRoot = state.modalEl || document.getElementById('supportModal');
+      if (modalRoot) {
+        modalRoot.classList.remove('mobile-qr-active');
+      }
       if (state.qrSection) state.qrSection.classList.remove('show');
       if (state.qrToggleText) state.qrToggleText.textContent = 'Show QR Code';
       if (state.qrPopover) state.qrPopover.classList.remove('show');
@@ -575,19 +553,17 @@
         // Mobile QR Toggle
         if (e.target.closest('#supportToggleQrBtn')) {
           e.preventDefault();
-          if (state.qrSection) {
-            var isShow = state.qrSection.classList.toggle('show');
+          e.stopPropagation();
+          var modalRoot = state.modalEl || document.getElementById('supportModal');
+          if (modalRoot) {
+            var isNowQrActive = modalRoot.classList.toggle('mobile-qr-active');
+            if (state.qrSection) {
+              state.qrSection.classList.toggle('show', isNowQrActive);
+            }
             if (state.qrToggleText) {
-              state.qrToggleText.textContent = isShow ? 'Hide QR Code' : 'Show QR Code';
+              state.qrToggleText.textContent = isNowQrActive ? 'Hide QR Code' : 'Show QR Code';
             }
-            sendTelemetry('support_qr_toggle', { is_shown: isShow });
-            if (isShow) {
-              setTimeout(function () {
-                try {
-                  state.qrSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } catch (_) {}
-              }, 50);
-            }
+            sendTelemetry('support_qr_toggle', { is_shown: isNowQrActive });
           }
           return;
         }
