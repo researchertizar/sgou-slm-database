@@ -5,8 +5,12 @@
 
 .toast,
 #readerToast {
-  position: fixed;
-  bottom: 24px;
+  position: fixed !important;
+  top: auto !important;
+  bottom: 24px !important;
+  height: auto !important;
+  max-height: 48px !important;
+  pointer-events: none !important;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: var(--toast-bg, #1a1714);

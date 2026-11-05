@@ -189,7 +189,148 @@
       transition: none !important;
     }
 
-    .pdf-page-wrap canvas {
+    
+    /* Mozilla PDF.js Text Layer (Enables 100% Native Selection, Copying & Search) */
+    .textLayer {
+      position: absolute;
+      text-align: initial;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      opacity: 1;
+      line-height: 1;
+      text-size-adjust: none;
+      forced-color-adjust: none;
+      transform-origin: 0 0;
+      z-index: 2;
+      pointer-events: auto;
+      user-select: text;
+      -webkit-user-select: text;
+      cursor: default;
+    }
+
+    .textLayer span,
+    .textLayer br {
+      color: transparent;
+      position: absolute;
+      white-space: pre;
+      cursor: text;
+      transform-origin: 0% 0%;
+    }
+
+    /* SGOU Brand Terracotta Selection Highlight */
+    .textLayer ::selection {
+      background: rgba(229, 114, 90, 0.40);
+      color: transparent;
+    }
+
+    .textLayer ::-moz-selection {
+      background: rgba(229, 114, 90, 0.40);
+      color: transparent;
+    }
+
+    /* Universal Desktop & Mobile Floating Selection Action Toolbar (WCAG AAA Compliant) */
+    #selectionActionPill {
+      position: fixed;
+      z-index: 999;
+      display: none;
+      align-items: center;
+      gap: 3px;
+      padding: 4px;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      pointer-events: auto;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #selectionActionPill[data-placement="top"] {
+      transform: translate(-50%, -100%);
+    }
+
+    #selectionActionPill[data-placement="bottom"] {
+      transform: translate(-50%, 0%);
+    }
+
+    .pill-btn {
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      min-height: 32px;
+      border-radius: 6px;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .pill-btn:hover {
+      background: var(--toolbar-btn-hover);
+      color: var(--accent);
+    }
+
+    .pill-btn:active {
+      transform: scale(0.96);
+    }
+
+    .pill-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    .pill-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--surface-border);
+      margin: 0 2px;
+    }
+
+    .pill-kbd {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--surface-subtle);
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--surface-border);
+      line-height: 1;
+    }
+
+    @media (max-width: 640px) {
+      .pill-kbd {
+        display: none;
+      }
+      .pill-btn {
+        padding: 6px 8px;
+        font-size: 11px;
+        min-height: 36px;
+      }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translate(-50%, -85%) scale(0.92); }
+      to { opacity: 1; }
+    }
+
+        .pdf-page-wrap canvas {
       display: block;
       width: 100%;
       height: 100%;
@@ -453,32 +594,7 @@
       color: #ffffff;
     }
 
-    /* Minimal Toast Notifications */
-    #readerToast {
-      position: absolute;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: var(--toolbar-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--toolbar-border);
-      color: var(--text);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-      pointer-events: none;
-      opacity: 0;
-      transition: transform 0.22s ease, opacity 0.22s ease;
-      z-index: 180;
-      white-space: nowrap;
-    }
-    #readerToast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
+    /* Toast styling managed centrally by css/components/toast.css */
 
     /* Loading Overlay */
     #loadingOverlay {
@@ -1044,6 +1160,41 @@
       </button>
     </div>
 
+    <!-- Universal Floating Selection Action Toolbar (Desktop & Mobile) -->
+  <div id="selectionActionPill" role="toolbar" aria-label="Selected text actions" data-placement="top">
+    <button class="pill-btn" id="copySelectionBtn" type="button" title="Copy text (Ctrl+C)" aria-label="Copy selected text to clipboard">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <span>Copy</span>
+      <span class="pill-kbd" id="copyKbdHint">Ctrl+C</span>
+    </button>
+    <div class="pill-divider"></div>
+    <button class="pill-btn" id="quoteSelectionBtn" type="button" title="Copy as formatted academic citation" aria-label="Copy selected text as formatted academic citation">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 21c3 0 7-1 7-8V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v6c0 4.4 2.6 8 3 10z"></path>
+        <path d="M17 21c3 0 7-1 7-8V5c0-1.1-.9-2-2-2h-4c-1.1 0-2 .9-2 2v6c0 4.4 2.6 8 3 10z"></path>
+      </svg>
+      <span>Quote</span>
+    </button>
+    <div class="pill-divider"></div>
+    <button class="pill-btn" id="searchSelectionBtn" type="button" title="Search term on the web" aria-label="Search selected term on the web">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <span>Search</span>
+    </button>
+    <div class="pill-divider"></div>
+    <button class="pill-btn" id="closeSelectionBtn" type="button" title="Dismiss toolbar (Esc)" aria-label="Dismiss selection toolbar" style="padding: 6px 7px;">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
     <!-- Quick Jump & Visual Scrubber Modal Dialog -->
     <div id="jumpModal">
       <div class="jump-card">
@@ -1483,6 +1634,12 @@
       var toolbarHidden = false;
       var scrollTicking = false;
 
+      function showToast(msg, type) {
+        if (window.Toast && typeof window.Toast.show === 'function') {
+          window.Toast.show(msg, type || 'info', 2200);
+        }
+      }
+
       function showError(msg) {
         var spinner = document.querySelector('.spinner');
         if (spinner) spinner.style.display = 'none';
@@ -1519,12 +1676,12 @@
           }
         } catch (_) {}
 
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          return '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
+        }
         var proxyBase = (window.SGOU_CONFIG && window.SGOU_CONFIG.PDF_PROXY_URL) ? window.SGOU_CONFIG.PDF_PROXY_URL : '';
         if (proxyBase) {
           return proxyBase + '?url=' + encodeURIComponent(url) + '&inline=1';
-        }
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-          return '/api/download?url=' + encodeURIComponent(url) + '&inline=1';
         }
         return url;
       }
@@ -1660,6 +1817,7 @@
       var zoomInBtn = document.getElementById('zoomInBtn');
       var zoomOutBtn = document.getElementById('zoomOutBtn');
       var activeRenderTasks = {};
+      var activeTextTasks = {};
       var renderDebounceTimer = null;
       var isTeleporting = false;
       var MIN_SCALE = 0.35;
@@ -1918,8 +2076,11 @@
           var page = await pdfDoc.getPage(num);
           var rasterScale = getOptimalRasterScale(currentScale);
           var viewport = page.getViewport({ scale: rasterScale });
+          var textViewport = page.getViewport({ scale: currentScale });
 
           var existingCanvas = wrap.querySelector('canvas');
+          var existingTextLayer = wrap.querySelector('.textLayer');
+
           if (!existingCanvas) {
             // First time rendering: create canvas with opaque context for maximum GPU throughput
             var canvas = document.createElement('canvas');
@@ -1934,6 +2095,9 @@
             if (activeRenderTasks[num]) {
               try { activeRenderTasks[num].cancel(); } catch (_) {}
             }
+            if (activeTextTasks[num]) {
+              try { activeTextTasks[num].cancel(); } catch (_) {}
+            }
 
             var ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: true });
             var renderTask = page.render({
@@ -1944,9 +2108,33 @@
             activeRenderTasks[num] = renderTask;
             await renderTask.promise;
             delete activeRenderTasks[num];
+
+            // Render TextLayer for 100% Native Selection & Copying
+            try {
+              var textContent = await page.getTextContent();
+              var textLayerDiv = document.createElement('div');
+              textLayerDiv.className = 'textLayer';
+              textLayerDiv.style.width = '100%';
+              textLayerDiv.style.height = '100%';
+              textLayerDiv.style.setProperty('--scale-factor', textViewport.scale);
+              wrap.appendChild(textLayerDiv);
+
+              var textTask = pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayerDiv,
+                viewport: textViewport,
+                textDivs: []
+              });
+              activeTextTasks[num] = textTask;
+              await textTask.promise;
+              delete activeTextTasks[num];
+            } catch (tErr) {
+              if (tErr && tErr.name !== 'RenderingCancelledException') {
+                console.warn('TextLayer render error page ' + num, tErr);
+              }
+            }
           } else {
             // Re-rendering existing page (e.g. after zoom change):
-            // Double-buffered rendering into off-screen canvas, then seamless atomic swap.
             var newCanvas = document.createElement('canvas');
             newCanvas.width = Math.floor(viewport.width);
             newCanvas.height = Math.floor(viewport.height);
@@ -1955,6 +2143,9 @@
 
             if (activeRenderTasks[num]) {
               try { activeRenderTasks[num].cancel(); } catch (_) {}
+            }
+            if (activeTextTasks[num]) {
+              try { activeTextTasks[num].cancel(); } catch (_) {}
             }
 
             var ctx = newCanvas.getContext('2d', { alpha: false, willReadFrequently: true });
@@ -1967,9 +2158,40 @@
             await renderTask.promise;
             delete activeRenderTasks[num];
 
-            // Atomic swap: replace old canvas with the freshly rendered canvas
+            // Render new TextLayer
+            var newTextLayer = null;
+            try {
+              var textContent = await page.getTextContent();
+              newTextLayer = document.createElement('div');
+              newTextLayer.className = 'textLayer';
+              newTextLayer.style.width = '100%';
+              newTextLayer.style.height = '100%';
+              newTextLayer.style.setProperty('--scale-factor', textViewport.scale);
+
+              var textTask = pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: newTextLayer,
+                viewport: textViewport,
+                textDivs: []
+              });
+              activeTextTasks[num] = textTask;
+              await textTask.promise;
+              delete activeTextTasks[num];
+            } catch (tErr) {
+              if (tErr && tErr.name !== 'RenderingCancelledException') {
+                console.warn('TextLayer re-render error page ' + num, tErr);
+              }
+            }
+
+            // Atomic swap: replace old canvas & textLayer
             if (existingCanvas.parentNode === wrap) {
               wrap.replaceChild(newCanvas, existingCanvas);
+            }
+            if (existingTextLayer && existingTextLayer.parentNode === wrap) {
+              existingTextLayer.remove();
+            }
+            if (newTextLayer) {
+              wrap.appendChild(newTextLayer);
             }
           }
         } catch (e) {
@@ -2144,7 +2366,17 @@
           toolbarHidden = false;
         }
 
-        // Native-like double-tap zoom
+        // Disable double-click zoom on desktop mouse & when clicking text
+        var isDesktop = (container.clientWidth || window.innerWidth) >= 840;
+        var isMouse = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+        var inTextLayer = e.target && e.target.closest && e.target.closest('.textLayer');
+        var hasSelection = window.getSelection && window.getSelection().toString().trim().length > 0;
+        if (isDesktop || isMouse || inTextLayer || hasSelection) {
+          lastTapTime = 0;
+          return;
+        }
+
+        // Native-like double-tap zoom (Touch / Mobile only)
         var now = Date.now();
         var distX = Math.abs(e.clientX - lastTapX);
         var distY = Math.abs(e.clientY - lastTapY);
@@ -2924,9 +3156,306 @@
         console.warn('[SGOU Reader Boundary] Handled unhandled rejection:', e.reason);
       });
 
+      // Universal Floating Quick-Copy & Action Toolbar Handler (Desktop & Mobile)
+      var selectionPill = null;
+      var copySelectionBtn = null;
+      var quoteSelectionBtn = null;
+      var searchSelectionBtn = null;
+      var closeSelectionBtn = null;
+      var copyKbdHint = null;
+
+      function ensureSelectionToolbarInit() {
+        if (!selectionPill) {
+          selectionPill = document.getElementById('selectionActionPill');
+          copySelectionBtn = document.getElementById('copySelectionBtn');
+          quoteSelectionBtn = document.getElementById('quoteSelectionBtn');
+          searchSelectionBtn = document.getElementById('searchSelectionBtn');
+          closeSelectionBtn = document.getElementById('closeSelectionBtn');
+          copyKbdHint = document.getElementById('copyKbdHint');
+
+          var isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+          if (copyKbdHint) copyKbdHint.textContent = isMac ? '⌘C' : 'Ctrl+C';
+
+          if (copySelectionBtn) {
+            copySelectionBtn.onclick = async function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var sel = window.getSelection();
+              var text = sel ? sel.toString().trim() : activeSelectionText;
+              if (!text) return;
+              await copyTextToClipboard(text, '✓ Copied to clipboard');
+              if (selectionPill) selectionPill.style.display = 'none';
+            };
+          }
+
+          if (quoteSelectionBtn) {
+            quoteSelectionBtn.onclick = async function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var sel = window.getSelection();
+              var text = sel ? sel.toString().trim() : activeSelectionText;
+              if (!text) return;
+              var clean = text.replace(/[\r\n]+/g, ' ').trim();
+              var doc = (docName && docName !== 'Document') ? docName : 'SGOU Course SLM';
+              var code = courseCode ? ' (' + courseCode + ')' : '';
+              var citation = '"' + clean + '"\n\n— ' + doc + code + ', Page ' + (activeSelectionPage || currentPage);
+              await copyTextToClipboard(citation, '✓ Citation copied with source');
+              if (selectionPill) selectionPill.style.display = 'none';
+            };
+          }
+
+          if (searchSelectionBtn) {
+            searchSelectionBtn.onclick = function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              var sel = window.getSelection();
+              var text = sel ? sel.toString().trim() : activeSelectionText;
+              if (!text) return;
+              var query = text.replace(/[\r\n]+/g, ' ').trim().slice(0, 100);
+              var url = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+              window.open(url, '_blank', 'noopener,noreferrer');
+              if (selectionPill) selectionPill.style.display = 'none';
+            };
+          }
+
+          if (closeSelectionBtn) {
+            closeSelectionBtn.onclick = function (e) {
+              e.preventDefault();
+              e.stopPropagation();
+              if (selectionPill) selectionPill.style.display = 'none';
+              var sel = window.getSelection();
+              if (sel) sel.removeAllRanges();
+            };
+          }
+        }
+        return selectionPill;
+      }
+
+      var activeSelectionText = '';
+      var activeSelectionPage = 1;
+      var selectionDebounce = null;
+
+      // Platform detection for keyboard shortcut hint (Mac vs Windows/Linux)
+      var isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
+      if (copyKbdHint) copyKbdHint.textContent = isMac ? '⌘C' : 'Ctrl+C';
+
+      function updateSelectionPill() {
+        ensureSelectionToolbarInit();
+        if (!selectionPill) return;
+        var sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+          selectionPill.style.display = 'none';
+          return;
+        }
+
+        var text = sel.toString().trim();
+        if (!text) {
+          selectionPill.style.display = 'none';
+          return;
+        }
+
+        try {
+          if (sel.rangeCount === 0) {
+            selectionPill.style.display = 'none';
+            return;
+          }
+          var range = sel.getRangeAt(0);
+          var rect = range.getBoundingClientRect();
+          if (rect.width === 0 && rect.height === 0) {
+            selectionPill.style.display = 'none';
+            return;
+          }
+
+          var node = range.commonAncestorContainer;
+          if (node.nodeType === 3) node = node.parentNode;
+          if (!container.contains(node)) {
+            selectionPill.style.display = 'none';
+            return;
+          }
+
+          // Detect source page
+          var pageWrap = node.closest ? node.closest('.pdf-page-wrap') : null;
+          activeSelectionPage = pageWrap ? parseInt(pageWrap.dataset.page, 10) : currentPage;
+          activeSelectionText = text;
+
+          // Smart placement: detect collision with top sticky header (~52px)
+          var topBarHeight = 56;
+          var pillHeight = 44;
+          var pillMargin = 8;
+          var fitsAbove = (rect.top - pillHeight - pillMargin) > topBarHeight;
+
+          var targetTop;
+          if (fitsAbove) {
+            targetTop = rect.top - pillMargin;
+            selectionPill.setAttribute('data-placement', 'top');
+          } else {
+            targetTop = rect.bottom + pillMargin;
+            selectionPill.setAttribute('data-placement', 'bottom');
+          }
+
+          // Horizontal alignment clamped within viewport
+          var pillWidth = selectionPill.offsetWidth || 260;
+          var halfPill = pillWidth / 2;
+          var centerX = rect.left + (rect.width / 2);
+          var minX = halfPill + 10;
+          var maxX = window.innerWidth - halfPill - 10;
+          var targetLeft = Math.max(minX, Math.min(maxX, centerX));
+
+          selectionPill.style.top = targetTop + 'px';
+          selectionPill.style.left = targetLeft + 'px';
+          selectionPill.style.display = 'flex';
+        } catch (_) {
+          selectionPill.style.display = 'none';
+        }
+      }
+
+      async function copyTextToClipboard(text, successMsg) {
+        if (!text) return false;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+          } else {
+            var ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          showToast(successMsg || '✓ Copied to clipboard', 'success');
+          return true;
+        } catch (err) {
+          console.warn('Clipboard write failed:', err);
+          showToast('Could not access clipboard', 'error');
+          return false;
+        }
+      }
+
+      // Action 1: Raw Copy
+      if (copySelectionBtn) {
+        copySelectionBtn.addEventListener('click', async function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var sel = window.getSelection();
+          var text = sel ? sel.toString().trim() : activeSelectionText;
+          if (!text) return;
+          await copyTextToClipboard(text, '✓ Copied to clipboard');
+          if (selectionPill) selectionPill.style.display = 'none';
+        });
+      }
+
+      // Action 2: Academic Citation Quote
+      if (quoteSelectionBtn) {
+        quoteSelectionBtn.addEventListener('click', async function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var sel = window.getSelection();
+          var text = sel ? sel.toString().trim() : activeSelectionText;
+          if (!text) return;
+
+          var clean = text.replace(/[\r\n]+/g, ' ').trim();
+          var doc = (docName && docName !== 'Document') ? docName : 'SGOU Course SLM';
+          var code = courseCode ? ' (' + courseCode + ')' : '';
+          var citation = '"' + clean + '"\n\n— ' + doc + code + ', Page ' + (activeSelectionPage || currentPage);
+
+          await copyTextToClipboard(citation, '✓ Citation copied with source');
+          if (selectionPill) selectionPill.style.display = 'none';
+        });
+      }
+
+      // Action 3: Web Search
+      if (searchSelectionBtn) {
+        searchSelectionBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var sel = window.getSelection();
+          var text = sel ? sel.toString().trim() : activeSelectionText;
+          if (!text) return;
+          var query = text.replace(/[\r\n]+/g, ' ').trim().slice(0, 100);
+          var url = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+          window.open(url, '_blank', 'noopener,noreferrer');
+          if (selectionPill) selectionPill.style.display = 'none';
+        });
+      }
+
+      // Action 4: Dismiss
+      if (closeSelectionBtn) {
+        closeSelectionBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (selectionPill) selectionPill.style.display = 'none';
+          var sel = window.getSelection();
+          if (sel) sel.removeAllRanges();
+        });
+      }
+
+      // Keyboard support: Ctrl+C / Cmd+C feedback & Esc dismissal
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          if (selectionPill && selectionPill.style.display === 'flex') {
+            selectionPill.style.display = 'none';
+            var sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
+          }
+          return;
+        }
+
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+          var sel = window.getSelection();
+          if (sel && !sel.isCollapsed && sel.toString().trim()) {
+            showToast('✓ Copied to clipboard', 'success');
+            if (selectionPill) {
+              setTimeout(function () {
+                selectionPill.style.display = 'none';
+              }, 400);
+            }
+          }
+        }
+      });
+
+      // Selection tracking listeners
+      document.addEventListener('selectionchange', function () {
+        clearTimeout(selectionDebounce);
+        selectionDebounce = setTimeout(updateSelectionPill, 40);
+      });
+      document.addEventListener('mouseup', function () {
+        updateSelectionPill();
+      });
+      document.addEventListener('touchend', function () {
+        setTimeout(updateSelectionPill, 10);
+      });
+      document.addEventListener('keyup', function () {
+        setTimeout(updateSelectionPill, 10);
+      });
+
+      // Viewport scroll tracking: hide if scrolled off-screen, pin if in view
+      container.addEventListener('scroll', function () {
+        if (selectionPill && selectionPill.style.display === 'flex') {
+          var sel = window.getSelection();
+          if (!sel || sel.isCollapsed) {
+            selectionPill.style.display = 'none';
+          } else {
+            try {
+              var range = sel.getRangeAt(0);
+              var rect = range.getBoundingClientRect();
+              if (rect.bottom < 50 || rect.top > window.innerHeight) {
+                selectionPill.style.display = 'none';
+              } else {
+                updateSelectionPill();
+              }
+            } catch (_) {
+              selectionPill.style.display = 'none';
+            }
+          }
+        }
+      }, { passive: true });
+
       loadDocument();
       checkAndDisplayMismatch();
     })();
   </script>
+
 </body>
 </html>

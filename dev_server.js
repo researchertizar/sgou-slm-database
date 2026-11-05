@@ -469,7 +469,9 @@ const server = http.createServer((req, res) => {
       if (action === 'export') {
         const format = reqUrl.searchParams.get('format') || 'json';
         const sessions = db.prepare(`SELECT * FROM telemetry_sessions ORDER BY start_time DESC`).all();
-        const events = db.prepare(`SELECT id, session_id, event_type, page_url, selector, text_snippet, details_json, created_at FROM telemetry_events ORDER BY id DESC LIMIT 500`).all();
+        const events = db.prepare(`SELECT id, session_id, event_type, page_url, selector, text_snippet, details_json,
+                 COALESCE(strftime('%Y-%m-%dT%H:%M:%SZ', created_at), strftime('%Y-%m-%dT%H:%M:%SZ', 'now')) AS created_at
+          FROM telemetry_events ORDER BY id DESC LIMIT 500`).all();
         const zeroSearches = db.prepare(`SELECT query, category, hit_count, last_searched FROM zero_search_ledger ORDER BY hit_count DESC`).all();
         const frictions = db.prepare(`SELECT element_selector, text_sample, rage_count, last_rage FROM rage_click_ledger ORDER BY rage_count DESC`).all();
 
@@ -558,7 +560,8 @@ const server = http.createServer((req, res) => {
 
       if (action === 'recent_events') {
         const results = db.prepare(`
-          SELECT id, session_id, event_type, page_url, selector, text_snippet, details_json, created_at
+          SELECT id, session_id, event_type, page_url, selector, text_snippet, details_json,
+                 COALESCE(strftime('%Y-%m-%dT%H:%M:%SZ', created_at), strftime('%Y-%m-%dT%H:%M:%SZ', 'now')) AS created_at
           FROM telemetry_events
           ORDER BY id DESC
           LIMIT 50

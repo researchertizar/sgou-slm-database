@@ -520,7 +520,8 @@ export default {
 
         if (action === 'recent_events') {
           const { results } = await env.DB.prepare(`
-            SELECT id, session_id, event_type, page_url, selector, text_snippet, details_json, created_at
+            SELECT id, session_id, event_type, page_url, selector, text_snippet, details_json,
+                   COALESCE(strftime('%Y-%m-%dT%H:%M:%SZ', created_at), strftime('%Y-%m-%dT%H:%M:%SZ', 'now')) AS created_at
             FROM telemetry_events
             ORDER BY id DESC
             LIMIT 50
