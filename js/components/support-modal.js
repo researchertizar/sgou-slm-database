@@ -3,12 +3,10 @@
  * Universal component shared across index.html, view.html, reader.html
  * 
  * Features:
- * - High-trust, conversion-optimized student community support messaging
- * - 1-tap mobile native UPI app launchers (GPay, PhonePe, Paytm, BHIM)
- * - Safe direct intent navigation (no target="_blank" popup blockage)
- * - Dynamic SVG QR generation + 1-tap SVG QR image saving
- * - Micro-guidance addressing Google Pay/PhonePe gallery scan advisory notice
- * - Verified State Bank of India (SBI) payee transparency
+ * - Minimal, situation-aware student impact messaging
+ * - 1-tap mobile native UPI intent execution
+ * - Clean desktop QR code with corner icon controls (download + info popover)
+ * - Zero scrolling: strictly compact geometry (<= 360px content height)
  * - Strict zero-emoji compliance with standard geometric SVGs
  */
 (function (root, factory) {
@@ -25,17 +23,9 @@
   var CONFIG = {
     vpa: 'ahayas.info@oksbi',
     payee: 'Ahayas',
-    registeredName: 'AHAMMAD YASEEN S',
-    bankName: 'SBI',
     note: 'Support SGOU Database',
     defaultAmount: 25,
-    amounts: [
-      { val: 15, label: '₹15', sub: 'Chai' },
-      { val: 25, label: '₹25', sub: 'Popular', popular: true },
-      { val: 50, label: '₹50', sub: 'Supporter' },
-      { val: 100, label: '₹100', sub: 'Patron' },
-      { val: 'custom', label: 'Any', sub: 'Custom' }
-    ]
+    amounts: [15, 25, 50, 100, 'custom']
   };
 
   function sendTelemetry(name, params) {
@@ -57,6 +47,7 @@
     qrToggleText: null,
     copyBtn: null,
     copyBtnText: null,
+    qrPopover: null,
     lastFocusedElement: null
   };
 
@@ -77,59 +68,25 @@
     },
 
     /**
-     * Build specific UPI app URI
-     * @param {string} app
-     * @param {number|null} amount
-     * @returns {string}
-     */
-    buildAppUri: function (app, amount) {
-      var baseUri = SupportModal.buildUpiUri(amount);
-      var query = baseUri.replace('upi://pay?', '');
-      switch (app) {
-        case 'gpay':
-          return 'tez://upi/pay?' + query;
-        case 'phonepe':
-          return 'phonepe://pay?' + query;
-        case 'paytm':
-          return 'paytmmp://pay?' + query;
-        case 'bhim':
-          return 'bhim://pay?' + query;
-        default:
-          return baseUri;
-      }
-    },
-
-    /**
      * Launch UPI payment via native protocol
-     * @param {string} app
+     * @param {string} [app='upi']
      * @param {number|null} [amount]
      */
     openUpi: function (app, amount) {
       var amt = typeof amount !== 'undefined' ? amount : state.activeAmount;
-      var specificUri = SupportModal.buildAppUri(app, amt);
-      var fallbackUri = SupportModal.buildUpiUri(amt);
+      var uri = SupportModal.buildUpiUri(amt);
 
       sendTelemetry('support_upi_click', {
         app: app || 'upi',
         amount: amt !== null ? amt : 'custom'
       });
 
-      if (!app || app === 'upi') {
-        window.location.href = fallbackUri;
-      } else {
-        var start = Date.now();
-        window.location.href = specificUri;
-        setTimeout(function () {
-          // If app was not installed or failed to intercept within 850ms, fallback to universal UPI chooser
-          if (Date.now() - start < 1600) {
-            window.location.href = fallbackUri;
-          }
-        }, 850);
-      }
+      // Direct window location navigation triggers the Android/iOS UPI app chooser without popup blocks
+      window.location.href = uri;
     },
 
     /**
-     * Download QR code as SVG
+     * Download QR code as SVG image file
      */
     downloadQr: function () {
       if (!state.qrContainer) return;
@@ -153,7 +110,7 @@
         });
 
         if (Toast && typeof Toast.show === 'function') {
-          Toast.show('QR code image saved');
+          Toast.show('QR code downloaded');
         }
       } catch (err) {
         console.warn('[SupportModal] Download QR failed:', err);
@@ -176,7 +133,7 @@
               '</div>' +
               '<div>' +
                 '<h3 id="supportModalTitle" class="support-title">Support SGOU Database</h3>' +
-                '<p class="support-subtitle">Keep SGOU Study Materials 100% Free</p>' +
+                '<p class="support-subtitle">Voluntary Student Contribution</p>' +
               '</div>' +
             '</div>' +
             '<button class="support-close-btn" id="supportModalCloseBtn" aria-label="Close dialog" title="Close (Esc)" type="button">' +
@@ -188,92 +145,36 @@
           '</div>' +
 
           '<div class="support-modal-body">' +
-            '<!-- Community Impact & Value Proposition -->' +
+            '<!-- Situation-aware minimal impact note -->' +
             '<div class="support-intro-card">' +
-              '<div class="support-intro-header">' +
-                '<div class="support-intro-icon" aria-hidden="true">' +
-                  '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                    '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>' +
-                  '</svg>' +
-                '</div>' +
-                '<span class="support-intro-heading">Community Funded for 40,000+ Students</span>' +
-              '</div>' +
               '<p class="support-intro-text">' +
-                'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.' +
+                'Keep SGOU study materials free, ad-free, and updated for every student.' +
               '</p>' +
-              '<div class="support-trust-pills">' +
-                '<span class="trust-pill">' +
-                  '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
-                  'Zero Ads' +
-                '</span>' +
-                '<span class="trust-pill">' +
-                  '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
-                  'Direct SBI Account' +
-                '</span>' +
-                '<span class="trust-pill">' +
-                  '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
-                  '0% Platform Fee' +
-                '</span>' +
-              '</div>' +
             '</div>' +
 
             '<!-- Contribution Amount Selection -->' +
             '<div class="support-section-label">Select Contribution</div>' +
             '<div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">' +
-              '<button type="button" class="amount-chip" data-amount="15">' +
-                '<span class="chip-val">₹15</span>' +
-                '<span class="chip-sub">Chai</span>' +
-              '</button>' +
+              '<button type="button" class="amount-chip" data-amount="15">₹15</button>' +
               '<button type="button" class="amount-chip popular active" data-amount="25">' +
                 '<span class="chip-badge">Popular</span>' +
-                '<span class="chip-val">₹25</span>' +
-                '<span class="chip-sub">Server</span>' +
+                '₹25' +
               '</button>' +
-              '<button type="button" class="amount-chip" data-amount="50">' +
-                '<span class="chip-val">₹50</span>' +
-                '<span class="chip-sub">Hero</span>' +
-              '</button>' +
-              '<button type="button" class="amount-chip" data-amount="100">' +
-                '<span class="chip-val">₹100</span>' +
-                '<span class="chip-sub">Patron</span>' +
-              '</button>' +
-              '<button type="button" class="amount-chip" data-amount="custom">' +
-                '<span class="chip-val">Any</span>' +
-                '<span class="chip-sub">Custom</span>' +
-              '</button>' +
+              '<button type="button" class="amount-chip" data-amount="50">₹50</button>' +
+              '<button type="button" class="amount-chip" data-amount="100">₹100</button>' +
+              '<button type="button" class="amount-chip" data-amount="custom">Custom</button>' +
             '</div>' +
 
             '<!-- Mobile 1-Tap Action Section (Primary on Mobile) -->' +
-            '<div class="support-mobile-section">' +
+            '<div class="support-mobile-section" id="supportMobileSection">' +
               '<button type="button" id="supportDirectPayBtn" class="support-pay-primary-btn" data-app="upi">' +
-                '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">' +
+                '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">' +
                   '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>' +
                 '</svg>' +
-                '<span id="supportDirectPayBtnText">Pay ₹25 via Any UPI App</span>' +
+                '<span id="supportDirectPayBtnText">Pay ₹25 via UPI</span>' +
               '</button>' +
-
-              '<!-- Dedicated 1-Tap Quick App Launchers -->' +
-              '<div class="support-apps-row" aria-label="Quick launch UPI app">' +
-                '<button type="button" class="support-app-pill" data-app="gpay" title="Open Google Pay">' +
-                  '<span class="app-pill-mark gpay-mark">G</span>' +
-                  '<span>GPay</span>' +
-                '</button>' +
-                '<button type="button" class="support-app-pill" data-app="phonepe" title="Open PhonePe">' +
-                  '<span class="app-pill-mark phonepe-mark">Pe</span>' +
-                  '<span>PhonePe</span>' +
-                '</button>' +
-                '<button type="button" class="support-app-pill" data-app="paytm" title="Open Paytm">' +
-                  '<span class="app-pill-mark paytm-mark">Pt</span>' +
-                  '<span>Paytm</span>' +
-                '</button>' +
-                '<button type="button" class="support-app-pill" data-app="bhim" title="Open BHIM UPI">' +
-                  '<span class="app-pill-mark bhim-mark">B</span>' +
-                  '<span>BHIM</span>' +
-                '</button>' +
-              '</div>' +
-
               '<button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn">' +
-                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                   '<rect x="3" y="3" width="7" height="7"></rect>' +
                   '<rect x="14" y="3" width="7" height="7"></rect>' +
                   '<rect x="14" y="14" width="7" height="7"></rect>' +
@@ -283,31 +184,33 @@
               '</button>' +
             '</div>' +
 
-            '<!-- QR Code Display Box (Expandable on Mobile, Primary on Desktop) -->' +
+            '<!-- QR Code Display Box (Desktop always visible, Mobile toggled) -->' +
             '<div class="support-qr-section" id="supportQrSection">' +
               '<div class="support-qr-card">' +
+                '<!-- Corner Icon Controls: Download + Info Popover -->' +
+                '<div class="support-qr-corner-actions">' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Payment advice" aria-label="Payment advice">' +
+                    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                      '<circle cx="12" cy="12" r="10"></circle>' +
+                      '<line x1="12" y1="16" x2="12" y2="12"></line>' +
+                      '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
+                    '</svg>' +
+                  '</button>' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportSaveQrBtn" title="Download QR Code" aria-label="Download QR Code">' +
+                    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                      '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
+                      '<polyline points="7 10 12 15 17 10"></polyline>' +
+                      '<line x1="12" y1="15" x2="12" y2="3"></line>' +
+                    '</svg>' +
+                  '</button>' +
+                '</div>' +
+                '<!-- Hidden popover for gallery notice advice -->' +
+                '<div class="support-qr-popover" id="supportQrPopover" role="tooltip" aria-hidden="true">' +
+                  '<span>If scanning via GPay / PhonePe gallery, tap <strong>Dismiss</strong> on their security notice to pay.</span>' +
+                '</div>' +
                 '<div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">' +
                   '<!-- SVG QR code rendered dynamically -->' +
                 '</div>' +
-                '<div class="support-qr-caption">' +
-                  '<span>Scan with camera or any UPI app</span>' +
-                '</div>' +
-                '<div class="support-gallery-tip">' +
-                  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-                    '<circle cx="12" cy="12" r="10"></circle>' +
-                    '<line x1="12" y1="16" x2="12" y2="12"></line>' +
-                    '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
-                  '</svg>' +
-                  '<span>If scanning via GPay / PhonePe gallery, tap <strong>Dismiss</strong> on their security notice to pay.</span>' +
-                '</div>' +
-                '<button type="button" class="support-save-qr-btn" id="supportSaveQrBtn">' +
-                  '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
-                    '<polyline points="7 10 12 15 17 10"></polyline>' +
-                    '<line x1="12" y1="15" x2="12" y2="3"></line>' +
-                  '</svg>' +
-                  '<span>Save QR Image</span>' +
-                '</button>' +
               '</div>' +
             '</div>' +
 
@@ -317,7 +220,7 @@
                 '<span class="support-vpa-label">UPI ID</span>' +
                 '<code class="support-vpa-text" id="supportVpaText">' + CONFIG.vpa + '</code>' +
               '</div>' +
-              '<button type="button" class="support-copy-btn" id="supportCopyVpaBtn" title="Copy UPI ID to clipboard">' +
+              '<button type="button" class="support-copy-btn" id="supportCopyVpaBtn" title="Copy UPI ID">' +
                 '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                   '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>' +
                   '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>' +
@@ -329,11 +232,11 @@
 
           '<div class="support-modal-footer">' +
             '<span class="support-security-note">' +
-              '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                 '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>' +
                 '<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' +
               '</svg>' +
-              'Direct to ' + CONFIG.bankName + ' &middot; 0% fee' +
+              '0% platform fee &middot; Direct UPI' +
             '</span>' +
             '<button type="button" class="support-done-btn" id="supportDoneBtn">Done</button>' +
           '</div>' +
@@ -373,6 +276,7 @@
       state.qrToggleText = document.getElementById('supportToggleQrText');
       state.copyBtn = document.getElementById('supportCopyVpaBtn');
       state.copyBtnText = document.getElementById('supportCopyBtnText');
+      state.qrPopover = document.getElementById('supportQrPopover');
     },
 
     /**
@@ -386,7 +290,7 @@
           var qr = window.qrcode(0, 'M');
           qr.addData(uri);
           qr.make();
-          state.qrContainer.innerHTML = qr.createSvgTag(4.5, 2);
+          state.qrContainer.innerHTML = qr.createSvgTag(3.8, 1);
         } catch (err) {
           console.warn('[SupportModal] QR render failed:', err);
         }
@@ -394,9 +298,9 @@
 
       if (state.payBtnText) {
         if (amount && Number(amount) > 0) {
-          state.payBtnText.textContent = 'Pay ₹' + amount + ' via Any UPI App';
+          state.payBtnText.textContent = 'Pay ₹' + amount + ' via UPI';
         } else {
-          state.payBtnText.textContent = 'Pay via Any UPI App (Custom Amount)';
+          state.payBtnText.textContent = 'Pay via UPI';
         }
       }
     },
@@ -473,6 +377,7 @@
 
       if (state.qrSection) state.qrSection.classList.remove('show');
       if (state.qrToggleText) state.qrToggleText.textContent = 'Show QR Code';
+      if (state.qrPopover) state.qrPopover.classList.remove('show');
 
       state.modalEl.classList.add('visible', 'active');
       state.modalEl.setAttribute('aria-hidden', 'false');
@@ -575,21 +480,30 @@
           return;
         }
 
-        // 1-Tap App Pill Click (GPay, PhonePe, Paytm, BHIM)
-        var appPill = e.target.closest('.support-app-pill');
-        if (appPill && state.modalEl.contains(appPill)) {
-          e.preventDefault();
-          var app = appPill.getAttribute('data-app');
-          SupportModal.openUpi(app);
-          return;
-        }
-
         // Download / Save QR Button Click
         var saveQrBtn = e.target.closest('#supportSaveQrBtn');
         if (saveQrBtn && state.modalEl.contains(saveQrBtn)) {
           e.preventDefault();
           SupportModal.downloadQr();
           return;
+        }
+
+        // Corner Info Popover Toggle
+        var infoBtn = e.target.closest('#supportQrInfoBtn');
+        if (infoBtn && state.modalEl.contains(infoBtn)) {
+          e.preventDefault();
+          var popover = document.getElementById('supportQrPopover');
+          if (popover) {
+            var isShow = popover.classList.toggle('show');
+            popover.setAttribute('aria-hidden', isShow ? 'false' : 'true');
+          }
+          return;
+        } else if (!e.target.closest('#supportQrPopover')) {
+          var popover = document.getElementById('supportQrPopover');
+          if (popover && popover.classList.contains('show')) {
+            popover.classList.remove('show');
+            popover.setAttribute('aria-hidden', 'true');
+          }
         }
 
         // Mobile QR Toggle
@@ -601,6 +515,13 @@
               state.qrToggleText.textContent = isShow ? 'Hide QR Code' : 'Show QR Code';
             }
             sendTelemetry('support_qr_toggle', { is_shown: isShow });
+            if (isShow) {
+              setTimeout(function () {
+                try {
+                  state.qrSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } catch (_) {}
+              }, 50);
+            }
           }
           return;
         }
