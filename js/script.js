@@ -1521,6 +1521,19 @@ class DownloadManager {
     $('dpSuccessActions').style.display = 'flex';
     UI.showToast(`Saved: ${filename}`);
 
+    // Smart 48-Hour Cooldown Voluntary Community Support Prompt
+    const COOLDOWN_MS = 48 * 60 * 60 * 1000;
+    const lastPrompt = parseInt(localStorage.getItem('sgou_support_post_dl_time') || '0', 10);
+    const now = Date.now();
+    if (now - lastPrompt > COOLDOWN_MS) {
+      localStorage.setItem('sgou_support_post_dl_time', String(now));
+      setTimeout(() => {
+        if (window.SupportModal && typeof window.SupportModal.open === 'function' && !window.SupportModal.isOpen()) {
+          window.SupportModal.open(25, $('dpSupportBtn') || null);
+        }
+      }, 1500);
+    }
+
     // Auto-dismiss floating download card after 6 seconds to prevent blocking UI
     if (this._dismissTimeout) clearTimeout(this._dismissTimeout);
     this._dismissTimeout = setTimeout(() => {
@@ -5015,6 +5028,15 @@ class UIController {
         this.openSupportModal(25, supTrigger);
         return;
       }
+
+      // B2B Partner / Academy Placements Inquiry Dialog
+      const partnerTrigger = e.target.closest('#footerPartnerBtn, #openPartnerInquiryBtn');
+      if (partnerTrigger) {
+        if (window.PartnerModal && typeof window.PartnerModal.open === 'function') {
+          window.PartnerModal.open(partnerTrigger);
+        }
+        return;
+      }
       if (e.target.closest('#supportModalCloseBtn') || e.target.closest('#supportDoneBtn') || (e.target === $('supportModal'))) {
         this.closeSupportModal();
         return;
@@ -5231,6 +5253,13 @@ class UIController {
       }
       if (e.target.closest('#dpDismissBtn')) {
         $('downloadProgressCard')?.classList.remove('visible');
+        return;
+      }
+      if (e.target.closest('#dpSupportBtn')) {
+        Analytics.event('post_download_support_click');
+        if (window.SupportModal && typeof window.SupportModal.open === 'function') {
+          window.SupportModal.open(25, $('dpSupportBtn') || null);
+        }
         return;
       }
       if (e.target.closest('#dpOpenBtn')) {

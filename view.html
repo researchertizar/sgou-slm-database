@@ -1843,7 +1843,7 @@
                 <div class="support-section-label">Choose Contribution</div>
                 <div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">
                     <button type="button" class="amount-chip" data-amount="15">₹15</button>
-                    <button type="button" class="amount-chip active" data-amount="25">₹25<span class="chip-star">★</span></button>
+                    <button type="button" class="amount-chip active" data-amount="25">₹25</button>
                     <button type="button" class="amount-chip" data-amount="50">₹50</button>
                     <button type="button" class="amount-chip" data-amount="100">₹100</button>
                     <button type="button" class="amount-chip" data-amount="custom">Any</button>
@@ -2367,6 +2367,19 @@
                         document.body.appendChild(a);
                         a.click();
                         setTimeout(function () { a.remove(); }, 200);
+                    }
+
+                    // Smart 48-Hour Cooldown Voluntary Community Support Prompt
+                    var COOLDOWN_MS = 48 * 60 * 60 * 1000;
+                    var lastPrompt = parseInt(localStorage.getItem('sgou_support_post_dl_time') || '0', 10);
+                    var now = Date.now();
+                    if (now - lastPrompt > COOLDOWN_MS) {
+                        localStorage.setItem('sgou_support_post_dl_time', String(now));
+                        setTimeout(function () {
+                            if (window.SupportModal && typeof window.SupportModal.open === 'function' && !window.SupportModal.isOpen()) {
+                                window.SupportModal.open(25, dlBtn || null);
+                            }
+                        }, 1500);
                     }
                 }
                 if (dlBtn) dlBtn.onclick = triggerDownload;

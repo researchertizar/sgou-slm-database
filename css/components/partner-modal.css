@@ -1,0 +1,209 @@
+/**
+ * SGOU Academic Database — B2B Partner & Academy Placement Modal
+ * Clean, accessible dialog for tuition centres, colleges, and educational publishers.
+ */
+
+.partner-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s;
+}
+
+.partner-modal-backdrop.visible,
+.partner-modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.partner-modal {
+  background: var(--surface, #181614);
+  color: var(--ink, #f5efe6);
+  border: 1px solid var(--border, #332d27);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.partner-modal-backdrop.visible .partner-modal {
+  transform: translateY(0) scale(1);
+}
+
+.partner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.15rem 1.25rem 0.85rem;
+  border-bottom: 1px solid var(--border, #332d27);
+}
+
+.partner-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.partner-handshake-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(229, 114, 90, 0.15);
+  color: var(--accent, #e5725a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.partner-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--ink, #f5efe6);
+  line-height: 1.25;
+}
+
+.partner-subtitle {
+  font-size: 0.76rem;
+  color: var(--ink-soft, #b5aba0);
+  margin: 2px 0 0;
+}
+
+.partner-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink-soft, #b5aba0);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.partner-close-btn:hover {
+  background: var(--surface-hover, #24201c);
+  color: var(--ink, #f5efe6);
+}
+
+.partner-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.partner-value-card {
+  background: var(--bg-deep, #100f0d);
+  border: 1px solid var(--border-subtle, #27221d);
+  border-left: 3px solid var(--accent, #e5725a);
+  border-radius: 8px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft, #b5aba0);
+  line-height: 1.45;
+}
+
+.partner-value-card strong {
+  color: var(--ink, #f5efe6);
+}
+
+.partner-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.partner-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ink, #f5efe6);
+}
+
+.partner-label .required {
+  color: #ef4444;
+}
+
+.partner-input,
+.partner-select,
+.partner-textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: var(--bg-deep, #100f0d);
+  border: 1px solid var(--border, #332d27);
+  border-radius: 8px;
+  color: var(--ink, #f5efe6);
+  font-family: inherit;
+  font-size: 0.85rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.partner-input:focus,
+.partner-select:focus,
+.partner-textarea:focus {
+  border-color: var(--accent, #e5725a);
+  box-shadow: 0 0 0 2px rgba(229, 114, 90, 0.2);
+}
+
+.partner-textarea {
+  resize: vertical;
+  min-height: 64px;
+}
+
+.partner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+}
+
+.partner-submit-btn {
+  background: #25D366;
+  color: #0b2e17;
+  border: none;
+  border-radius: 9px;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: transform 0.12s, filter 0.15s;
+}
+
+.partner-submit-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.partner-submit-btn:active {
+  transform: translateY(0);
+}
+
+.partner-footer-hint {
+  font-size: 0.72rem;
+  color: var(--ink-muted, #8a8075);
+  text-align: center;
+}

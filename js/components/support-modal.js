@@ -115,7 +115,7 @@
             '<div class="support-section-label">Choose Contribution</div>' +
             '<div class="support-amount-chips" role="radiogroup" aria-label="Contribution Amount">' +
               '<button type="button" class="amount-chip" data-amount="15">₹15</button>' +
-              '<button type="button" class="amount-chip active" data-amount="25">₹25<span class="chip-star">★</span></button>' +
+              '<button type="button" class="amount-chip active" data-amount="25">₹25</button>' +
               '<button type="button" class="amount-chip" data-amount="50">₹50</button>' +
               '<button type="button" class="amount-chip" data-amount="100">₹100</button>' +
               '<button type="button" class="amount-chip" data-amount="custom">Any</button>' +
@@ -281,7 +281,7 @@
       var vpa = CONFIG.vpa;
       var doFeedback = function () {
         if (state.copyBtn) state.copyBtn.classList.add('copied');
-        if (state.copyBtnText) state.copyBtnText.textContent = 'Copied! ✓';
+        if (state.copyBtnText) state.copyBtnText.textContent = 'Copied';
         sendTelemetry('support_copy_upi', {
           amount: state.activeAmount !== null ? state.activeAmount : 'custom'
         });
