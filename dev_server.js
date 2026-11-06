@@ -103,6 +103,29 @@ function clearAuthFailures(ip) {
   authRateLimits.delete(ip);
 }
 
+// Sliding-window general rate limits (clientIp -> timestamps array)
+const telemetryRateLimits = new Map();
+const queryRateLimits = new Map();
+
+function isGeneralRateLimited(map, clientIp, maxPerMinute) {
+  if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1' || clientIp === 'localhost') return false;
+  const now = Date.now();
+  const windowStart = now - 60000;
+  let timestamps = map.get(clientIp);
+  if (!timestamps) {
+    timestamps = [];
+    map.set(clientIp, timestamps);
+  }
+  while (timestamps.length > 0 && timestamps[0] < windowStart) {
+    timestamps.shift();
+  }
+  if (timestamps.length >= maxPerMinute) {
+    return true;
+  }
+  timestamps.push(now);
+  return false;
+}
+
 function verifyAdminToken(token) {
   const configuredSecret = (process.env.SGOU_ADMIN_SECRET || '').trim();
   if (!configuredSecret) {
@@ -120,6 +143,12 @@ const server = http.createServer((req, res) => {
 
   // 1. Real Ingestion Route: /api/telemetry (POST)
   if (reqUrl.pathname === '/api/telemetry' && req.method === 'POST') {
+    // Sliding-window Rate Limiting: Max 60 telemetry requests per minute
+    if (isGeneralRateLimited(telemetryRateLimits, clientIp, 60)) {
+      res.writeHead(429, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Retry-After': '60' });
+      return res.end(JSON.stringify({ error: 'Rate limit exceeded: Max 60 telemetry requests per minute.' }));
+    }
+
     // DoS Protection: max 64KB payload
     const contentLength = parseInt(req.headers['content-length'] || '0', 10);
     if (contentLength > 65536) {
@@ -265,6 +294,16 @@ const server = http.createServer((req, res) => {
 
   // 2. Real Query Route: /api/analytics/query (GET or POST)
   if (reqUrl.pathname === '/api/analytics/query') {
+    // Sliding-window general rate limiting: Max 60 queries per minute
+    if (isGeneralRateLimited(queryRateLimits, clientIp, 60)) {
+      res.writeHead(429, {
+        'Content-Type': 'application/json',
+        'Retry-After': '60',
+        'Access-Control-Allow-Origin': '*'
+      });
+      return res.end(JSON.stringify({ error: 'Rate limit exceeded: Max 60 queries per minute.' }));
+    }
+
     // Brute-force rate limiting check
     if (isRateLimited(clientIp)) {
       res.writeHead(429, {

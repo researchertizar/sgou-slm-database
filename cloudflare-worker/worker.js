@@ -29,6 +29,35 @@ function timingSafeEqual(a, b) {
   return out === 0;
 }
 
+// Edge Rate Limiting Maps (Sliding 60-second window per client IP)
+const telemetryRateLimitMap = new Map();
+const queryRateLimitMap = new Map();
+
+function isClientRateLimited(map, clientIp, maxPerMinute) {
+  if (!clientIp) return false;
+  if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === 'localhost') return false;
+
+  const now = Date.now();
+  const windowStart = now - 60000;
+
+  let timestamps = map.get(clientIp);
+  if (!timestamps) {
+    timestamps = [];
+    map.set(clientIp, timestamps);
+  }
+
+  while (timestamps.length > 0 && timestamps[0] < windowStart) {
+    timestamps.shift();
+  }
+
+  if (timestamps.length >= maxPerMinute) {
+    return true;
+  }
+
+  timestamps.push(now);
+  return false;
+}
+
 function getCorsOrigin(request) {
   const origin = request.headers.get('Origin');
   if (!origin) return '*'; // Direct browser navigation or non-browser client
@@ -66,11 +95,30 @@ export default {
 
     const urlObj = new URL(request.url);
     const pathname = urlObj.pathname;
+    const clientIp = request.headers.get('cf-connecting-ip') || (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+
+    const queryHeaders = {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+    };
 
     // ========================================================================
     // 2. INGESTION ROUTE: /api/telemetry (POST)
     // ========================================================================
     if (pathname === '/api/telemetry' && request.method === 'POST') {
+      // Edge Rate Limiting: Max 30 flushes per minute per client IP
+      if (isClientRateLimited(telemetryRateLimitMap, clientIp, 30)) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded: Max 30 telemetry flushes per minute.' }), {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': '60'
+          }
+        });
+      }
+
       try {
         const payload = await request.json();
         const { sid, uid = null, is_returning = 0, visit_count = 1, is_active = 0, profile = {}, events = [] } = payload;
@@ -227,6 +275,18 @@ export default {
     // 3. DASHBOARD QUERY ROUTE: /api/analytics/query (GET or POST)
     // ========================================================================
     if (pathname === '/api/analytics/query') {
+      // Edge Rate Limiting: Max 60 queries per minute per client IP
+      if (isClientRateLimited(queryRateLimitMap, clientIp, 60)) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded: Max 60 queries per minute.' }), {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+            'Retry-After': '60'
+          }
+        });
+      }
+
       // Validate Authorization token strictly via Cloudflare Environment Variable
       const configuredSecret = (env && (env.ADMIN_SECRET || env.ADMIN_SECRET_TOKEN || '')).trim();
       if (!configuredSecret) {

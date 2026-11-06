@@ -1366,7 +1366,8 @@
       });
 
       refreshBtn?.addEventListener('click', () => {
-        loadAllData();
+        queryClientCache.clear();
+        loadAllData(true);
         showToast('Dashboard data refreshed.');
       });
 
@@ -1424,7 +1425,18 @@
         setTimeout(() => toast.classList.remove('show'), 3500);
       }
 
-      async function fetchApi(action, extraParams = '') {
+      const queryClientCache = new Map();
+      const QUERY_CACHE_TTL_MS = 15000; // 15s in-memory cache to prevent redundant D1 queries
+
+      async function fetchApi(action, extraParams = '', forceRefresh = false) {
+        const cacheKey = action + ':' + extraParams;
+        if (!forceRefresh) {
+          const cached = queryClientCache.get(cacheKey);
+          if (cached && (Date.now() - cached.ts < QUERY_CACHE_TTL_MS)) {
+            return cached.data;
+          }
+        }
+
         const base = getApiBase();
         const url = base + '/api/analytics/query?action=' + action + '&token=' + encodeURIComponent(currentToken) + extraParams;
         const res = await fetch(url);
@@ -1453,7 +1465,9 @@
           const sourceLabel = (isLocalHost && activeDataSource === 'local') ? 'Local SQLite (.db)' : 'Cloudflare D1 Edge';
           authStatusBadge.innerHTML = '<span class="badge badge-success">✓ Online (' + sourceLabel + ')</span>';
         }
-        return res.json();
+        const data = await res.json();
+        queryClientCache.set(cacheKey, { ts: Date.now(), data: data });
+        return data;
       }
 
       // Interactive KPI Card Handlers
@@ -1503,7 +1517,7 @@
         );
       });
 
-      async function loadAllData() {
+      async function loadAllData(forceRefresh = false) {
         if (!currentToken) {
           if (authStatusBadge) {
             authStatusBadge.innerHTML = '<span class="badge badge-warning">Enter Admin Secret Token to authenticate</span>';
@@ -1522,7 +1536,7 @@
           lastUpdatedEl.textContent = 'Updating…';
 
           // 1. Overview KPIs
-          const overviewData = await fetchApi('overview');
+          const overviewData = await fetchApi('overview', '', forceRefresh);
           lastOverviewData = overviewData;
           const ov = overviewData.overview || {};
 
@@ -1556,7 +1570,7 @@
 
           // 2. Real-Time Active Users & Live Learners
           try {
-            const rtData = await fetchApi('realtime');
+            const rtData = await fetchApi('realtime', '', forceRefresh);
             const rt = rtData.realtime || {};
             const liveNow = rt.live_sessions || rt.active_5m || 0;
             const liveUsers = rt.live_users || 0;
@@ -1568,7 +1582,7 @@
 
           // 3. Time Series Traffic Curve
           try {
-            const tsData = await fetchApi('timeseries');
+            const tsData = await fetchApi('timeseries', '', forceRefresh);
             renderTimeSeriesChart(tsData.timeseries || {});
           } catch (tErr) {
             console.warn('[TimeSeries Error]', tErr);
@@ -1576,7 +1590,7 @@
 
           // 4. Comparative Deltas
           try {
-            const compData = await fetchApi('comparison', '&period=' + currentPeriod);
+            const compData = await fetchApi('comparison', '&period=' + currentPeriod, forceRefresh);
             renderDeltas(compData.metrics || {});
           } catch (cErr) {
             console.warn('[Comparison Error]', cErr);
@@ -1584,7 +1598,7 @@
 
           // 5. Device Donut Chart
           try {
-            const devData = await fetchApi('devices');
+            const devData = await fetchApi('devices', '', forceRefresh);
             lastDeviceData = devData.devices || [];
             renderDeviceDonut(lastDeviceData);
           } catch (dErr) {
@@ -1593,7 +1607,7 @@
 
           // 6. Traversal Funnel
           try {
-            const funnelData = await fetchApi('funnel');
+            const funnelData = await fetchApi('funnel', '', forceRefresh);
             renderFunnel(funnelData.funnel || {});
           } catch (fErr) {
             console.warn('[Funnel Error]', fErr);
@@ -1602,7 +1616,7 @@
           // 7. Load currently active perspective tab lazily
           const activeTabId = document.querySelector('.p-tab.active')?.getAttribute('data-tab') || 'tabPulse';
           if (activeTabId !== 'tabPulse') {
-            await loadTabData(activeTabId, true);
+            await loadTabData(activeTabId, forceRefresh);
           }
 
           lastUpdatedEl.textContent = 'Synced: ' + new Date().toLocaleTimeString();

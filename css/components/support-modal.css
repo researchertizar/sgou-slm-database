@@ -325,11 +325,17 @@
 .support-mobile-section {
   display: none;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   width: 100%;
   box-sizing: border-box;
 }
 
+#supportDirectPayBtn { order: 1; }
+#supportAltDivider { order: 2; }
+#supportMobileShareBtn { order: 3; }
+#supportToggleQrBtn { order: 4; }
+
+/* 1. PRIMARY ACTION: High-contrast Solid Accent Button */
 .support-pay-primary-btn {
   display: flex;
   align-items: center;
@@ -366,20 +372,166 @@
   transform: translateY(0);
 }
 
-/* Toggle QR Button */
+/* Micro Alternative Divider (Visually defines Primary vs Secondary/Tertiary alternatives) */
+.support-alt-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 1px 0;
+}
+
+.support-alt-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border, #d6cfc2);
+  opacity: 0.7;
+}
+
+[data-theme="dark"] .support-alt-line {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.support-alt-text {
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted, #78716c);
+  user-select: none;
+}
+
+[data-theme="dark"] .support-alt-text {
+  color: var(--ink-muted, #a8a29e);
+}
+
+/* 2. SECONDARY ACTION: Soft Tonal Surface with Clean Border */
+.support-share-fallback-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100%;
+  height: 33px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: var(--surface-subtle, #f5f0e8);
+  border: 1px solid var(--border, #d6cfc2);
+  color: var(--ink, #1c1917);
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .16s ease;
+  box-sizing: border-box;
+  touch-action: manipulation;
+}
+
+.support-share-fallback-btn svg {
+  color: var(--accent, #b8432f);
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .support-share-fallback-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f5f5f4;
+}
+
+[data-theme="dark"] .support-share-fallback-btn svg {
+  color: var(--accent, #e06b52);
+}
+
+.support-share-fallback-btn:hover {
+  background: var(--surface-hover, #ebe4d8);
+  border-color: var(--accent, #b8432f);
+  color: var(--accent, #b8432f);
+}
+
+[data-theme="dark"] .support-share-fallback-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent, #e06b52);
+  color: #ffffff;
+}
+
+/* When Share is Prioritized (Direct Pay failed or returned from UPI app) */
+.support-mobile-section.share-prioritized #supportMobileShareBtn {
+  order: 1 !important;
+  background: var(--accent, #b8432f) !important;
+  border-color: var(--accent, #b8432f) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(184, 67, 47, 0.35);
+  animation: support-pulse 2s infinite ease-in-out;
+  height: 38px;
+  font-size: 13px;
+}
+
+.support-mobile-section.share-prioritized #supportMobileShareBtn svg {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .support-mobile-section.share-prioritized #supportMobileShareBtn {
+  background: var(--accent, #e06b52) !important;
+  border-color: var(--accent, #e06b52) !important;
+  box-shadow: 0 3px 12px rgba(224, 107, 82, 0.4);
+}
+
+.support-mobile-section.share-prioritized #supportAltDivider {
+  order: 2 !important;
+}
+
+.support-mobile-section.share-prioritized #supportDirectPayBtn {
+  order: 3 !important;
+  background: var(--surface-subtle, #f5f0e8) !important;
+  color: var(--ink-soft, #57534e) !important;
+  border: 1px solid var(--border, #d6cfc2) !important;
+  box-shadow: none !important;
+  font-weight: 550;
+  height: 33px;
+  font-size: 12px;
+}
+
+[data-theme="dark"] .support-mobile-section.share-prioritized #supportDirectPayBtn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #d6d3d1 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.support-mobile-section.share-prioritized #supportToggleQrBtn {
+  order: 4 !important;
+}
+
+.support-phonepe-notice.alert-mode {
+  background: rgba(184, 67, 47, 0.08) !important;
+  border-color: rgba(184, 67, 47, 0.28) !important;
+}
+
+[data-theme="dark"] .support-phonepe-notice.alert-mode {
+  background: rgba(224, 107, 82, 0.12) !important;
+  border-color: rgba(224, 107, 82, 0.35) !important;
+}
+
+@keyframes support-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+  100% { transform: scale(1); }
+}
+
+/* 3. TERTIARY ACTION: Borderless Minimal Ghost / Link */
 .support-toggle-qr-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   width: 100%;
-  height: 32px;
-  padding: 0 12px;
+  height: 27px;
+  padding: 0 10px;
   background: transparent;
-  border: 1px dashed var(--border, #d6cfc2);
-  border-radius: 8px;
+  border: none;
+  border-radius: 6px;
   font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif);
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--ink-muted, #78716c);
   cursor: pointer;
@@ -387,21 +539,28 @@
   box-sizing: border-box;
 }
 
+.support-toggle-qr-btn svg {
+  color: var(--ink-muted, #78716c);
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
 .support-toggle-qr-btn:hover {
-  border-color: var(--accent, #b8432f);
   color: var(--ink, #1c1917);
-  background: var(--surface-hover, #faf7f1);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 [data-theme="dark"] .support-toggle-qr-btn {
-  border-color: var(--border, #38342e);
   color: var(--ink-muted, #a8a29e);
 }
 
+[data-theme="dark"] .support-toggle-qr-btn svg {
+  color: #a8a29e;
+}
+
 [data-theme="dark"] .support-toggle-qr-btn:hover {
-  border-color: var(--accent, #e06b52);
-  color: var(--ink, #f5f5f4);
-  background: var(--surface-hover, #2a2520);
+  color: #f5f5f4;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* QR Code Card */
@@ -737,9 +896,11 @@
     display: none;
   }
 
-  /* Seamless Mobile View-Swap (Hides Pay button and shows QR code in place) */
+  /* Seamless Mobile View-Swap (Hides Pay button & divider and shows QR code in place) */
   .support-modal.mobile-qr-active #supportDirectPayBtn,
-  .support-modal-backdrop.mobile-qr-active #supportDirectPayBtn {
+  .support-modal-backdrop.mobile-qr-active #supportDirectPayBtn,
+  .support-modal.mobile-qr-active #supportAltDivider,
+  .support-modal-backdrop.mobile-qr-active #supportAltDivider {
     display: none !important;
   }
 
@@ -751,14 +912,16 @@
 
   .support-modal.mobile-qr-active .support-toggle-qr-btn,
   .support-modal-backdrop.mobile-qr-active .support-toggle-qr-btn {
-    border-style: solid;
-    background: var(--surface-hover, #faf7f1);
+    border: none !important;
+    background: var(--surface-subtle, #f5f0e8);
     color: var(--ink, #1c1917);
+    border-radius: 6px;
   }
 
   [data-theme="dark"] .support-modal.mobile-qr-active .support-toggle-qr-btn,
   [data-theme="dark"] .support-modal-backdrop.mobile-qr-active .support-toggle-qr-btn {
-    background: var(--surface-hover, #2a2520);
-    color: var(--ink, #f5f5f4);
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5f5f4;
+    border: none !important;
   }
 }

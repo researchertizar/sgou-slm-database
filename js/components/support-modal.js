@@ -61,6 +61,11 @@
     qrContainer: null,
     payBtn: null,
     payBtnText: null,
+    mobileShareBtn: null,
+    mobileShareBtnText: null,
+    mobileSection: null,
+    noticeCard: null,
+    noticeText: null,
     qrSection: null,
     qrToggleBtn: null,
     qrToggleText: null,
@@ -70,6 +75,8 @@
     lastFocusedElement: null,
     modalOpenTimestamp: 0,
     lastChipSelectTimestamp: 0,
+    directPayAttemptTimestamp: 0,
+    isSharePrioritized: false,
     hasEngagedPayment: false
   };
 
@@ -99,6 +106,7 @@
       var uri = SupportModal.buildUpiUri(amt);
 
       state.hasEngagedPayment = true;
+      state.directPayAttemptTimestamp = Date.now();
       var dwellMs = state.modalOpenTimestamp ? Math.round(performance.now() - state.modalOpenTimestamp) : 0;
       sendTelemetry('support_upi_click', {
         app: app || 'upi',
@@ -108,6 +116,34 @@
 
       // Direct window location navigation triggers the Android/iOS UPI app chooser without popup blocks
       window.location.href = uri;
+
+      // Automatically prepare share priority for when the user returns
+      setTimeout(function () {
+        SupportModal.prioritizeShareMethod();
+      }, 1200);
+    },
+
+    /**
+     * Prioritize Sharing method when direct pay is attempted or loops/fails
+     */
+    prioritizeShareMethod: function () {
+      if (state.isSharePrioritized) return;
+      state.isSharePrioritized = true;
+      if (state.mobileSection) {
+        state.mobileSection.classList.add('share-prioritized');
+      }
+      if (state.noticeCard) {
+        state.noticeCard.classList.add('alert-mode');
+      }
+      if (state.noticeText) {
+        state.noticeText.innerHTML = 'Direct pay looped or blocked? Tap <strong>Share QR</strong> above to pay via PhonePe / GPay, or <strong>Copy UPI ID</strong>.';
+      }
+      if (state.mobileShareBtnText) {
+        state.mobileShareBtnText.textContent = 'Share QR to PhonePe / App';
+      }
+      sendTelemetry('support_share_prioritized', {
+        amount: state.activeAmount !== null ? state.activeAmount : 'custom'
+      });
     },
 
     /**
@@ -340,6 +376,21 @@
                 '</svg>' +
                 '<span id="supportDirectPayBtnText">Pay ₹25</span>' +
               '</button>' +
+              '<div class="support-alt-divider" id="supportAltDivider" role="separator" aria-label="Alternative payment options">' +
+                '<span class="support-alt-line"></span>' +
+                '<span class="support-alt-text">or</span>' +
+                '<span class="support-alt-line"></span>' +
+              '</div>' +
+              '<button type="button" id="supportMobileShareBtn" class="support-share-fallback-btn" title="Share QR directly to PhonePe or UPI App">' +
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                  '<circle cx="18" cy="5" r="3"></circle>' +
+                  '<circle cx="6" cy="12" r="3"></circle>' +
+                  '<circle cx="18" cy="19" r="3"></circle>' +
+                  '<line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>' +
+                  '<line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>' +
+                '</svg>' +
+                '<span id="supportMobileShareBtnText">Share QR to PhonePe / App</span>' +
+              '</button>' +
               '<button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn">' +
                 '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                   '<rect x="3" y="3" width="7" height="7"></rect>' +
@@ -381,10 +432,10 @@
                   '</button>' +
                 '</div>' +
                 '<div class="support-qr-popover" id="supportQrPopover" role="tooltip" aria-hidden="true">' +
-                  '<span class="support-popover-title">PhonePe / Gallery Scan Help</span>' +
-                  '<span>1. Tap <strong>Share</strong> or <strong>Save</strong> for high-res PNG</span>' +
-                  '<span>2. In PhonePe / GPay scanner, pick from gallery</span>' +
-                  '<span>3. Or tap <strong>Copy</strong> below to pay via UPI ID</span>' +
+                  '<span class="support-popover-title">PhonePe &amp; Gallery Scan Help</span>' +
+                  '<span>1. Tap <strong>Share</strong> to open directly in PhonePe / GPay</span>' +
+                  '<span>2. Tap <strong>Save</strong> for high-res PNG to scan from gallery</span>' +
+                  '<span>3. Or tap <strong>Copy</strong> below to pay via UPI ID (0% fee)</span>' +
                 '</div>' +
                 '<div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">' +
                   '<!-- SVG QR rendered dynamically -->' +
@@ -396,13 +447,13 @@
             '</div>' +
 
             '<!-- PhonePe / Payment App Guidance Notice -->' +
-            '<div class="support-phonepe-notice" role="note">' +
+            '<div class="support-phonepe-notice" id="supportPhonepeNotice" role="note">' +
               '<svg class="support-notice-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
                 '<circle cx="12" cy="12" r="10"></circle>' +
                 '<line x1="12" y1="16" x2="12" y2="12"></line>' +
                 '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
               '</svg>' +
-              '<span class="support-notice-text">PhonePe / Paytm loop? Tap <strong>Show QR</strong> to scan from gallery, or <strong>Copy UPI ID</strong>.</span>' +
+              '<span class="support-notice-text" id="supportNoticeText">PhonePe / Paytm loop? Tap <strong>Share QR</strong> above to pay directly, or <strong>Copy UPI ID</strong>.</span>' +
             '</div>' +
 
             '<!-- UPI ID Copy Section -->' +
@@ -460,6 +511,12 @@
       state.qrContainer = document.getElementById('supportQrContainer');
       state.payBtn = document.getElementById('supportDirectPayBtn');
       state.payBtnText = document.getElementById('supportDirectPayBtnText');
+      state.mobileShareBtn = document.getElementById('supportMobileShareBtn');
+      state.mobileShareBtnText = document.getElementById('supportMobileShareBtnText');
+      state.mobileSection = document.getElementById('supportMobileSection');
+      state.altDivider = document.getElementById('supportAltDivider');
+      state.noticeCard = document.getElementById('supportPhonepeNotice');
+      state.noticeText = document.getElementById('supportNoticeText');
       state.qrSection = document.getElementById('supportQrSection');
       state.qrToggleBtn = document.getElementById('supportToggleQrBtn');
       state.qrToggleText = document.getElementById('supportToggleQrText');
@@ -607,10 +664,23 @@
       var modalRoot = state.modalEl || document.getElementById('supportModal');
       if (modalRoot) {
         modalRoot.classList.remove('mobile-qr-active');
+        var innerModal = modalRoot.querySelector ? modalRoot.querySelector('.support-modal') : null;
+        if (innerModal) innerModal.classList.remove('mobile-qr-active');
       }
       if (state.qrSection) state.qrSection.classList.remove('show');
       if (state.qrToggleText) state.qrToggleText.textContent = 'Show QR Code';
       if (state.qrPopover) state.qrPopover.classList.remove('show');
+
+      state.directPayAttemptTimestamp = 0;
+      state.isSharePrioritized = false;
+      if (state.mobileSection) state.mobileSection.classList.remove('share-prioritized');
+      if (state.noticeCard) state.noticeCard.classList.remove('alert-mode');
+      if (state.noticeText) {
+        state.noticeText.innerHTML = 'PhonePe / Paytm loop? Tap <strong>Share QR</strong> above to pay directly, or <strong>Copy UPI ID</strong>.';
+      }
+      if (state.mobileShareBtnText) {
+        state.mobileShareBtnText.textContent = 'Share QR to PhonePe / App';
+      }
 
       state.modalEl.classList.add('visible', 'active');
       state.modalEl.setAttribute('aria-hidden', 'false');
@@ -720,6 +790,14 @@
           return;
         }
 
+        // Mobile Direct Share QR Button Click
+        var mobileShareBtn = e.target.closest('#supportMobileShareBtn');
+        if (mobileShareBtn && state.modalEl.contains(mobileShareBtn)) {
+          e.preventDefault();
+          SupportModal.shareQr();
+          return;
+        }
+
         // Direct Pay UPI Click
         var payBtn = e.target.closest('#supportDirectPayBtn');
         if (payBtn && state.modalEl.contains(payBtn)) {
@@ -819,6 +897,22 @@
           }
         }
       });
+
+      // Return detection: prioritize sharing if user returns within 120s of attempting direct pay
+      var checkDirectPayReturn = function () {
+        if (SupportModal.isOpen() && state.directPayAttemptTimestamp > 0) {
+          var elapsed = Date.now() - state.directPayAttemptTimestamp;
+          if (elapsed < 120000 && !state.isSharePrioritized) {
+            SupportModal.prioritizeShareMethod();
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') {
+          checkDirectPayReturn();
+        }
+      });
+      window.addEventListener('focus', checkDirectPayReturn);
     }
   };
 

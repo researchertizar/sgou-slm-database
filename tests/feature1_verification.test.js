@@ -135,3 +135,54 @@ test('Feature 1: Share QR Button, PhonePe Guidance Notice & Chip labels', () => 
   assert(modalCss.includes('.support-notice-icon'), 'CSS must style .support-notice-icon');
   assert(modalCss.includes('.support-notice-text'), 'CSS must style .support-notice-text');
 });
+
+test('Feature 1: Mobile Share Priority Fallback and Dynamic Notice Update', () => {
+  const modalJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'components', 'support-modal.js'), 'utf8');
+  const modalCss = fs.readFileSync(path.join(__dirname, '..', 'css', 'components', 'support-modal.css'), 'utf8');
+
+  // Verify dedicated mobile share fallback button in template
+  assert(modalJs.includes('id="supportMobileShareBtn"'), 'Template must include #supportMobileShareBtn');
+  assert(modalJs.includes('Share QR to PhonePe / App'), 'Button must clearly indicate sharing directly to app');
+  assert(modalJs.includes('id="supportAltDivider"'), 'Template must include #supportAltDivider micro divider');
+
+  // Verify prioritizeShareMethod function and event bindings
+  assert(modalJs.includes('prioritizeShareMethod: function'), 'support-modal.js must provide prioritizeShareMethod method');
+  assert(modalJs.includes("mobileSection.classList.add('share-prioritized')"), 'Must add share-prioritized class');
+  assert(modalJs.includes('checkDirectPayReturn'), 'Must check direct pay return on window focus / visibilitychange');
+
+  // Verify CSS styling for share priority and alternative visual hierarchy
+  assert(modalCss.includes('.support-share-fallback-btn'), 'CSS must style .support-share-fallback-btn');
+  assert(modalCss.includes('.support-alt-divider'), 'CSS must style .support-alt-divider');
+  assert(modalCss.includes('.support-mobile-section.share-prioritized #supportMobileShareBtn'), 'CSS must elevate share button when prioritized');
+  assert(modalCss.includes('support-pulse'), 'CSS must apply animated focus pulse');
+});
+
+test('Feature 1: Edge & Local Rate Limiting and Query Cache Header Enforcement', () => {
+  const workerJs = fs.readFileSync(path.join(__dirname, '..', 'cloudflare-worker', 'worker.js'), 'utf8');
+  const devServerJs = fs.readFileSync(path.join(__dirname, '..', 'dev_server.js'), 'utf8');
+  const analyticsJs = fs.readFileSync(path.join(__dirname, '..', 'js', 'telemetry', 'analytics-core.js'), 'utf8');
+  const dashboardHtml = fs.readFileSync(path.join(__dirname, '..', 'admin', 'dashboard.html'), 'utf8');
+
+  // Verify worker sliding window rate limiting
+  assert(workerJs.includes('telemetryRateLimitMap'), 'Cloudflare Worker must maintain telemetry rate limit map');
+  assert(workerJs.includes('queryRateLimitMap'), 'Cloudflare Worker must maintain query rate limit map');
+  assert(workerJs.includes('isClientRateLimited'), 'Cloudflare Worker must implement isClientRateLimited function');
+  assert(workerJs.includes('status: 429'), 'Worker must return HTTP 429 when rate limited');
+  assert(workerJs.includes('Retry-After'), 'Worker 429 response must include Retry-After header');
+
+  // Verify query cache headers in worker
+  assert(workerJs.includes('private, max-age=15'), 'Worker query responses must include Cache-Control to protect D1 quotas');
+
+  // Verify dev server rate limiting
+  assert(devServerJs.includes('telemetryRateLimits'), 'Dev server must maintain telemetryRateLimits map');
+  assert(devServerJs.includes('queryRateLimits'), 'Dev server must maintain queryRateLimits map');
+  assert(devServerJs.includes('isGeneralRateLimited'), 'Dev server must implement isGeneralRateLimited');
+
+  // Verify client sensor quota protections
+  assert(analyticsJs.includes('MAX_FLUSHES_PER_SESSION'), 'analytics-core.js must enforce hard session flush ceiling');
+  assert(analyticsJs.includes('rateLimitBackoffUntil'), 'analytics-core.js must support 429 rate limit backoff');
+
+  // Verify dashboard in-memory query TTL cache
+  assert(dashboardHtml.includes('queryClientCache'), 'dashboard.html must implement in-memory queryClientCache');
+  assert(dashboardHtml.includes('QUERY_CACHE_TTL_MS'), 'dashboard.html must define cache TTL constant');
+});

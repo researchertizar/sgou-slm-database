@@ -151,6 +151,9 @@
   let lastUserActivityTimestamp = Date.now();
   let sessionHeartbeatCount = 0;
   const MAX_HEARTBEATS_PER_SESSION = 40; // Max 40 heartbeats per tab session to protect Worker limits
+  const MAX_FLUSHES_PER_SESSION = 80;    // Hard ceiling: max 80 network flushes per browser session
+  let totalFlushesThisSession = 0;
+  let rateLimitBackoffUntil = 0;          // Backoff timestamp if edge returns 429 Too Many Requests
 
   // Track passive student activity to detect idle tabs and avoid burning free quota
   function recordUserActivity() {
@@ -167,6 +170,11 @@
   function flush(isHeartbeat = false) {
     if ((eventQueue.length === 0 && !isHeartbeat) || isFlushing) return;
 
+    // Hard Quota Guard: Backoff if edge returned 429 or if tab exceeded session flush ceiling
+    if (Date.now() < rateLimitBackoffUntil || totalFlushesThisSession >= MAX_FLUSHES_PER_SESSION) {
+      return;
+    }
+
     // Limit Protection: If sending a heartbeat, suppress if user is idle (> 2 minutes without interaction)
     if (isHeartbeat) {
       const isIdle = (Date.now() - lastUserActivityTimestamp > 120000);
@@ -177,6 +185,7 @@
     }
 
     isFlushing = true;
+    totalFlushesThisSession++;
 
     const eventsToDeliver = eventQueue.splice(0, eventQueue.length);
     const hasMilestone = eventsToDeliver.some(e => e.t === 'document_download' || e.t === 'reader_page_dwell');
@@ -202,10 +211,18 @@
       if (navigator.sendBeacon) {
         const sent = navigator.sendBeacon(endpoint, payload);
         if (!sent) {
-          fetch(endpoint, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+          fetch(endpoint, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } })
+            .then(res => {
+              if (res.status === 429) rateLimitBackoffUntil = Date.now() + 60000;
+            })
+            .catch(() => {});
         }
       } else {
-        fetch(endpoint, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+        fetch(endpoint, { method: 'POST', body: payload, keepalive: true, headers: { 'Content-Type': 'application/json' } })
+          .then(res => {
+            if (res.status === 429) rateLimitBackoffUntil = Date.now() + 60000;
+          })
+          .catch(() => {});
       }
     } catch (_) {
       // Offline fallback: preserve events if delivery throws
