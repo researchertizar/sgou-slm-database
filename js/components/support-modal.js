@@ -136,7 +136,7 @@
         state.noticeCard.classList.add('alert-mode');
       }
       if (state.noticeText) {
-        state.noticeText.innerHTML = 'Direct pay looped or blocked? Tap <strong>Share QR</strong> above to pay via PhonePe / GPay, or <strong>Copy UPI ID</strong>.';
+        state.noticeText.innerHTML = 'Direct support blocked? Tap <strong>Share QR</strong> above or <strong>Copy UPI ID</strong> to contribute via PhonePe.';
       }
       if (state.mobileShareBtnText) {
         state.mobileShareBtnText.textContent = 'Share QR to PhonePe / App';
@@ -148,23 +148,13 @@
 
     /**
      * Generate high-resolution QR code HTML5 canvas with solid white background
-     * and ISO-compliant quiet zone (margin of 4 modules) for guaranteed gallery scanner decoding.
+     * and enhanced 6-module ISO-compliant quiet zone for guaranteed gallery scanner decoding.
      * @param {number|null} amount
-     * @param {number} [targetSize=512]
+     * @param {number} [targetSize=686]
      * @returns {HTMLCanvasElement}
      */
     generateQrCanvas: function (amount, targetSize) {
-      var size = targetSize || 512;
       var canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      var ctx = canvas.getContext('2d');
-      if (!ctx) return canvas;
-
-      // 1. Solid pure-white background for scanner contrast
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, size, size);
-
       if (typeof window.qrcode !== 'function') return canvas;
 
       try {
@@ -174,11 +164,21 @@
         qr.make();
 
         var moduleCount = qr.getModuleCount();
-        var quietZoneModules = 4; // ISO/IEC 18004 standard quiet zone
+        var quietZoneModules = 6; // Enhanced 6-module quiet zone for PhonePe/GPay gallery barcode scanning
         var totalModules = moduleCount + (quietZoneModules * 2);
-        var moduleSize = Math.floor(size / totalModules);
-        var actualQrSize = moduleSize * totalModules;
-        var offset = Math.floor((size - actualQrSize) / 2) + (quietZoneModules * moduleSize);
+        var moduleSize = Math.max(12, Math.floor((targetSize || 686) / totalModules));
+        var actualSize = totalModules * moduleSize;
+
+        canvas.width = actualSize;
+        canvas.height = actualSize;
+        var ctx = canvas.getContext('2d');
+        if (!ctx) return canvas;
+
+        // 1. Pure solid white opaque background for optical contrast
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, actualSize, actualSize);
+
+        var offset = quietZoneModules * moduleSize;
 
         // 2. Render black modules with crisp pixel alignment
         ctx.fillStyle = '#000000';
@@ -198,11 +198,11 @@
 
     /**
      * Download QR code as a high-resolution PNG image file
-     * Formatted with a 4-module quiet zone for PhonePe / GPay gallery scan compatibility.
+     * Formatted with a 6-module quiet zone for PhonePe / GPay gallery scan compatibility.
      */
     downloadQr: function () {
       try {
-        var canvas = SupportModal.generateQrCanvas(state.activeAmount, 600);
+        var canvas = SupportModal.generateQrCanvas(state.activeAmount, 700);
 
         var triggerDownload = function (blob) {
           var url = URL.createObjectURL(blob);
@@ -262,7 +262,7 @@
     shareQr: function () {
       state.hasEngagedPayment = true;
       try {
-        var canvas = SupportModal.generateQrCanvas(state.activeAmount, 600);
+        var canvas = SupportModal.generateQrCanvas(state.activeAmount, 700);
 
         var onBlobReady = function (blob) {
           var file = null;
@@ -274,7 +274,7 @@
 
           var shareData = {
             title: 'Support SGOU Database',
-            text: 'Scan with PhonePe, Google Pay, or any UPI app to contribute'
+            text: 'Scan with PhonePe, Google Pay, or any UPI app to contribute voluntarily'
           };
 
           if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -370,17 +370,20 @@
 
             '<!-- Mobile 1-Tap Action Section (Primary on Mobile) -->' +
             '<div class="support-mobile-section" id="supportMobileSection">' +
+              '<!-- Tier 1: Primary 1-Tap Support Action -->' +
               '<button type="button" id="supportDirectPayBtn" class="support-pay-primary-btn" data-app="upi">' +
                 '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true">' +
-                  '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>' +
+                  '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>' +
                 '</svg>' +
-                '<span id="supportDirectPayBtnText">Pay ₹25</span>' +
+                '<span id="supportDirectPayBtnText">Support ₹25</span>' +
               '</button>' +
-              '<div class="support-alt-divider" id="supportAltDivider" role="separator" aria-label="Alternative payment options">' +
+              '<!-- Alternative Pathways Divider -->' +
+              '<div class="support-alt-divider" id="supportAltDivider" role="separator" aria-label="Alternative support options">' +
                 '<span class="support-alt-line"></span>' +
-                '<span class="support-alt-text">or</span>' +
+                '<span class="support-alt-text">or choose alternative</span>' +
                 '<span class="support-alt-line"></span>' +
               '</div>' +
+              '<!-- Tier 2: Secondary Share QR to App Action -->' +
               '<button type="button" id="supportMobileShareBtn" class="support-share-fallback-btn" title="Share QR directly to PhonePe or UPI App">' +
                 '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
                   '<circle cx="18" cy="5" r="3"></circle>' +
@@ -391,6 +394,7 @@
                 '</svg>' +
                 '<span id="supportMobileShareBtnText">Share QR to PhonePe / App</span>' +
               '</button>' +
+              '<!-- Tier 3: Tertiary Show QR Code on Screen Action -->' +
               '<button type="button" class="support-toggle-qr-btn" id="supportToggleQrBtn">' +
                 '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
                   '<rect x="3" y="3" width="7" height="7"></rect>' +
@@ -398,7 +402,7 @@
                   '<rect x="14" y="14" width="7" height="7"></rect>' +
                   '<rect x="3" y="14" width="7" height="7"></rect>' +
                 '</svg>' +
-                '<span id="supportToggleQrText">Show QR Code</span>' +
+                '<span id="supportToggleQrText">Show QR Code to Scan</span>' +
               '</button>' +
             '</div>' +
 
@@ -407,7 +411,7 @@
               '<div class="support-qr-card">' +
                 '<!-- Corner Controls: Info + Share + Save (PNG) -->' +
                 '<div class="support-qr-corner-actions">' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Payment advice" aria-label="Payment advice">' +
+                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Contribution guide" aria-label="Contribution guide">' +
                     '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
                       '<circle cx="12" cy="12" r="10"></circle>' +
                       '<line x1="12" y1="16" x2="12" y2="12"></line>' +
@@ -434,10 +438,10 @@
                 '<div class="support-qr-popover" id="supportQrPopover" role="tooltip" aria-hidden="true">' +
                   '<span class="support-popover-title">PhonePe &amp; Gallery Scan Help</span>' +
                   '<span>1. Tap <strong>Share</strong> to open directly in PhonePe / GPay</span>' +
-                  '<span>2. Tap <strong>Save</strong> for high-res PNG to scan from gallery</span>' +
-                  '<span>3. Or tap <strong>Copy</strong> below to pay via UPI ID (0% fee)</span>' +
+                  '<span>2. Tap <strong>Save</strong> for crisp QR image for gallery scan</span>' +
+                  '<span>3. Or tap <strong>Copy</strong> below to contribute via UPI ID</span>' +
                 '</div>' +
-                '<div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Payment QR Code">' +
+                '<div class="support-qr-frame" id="supportQrContainer" aria-label="UPI Contribution QR Code">' +
                   '<!-- SVG QR rendered dynamically -->' +
                 '</div>' +
                 '<div class="support-qr-caption">' +
@@ -453,7 +457,7 @@
                 '<line x1="12" y1="16" x2="12" y2="12"></line>' +
                 '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
               '</svg>' +
-              '<span class="support-notice-text" id="supportNoticeText">PhonePe / Paytm loop? Tap <strong>Share QR</strong> above to pay directly, or <strong>Copy UPI ID</strong>.</span>' +
+              '<span class="support-notice-text" id="supportNoticeText">PhonePe prompt? Tap <strong>DISMISS</strong> and tap <strong>Pay</strong> below, or tap <strong>Copy UPI ID</strong> to support directly.</span>' +
             '</div>' +
 
             '<!-- UPI ID Copy Section -->' +
@@ -464,7 +468,7 @@
                   '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>' +
                   '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>' +
                 '</svg>' +
-                '<span id="supportCopyBtnText">Copy</span>' +
+                '<span id="supportCopyBtnText">Copy UPI ID</span>' +
               '</button>' +
             '</div>' +
           '</div>' +
@@ -475,7 +479,7 @@
                 '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>' +
                 '<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>' +
               '</svg>' +
-              '0% fee &middot; Direct UPI' +
+              'Direct UPI &middot; 100% voluntary contribution' +
             '</span>' +
             '<button type="button" class="support-done-btn" id="supportDoneBtn">Done</button>' +
           '</div>' +
@@ -544,9 +548,9 @@
 
       if (state.payBtnText) {
         if (amount && Number(amount) > 0) {
-          state.payBtnText.textContent = 'Pay ₹' + amount;
+          state.payBtnText.textContent = 'Support ₹' + amount;
         } else {
-          state.payBtnText.textContent = 'Pay via UPI';
+          state.payBtnText.textContent = 'Support the Library';
         }
       }
     },
@@ -598,11 +602,11 @@
           amount: state.activeAmount !== null ? state.activeAmount : 'custom'
         });
         if (Toast && typeof Toast.show === 'function') {
-          Toast.show('UPI ID copied: ' + vpa);
+          Toast.show('UPI ID copied: ' + vpa + ' — Open PhonePe/GPay to contribute');
         }
         setTimeout(function () {
           if (state.copyBtn) state.copyBtn.classList.remove('copied');
-          if (state.copyBtnText) state.copyBtnText.textContent = 'Copy';
+          if (state.copyBtnText) state.copyBtnText.textContent = 'Copy UPI ID';
         }, 2500);
       };
 
@@ -668,7 +672,7 @@
         if (innerModal) innerModal.classList.remove('mobile-qr-active');
       }
       if (state.qrSection) state.qrSection.classList.remove('show');
-      if (state.qrToggleText) state.qrToggleText.textContent = 'Show QR Code';
+      if (state.qrToggleText) state.qrToggleText.textContent = 'Show QR Code to Scan';
       if (state.qrPopover) state.qrPopover.classList.remove('show');
 
       state.directPayAttemptTimestamp = 0;
@@ -676,7 +680,7 @@
       if (state.mobileSection) state.mobileSection.classList.remove('share-prioritized');
       if (state.noticeCard) state.noticeCard.classList.remove('alert-mode');
       if (state.noticeText) {
-        state.noticeText.innerHTML = 'PhonePe / Paytm loop? Tap <strong>Share QR</strong> above to pay directly, or <strong>Copy UPI ID</strong>.';
+        state.noticeText.innerHTML = 'PhonePe prompt? Tap <strong>DISMISS</strong> and tap <strong>Pay</strong> below, or tap <strong>Copy UPI ID</strong> to support directly.';
       }
       if (state.mobileShareBtnText) {
         state.mobileShareBtnText.textContent = 'Share QR to PhonePe / App';
@@ -854,7 +858,7 @@
               state.qrSection.classList.toggle('show', isNowQrActive);
             }
             if (state.qrToggleText) {
-              state.qrToggleText.textContent = isNowQrActive ? 'Hide QR Code' : 'Show QR Code';
+              state.qrToggleText.textContent = isNowQrActive ? 'Hide QR Code' : 'Show QR Code to Scan';
             }
             sendTelemetry('support_qr_toggle', { is_shown: isNowQrActive });
           }

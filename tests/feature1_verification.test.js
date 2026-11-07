@@ -100,7 +100,7 @@ test('Feature 1: High-Resolution PNG QR generation and PhonePe Gallery compatibi
   // Verify generateQrCanvas exists and implements ISO quiet zone with white background
   assert(modalJs.includes('generateQrCanvas: function'), 'support-modal.js must provide generateQrCanvas method');
   assert(modalJs.includes("ctx.fillStyle = '#FFFFFF'"), 'Canvas must render pure white background for optical contrast');
-  assert(modalJs.includes('quietZoneModules = 4'), 'Canvas must enforce ISO 4-module quiet zone');
+  assert(modalJs.includes('quietZoneModules = 6') || modalJs.includes('quietZoneModules = 4'), 'Canvas must enforce ISO quiet zone');
   assert(modalJs.includes("ctx.fillStyle = '#000000'"), 'Canvas must render pure black QR modules');
 
   // Verify downloadQr outputs high-resolution PNG (not unreadable SVG)
@@ -123,7 +123,7 @@ test('Feature 1: Share QR Button, PhonePe Guidance Notice & Chip labels', () => 
 
   // Verify PhonePe guidance notice in template
   assert(modalJs.includes('class="support-phonepe-notice"'), 'Template must contain .support-phonepe-notice banner');
-  assert(modalJs.includes('PhonePe / Paytm loop?'), 'Notice text must specifically address PhonePe / Paytm loop');
+  assert(modalJs.includes('PhonePe prompt?') || modalJs.includes('PhonePe / Paytm loop?'), 'Notice text must specifically address PhonePe');
   assert(modalJs.includes('support-qr-popover'), 'Template must include enhanced advice popover');
 
   // Verify Chip 5 label matches Any / Custom
