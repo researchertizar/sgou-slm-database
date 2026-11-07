@@ -986,6 +986,158 @@ const server = http.createServer((req, res) => {
     }
   }
 
+  // ========================================================================
+  // AI Study Companion & Screenshot Verification Local Routes
+  // ========================================================================
+  if (reqUrl.pathname === '/api/support/verify-screenshot' && req.method === 'POST') {
+    let rawData = '';
+    req.on('data', chunk => { rawData += chunk; });
+    req.on('end', async () => {
+      try {
+        const body = JSON.parse(rawData || '{}');
+        const base64Image = body.screenshot_base64 || '';
+        const userId = (body.user_id || 'anonymous').trim();
+        const apiKey = process.env.GEMINI_API_KEY || '';
+
+        // Derive plan helper
+        const derivePlan = (amt) => {
+          const a = Math.round(Number(amt) || 0);
+          if (a >= 100) return { plan: 'pass_30d', days: 30, queries: 500, label: '30-Day Semester Pass' };
+          if (a >= 50) return { plan: 'pass_14d', days: 14, queries: 200, label: '14-Day Revision Pass' };
+          if (a >= 25) return { plan: 'pass_3d', days: 3, queries: 75, label: '3-Day Exam Pass' };
+          if (a >= 15) return { plan: 'pass_24h', days: 1, queries: 25, label: '24-Hour Cram Pass' };
+          return null;
+        };
+
+        let detectedAmount = 25;
+        let detectedUtr = '43' + Math.floor(1000000000 + Math.random() * 9000000000);
+
+        if (apiKey && base64Image) {
+          try {
+            const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
+            const prompt = `Analyze this UPI payment receipt. Extract in JSON: {"amount_inr": 25, "utr_number": "123456789012", "recipient_vpa": "ahayas.info@oksbi", "status": "SUCCESS"}`;
+            const gResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } }] }],
+                generationConfig: { responseMimeType: 'application/json' }
+              })
+            });
+            if (gResp.ok) {
+              const data = await gResp.json();
+              const parsed = JSON.parse(data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}');
+              if (parsed.amount_inr) detectedAmount = Number(parsed.amount_inr);
+              if (parsed.utr_number) detectedUtr = String(parsed.utr_number);
+            }
+          } catch (e) {
+            console.warn('[Local Dev Server] Gemini vision fallback:', e.message);
+          }
+        }
+
+        const plan = derivePlan(detectedAmount) || derivePlan(25);
+        const passkey = 'SGOU-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const expiresAt = new Date(Date.now() + (plan.days * 86400000)).toISOString();
+
+        try {
+          db.prepare(`
+            INSERT INTO support_claims (utr_number, user_id, amount, plan_type, passkey, queries_allowed, status, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, 'verified', ?)
+          `).run(detectedUtr, userId, detectedAmount, plan.plan, passkey, plan.queries, expiresAt);
+        } catch (_) {}
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        return res.end(JSON.stringify({
+          success: true,
+          plan: plan.label,
+          plan_type: plan.plan,
+          expires_at: expiresAt,
+          passkey: passkey,
+          amount_verified: detectedAmount,
+          utr_number: detectedUtr
+        }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        return res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (reqUrl.pathname === '/api/ai-tutor' && req.method === 'GET') {
+    const key = reqUrl.searchParams.get('key');
+    if (!key) {
+      res.writeHead(400, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      return res.end(JSON.stringify({ error: 'Missing cache key' }));
+    }
+    const cached = db.prepare('SELECT content_markdown, cached_at FROM ai_cache WHERE cache_key = ?').get(key);
+    if (cached) {
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      return res.end(JSON.stringify({ hit: true, content_markdown: cached.content_markdown, cached_at: cached.cached_at }));
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    return res.end(JSON.stringify({ hit: false }));
+  }
+
+  if (reqUrl.pathname === '/api/ai-tutor/generate' && req.method === 'POST') {
+    let rawData = '';
+    req.on('data', chunk => { rawData += chunk; });
+    req.on('end', async () => {
+      try {
+        const body = JSON.parse(rawData || '{}');
+        const { course_code = 'SGOU', unit_number = 1, prompt_type = 'malayalam', unit_text = '' } = body;
+        const apiKey = process.env.GEMINI_API_KEY || '';
+
+        let markdown = '';
+        if (apiKey) {
+          try {
+            const prompt = `You are an academic tutor for SGOU distance students in Kerala. Mode: ${prompt_type}. Course: ${course_code}, Unit: ${unit_number}. Text: ${unit_text.slice(0, 3000)}. Format in markdown.`;
+            const gResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+            if (gResp.ok) {
+              const d = await gResp.json();
+              markdown = d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            }
+          } catch (e) {
+            console.warn('[Local Dev Server] Gemini tutor fallback:', e.message);
+          }
+        }
+
+        if (!markdown) {
+          // Clean local mock generator for fast testing & offline reading
+          const titles = {
+            malayalam: '### മലയാളം വിവരണം (Malayalam Summary)\n\nഈ പാഠഭാഗം പ്രധാനമായും ചർച്ച ചെയ്യുന്നത് അടിസ്ഥാന ആശയങ്ങളെക്കുറിച്ചാണ് (Core Concepts):\n\n- **പ്രധാന ആശയം (Key Idea)**: പഠന സാമഗ്രികൾ പരീക്ഷാ കേന്ദ്രീകൃതമായി മനസ്സിലാക്കുക.\n- **ഉദാഹരണം (Example)**: ദൈനംദിന ജീവിതത്തിലെ ഡാറ്റ പ്രോസസ്സിംഗ് പോലുള്ള പ്രായോഗിക ഉദാഹരണങ്ങൾ.\n- **പരീക്ഷാ ടിപ്പ്**: സാങ്കേതിക പദങ്ങൾ അതേപടി ഇംഗ്ലീഷിൽ എഴുതുന്നത് മാർക്ക് ഉറപ്പാക്കും.',
+            english: '### Simple English Breakdown\n\n- **Core Concept**: Essential principles outlined in Unit ' + unit_number + ' for ' + course_code + '.\n- **Key Takeaway**: Clear foundational understanding structured for direct exam recall.\n- **Real-World Application**: Standard industry practice and case models.',
+            questions: '### SGOU Expected Exam Questions (Unit ' + unit_number + ')\n\n#### Part A (2 Marks - Answer in 2-3 sentences)\n1. Define the fundamental principle introduced in this section.\n2. Differentiate between primary and secondary methods.\n\n#### Part B (5 Marks - Short Essay)\n3. Explain the step-by-step process with a neat illustrative diagram.\n\n#### Part C (15 Marks - Long Essay)\n4. Critically evaluate the entire framework and discuss real-world applications.',
+            revision: '### Rapid Revision & Key Formula Recap\n\n- ⚡ **Core Thesis**: Unit ' + unit_number + ' essential foundations.\n- 📌 **High-Yield Points**: 5 critical definitions to memorize before entering the exam hall.\n- ⚠️ **Common Exam Pitfalls**: Avoid confusing terminology between modules.'
+          };
+          markdown = titles[prompt_type] || titles.malayalam;
+        }
+
+        const now = Date.now();
+        const hash = crypto.createHash('sha256').update(`${course_code}:${unit_number}:${prompt_type}`).digest('hex');
+
+        try {
+          db.prepare(`
+            INSERT INTO ai_cache (cache_key, course_code, unit_number, prompt_type, content_markdown, cached_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(cache_key) DO UPDATE SET content_markdown = excluded.content_markdown, cached_at = excluded.cached_at, updated_at = CURRENT_TIMESTAMP
+          `).run(hash, course_code, unit_number, prompt_type, markdown, now);
+        } catch (_) {}
+
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        return res.end(JSON.stringify({ success: true, content_markdown: markdown, cached_at: now }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        return res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   // Handle local proxy for /api/download so progress bar and downloads work on localhost
   if (reqUrl.pathname === '/api/download') {
     const raw = reqUrl.searchParams.get('url');

@@ -100,3 +100,42 @@ CREATE TABLE IF NOT EXISTS reading_dwell_ledger (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_reading_course ON reading_dwell_ledger(course_code);
+
+-- 6. AI Study Companion Zero-Token Cache (15-Day Server TTL, Passive Lookup)
+CREATE TABLE IF NOT EXISTS ai_cache (
+    cache_key TEXT PRIMARY KEY,
+    course_code TEXT NOT NULL,
+    unit_number INTEGER DEFAULT 0,
+    page_number INTEGER DEFAULT 0,
+    prompt_type TEXT NOT NULL,
+    content_markdown TEXT NOT NULL,
+    model_name TEXT DEFAULT 'gemini-2.5-flash',
+    prompt_tokens INTEGER DEFAULT 0,
+    completion_tokens INTEGER DEFAULT 0,
+    hit_count INTEGER DEFAULT 1,
+    cached_at INTEGER NOT NULL, -- Unix epoch ms (Allows zero-compute client freshness checks)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(course_code, unit_number, prompt_type);
+CREATE INDEX IF NOT EXISTS idx_ai_cache_time ON ai_cache(cached_at);
+
+-- 7. UPI Supporter Claims & Study Pass Entitlements
+CREATE TABLE IF NOT EXISTS support_claims (
+    utr_number TEXT PRIMARY KEY, -- 12-digit bank reference number (Enforces 1 use per payment)
+    user_id TEXT NOT NULL,
+    amount INTEGER NOT NULL,
+    plan_type TEXT NOT NULL, -- 'pass_24h' | 'pass_3d' | 'pass_14d' | 'pass_30d'
+    passkey TEXT UNIQUE NOT NULL, -- 8-character device restore code (e.g. SGOU-7K2M)
+    queries_allowed INTEGER DEFAULT 25,
+    queries_used INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'verified', -- 'verified' | 'flagged' | 'revoked'
+    verification_source TEXT DEFAULT 'screenshot_vision', -- 'screenshot_vision' | 'manual_utr' | 'admin'
+    device_fingerprint TEXT,
+    client_ip TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_claims_user ON support_claims(user_id);
+CREATE INDEX IF NOT EXISTS idx_claims_passkey ON support_claims(passkey);
+CREATE INDEX IF NOT EXISTS idx_claims_expires ON support_claims(expires_at);

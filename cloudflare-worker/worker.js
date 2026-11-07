@@ -29,9 +29,145 @@ function timingSafeEqual(a, b) {
   return out === 0;
 }
 
+async function sha256Hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function generatePasskey() {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let out = 'SGOU-';
+  for (let i = 0; i < 4; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
+function deriveStudyPassPlan(amountInr) {
+  const amt = Math.round(Number(amountInr) || 0);
+  if (amt >= 100) return { plan: 'pass_30d', days: 30, queries: 500, label: '30-Day Semester Pass' };
+  if (amt >= 50) return { plan: 'pass_14d', days: 14, queries: 200, label: '14-Day Revision Pass' };
+  if (amt >= 25) return { plan: 'pass_3d', days: 3, queries: 75, label: '3-Day Exam Pass' };
+  if (amt >= 15) return { plan: 'pass_24h', days: 1, queries: 25, label: '24-Hour Cram Pass' };
+  return null;
+}
+
+async function callGeminiVisionReceipt(apiKey, base64Image) {
+  const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const prompt = `You are a bank receipt audit system. Analyze this Indian UPI payment receipt (PhonePe, Google Pay, Paytm, BHIM, Cred).
+Extract these exact fields in valid JSON format:
+{
+  "recipient_vpa": "string", // Payee UPI ID or Payee Name (e.g. ahayas.info@oksbi or Ahayas)
+  "amount_inr": 25,          // Number in Indian Rupees (without currency symbols)
+  "utr_number": "string",     // 12-digit UPI transaction reference number / UTR
+  "status": "SUCCESS"        // "SUCCESS", "FAILED", "PENDING", or "INVALID"
+}
+Rules:
+- amount_inr MUST be a number representing the total transferred rupees.
+- status must only be "SUCCESS" if the receipt explicitly shows payment completed / successful.
+- Return ONLY the raw JSON string without markdown code fences.`;
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType: 'image/jpeg', data: cleanBase64 } }
+        ]
+      }],
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
+    })
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Gemini Vision API error (${resp.status}): ${errText}`);
+  }
+
+  const data = await resp.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Empty response from Gemini Vision');
+  return JSON.parse(text);
+}
+
+async function callGeminiStudyTutor(apiKey, courseCode, courseTitle, unitNum, promptType, unitText) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  let systemPrompt = '';
+  if (promptType === 'malayalam') {
+    systemPrompt = `You are a supportive, high-clarity academic tutor for Sreenarayana Guru Open University (SGOU) distance learners in Kerala.
+Explain the syllabus material provided in clear, conversational Malayalam script, retaining essential technical terms in English inside parentheses.
+Use clear bullet points and provide one relatable everyday Kerala example. Do not translate standard computer or management terms into awkward archaic Malayalam.`;
+  } else if (promptType === 'english') {
+    systemPrompt = `You are an academic clarity specialist for university distance learning students.
+Explain the syllabus material provided in simple, high-yield English (Grade 8 reading level).
+Structure:
+1. Core Concept (2 sentences).
+2. Key Points (4 clear bullets).
+3. Real-world Example (1 bullet).
+Bold all crucial definitions and concepts.`;
+  } else if (promptType === 'questions') {
+    systemPrompt = `You are an SGOU University Examination Board question setter.
+Generate authentic predicted examination questions based strictly on the provided textbook material.
+Follow the SGOU Exam Pattern:
+- Part A: Two 2-Mark Short Answer Questions (Definitions, Distinctions).
+- Part B: One 5-Mark Short Essay Question (Concepts, Processes, Comparisons).
+- Part C: One 15-Mark Long Essay Question (Comprehensive Problem or Analytical Evaluation).
+Provide a brief 1-line answer key/hint for each question.`;
+  } else { // revision
+    systemPrompt = `You are an exam revision coach for SGOU university students.
+Distill the provided material into an ultra-concise, high-density exam revision cheat-sheet.
+Structure:
+1. One-Sentence Thesis.
+2. 5 Must-Remember Key Takeaways.
+3. Key Definitions / Formulas.
+4. Common Exam Mistakes to Avoid.`;
+  }
+
+  const promptText = `Course: ${courseCode || 'SGOU Course'} ${courseTitle ? '- ' + courseTitle : ''}
+Unit: Unit ${unitNum || 1}
+Mode: ${promptType}
+
+Source Material:
+${(unitText || '').slice(0, 5000)}
+
+Format the output in clean, elegant Markdown with headings and bullets.`;
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: systemPrompt + '\n\n' + promptText }
+        ]
+      }],
+      generationConfig: {
+        temperature: promptType === 'questions' ? 0.6 : 0.3
+      }
+    })
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Gemini Tutor error (${resp.status}): ${errText}`);
+  }
+
+  const data = await resp.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Empty response from Gemini Tutor');
+  return text;
+}
+
 // Edge Rate Limiting Maps (Sliding 60-second window per client IP)
 const telemetryRateLimitMap = new Map();
 const queryRateLimitMap = new Map();
+const aiTutorRateLimitMap = new Map();
 
 function isClientRateLimited(map, clientIp, maxPerMinute) {
   if (!clientIp) return false;
@@ -960,6 +1096,253 @@ export default {
         return new Response(JSON.stringify({ error: 'Unknown action' }), { status: 400, headers: corsHeaders });
       } catch (err) {
         return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
+      }
+    }
+
+    // ========================================================================
+    // 3b. AI STUDY COMPANION & SCREENSHOT VERIFICATION ROUTES
+    // ========================================================================
+
+    // Route: Verify UPI Payment Screenshot (Instant Vision AI Verification)
+    if (pathname === '/api/support/verify-screenshot' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const base64Image = body.screenshot_base64 || '';
+        const userId = (body.user_id || 'anonymous').trim();
+        const deviceFingerprint = (body.device_fingerprint || '').trim();
+
+        if (!base64Image) {
+          return new Response(JSON.stringify({ success: false, error: 'No screenshot image provided' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const apiKey = env.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : '');
+        if (!apiKey) {
+          return new Response(JSON.stringify({ success: false, error: 'AI Verification engine unconfigured (Missing GEMINI_API_KEY)' }), {
+            status: 503,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        // 1. Analyze receipt via Gemini 2.5 Flash Vision
+        const receipt = await callGeminiVisionReceipt(apiKey, base64Image);
+        const recipient = (receipt.recipient_vpa || '').toLowerCase();
+        const status = (receipt.status || '').toUpperCase();
+        const utr = (receipt.utr_number || '').replace(/\D/g, '');
+        const amount = Number(receipt.amount_inr) || 0;
+
+        // 2. Strict Fraud Validations
+        if (status !== 'SUCCESS') {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Payment receipt does not indicate a successful transaction.' 
+          }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (!recipient.includes('ahayas') && !recipient.includes('oksbi') && !recipient.includes('sbi')) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Receipt payee does not match SGOU Library (ahayas.info@oksbi).' 
+          }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        const plan = deriveStudyPassPlan(amount);
+        if (!plan) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: `Minimum contribution for Study Pass is ₹15 (Detected ₹${amount}).` 
+          }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        // 3. Prevent duplicate UTR reuse
+        if (utr && utr.length >= 8 && env.DB) {
+          const existing = await env.DB.prepare('SELECT utr_number, user_id FROM support_claims WHERE utr_number = ?').bind(utr).first();
+          if (existing) {
+            return new Response(JSON.stringify({ 
+              success: false, 
+              error: 'This UPI transaction reference has already been claimed.' 
+            }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+        }
+
+        const passkey = generatePasskey();
+        const expiresAt = new Date(Date.now() + (plan.days * 86400000)).toISOString();
+        const safeUtr = utr || ('UTR' + Date.now());
+
+        if (env.DB) {
+          await env.DB.prepare(`
+            INSERT INTO support_claims (
+              utr_number, user_id, amount, plan_type, passkey,
+              queries_allowed, status, verification_source, device_fingerprint,
+              client_ip, expires_at
+            ) VALUES (?, ?, ?, ?, ?, ?, 'verified', 'screenshot_vision', ?, ?, ?)
+          `).bind(safeUtr, userId, amount, plan.plan, passkey, plan.queries, deviceFingerprint, clientIp, expiresAt).run();
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          plan: plan.label,
+          plan_type: plan.plan,
+          expires_at: expiresAt,
+          passkey: passkey,
+          amount_verified: amount,
+          utr_number: safeUtr
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+      } catch (err) {
+        return new Response(JSON.stringify({ success: false, error: err.message || 'Verification failed' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // Route: Restore Study Pass via Passkey
+    if (pathname === '/api/support/restore-passkey' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const passkey = (body.passkey || '').trim().toUpperCase();
+
+        if (!passkey || !env.DB) {
+          return new Response(JSON.stringify({ success: false, error: 'Invalid or missing passkey' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const claim = await env.DB.prepare(`
+          SELECT plan_type, expires_at, status, queries_allowed, queries_used
+          FROM support_claims
+          WHERE passkey = ? AND expires_at > CURRENT_TIMESTAMP AND status = 'verified'
+        `).bind(passkey).first();
+
+        if (!claim) {
+          return new Response(JSON.stringify({ success: false, error: 'Passkey not found or expired' }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          plan_type: claim.plan_type,
+          expires_at: claim.expires_at,
+          queries_allowed: claim.queries_allowed
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+      } catch (err) {
+        return new Response(JSON.stringify({ success: false, error: err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    // Route: Passive Zero-Compute AI Tutor Cache Lookup (GET)
+    if (pathname === '/api/ai-tutor' && request.method === 'GET') {
+      const cacheKey = urlObj.searchParams.get('key');
+      if (!cacheKey) {
+        return new Response(JSON.stringify({ error: 'Missing cache key' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      if (env.DB) {
+        const cached = await env.DB.prepare(`
+          SELECT content_markdown, cached_at 
+          FROM ai_cache 
+          WHERE cache_key = ?
+        `).bind(cacheKey).first();
+
+        if (cached) {
+          // Asynchronously record hit
+          env.DB.prepare('UPDATE ai_cache SET hit_count = hit_count + 1 WHERE cache_key = ?').bind(cacheKey).run().catch(() => {});
+          return new Response(JSON.stringify({
+            hit: true,
+            content_markdown: cached.content_markdown,
+            cached_at: cached.cached_at
+          }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+      }
+
+      return new Response(JSON.stringify({ hit: false }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Route: AI Study Tutor Generation (POST)
+    if (pathname === '/api/ai-tutor/generate' && request.method === 'POST') {
+      try {
+        const body = await request.json();
+        const {
+          course_code = 'SGOU',
+          course_title = '',
+          unit_number = 1,
+          prompt_type = 'malayalam',
+          unit_text = '',
+          user_id = 'anon',
+          passkey = ''
+        } = body;
+
+        // Check if user has active pass
+        let isPassActive = false;
+        if (passkey && env.DB) {
+          const pass = await env.DB.prepare(`
+            SELECT id FROM support_claims 
+            WHERE passkey = ? AND expires_at > CURRENT_TIMESTAMP AND status = 'verified'
+          `).bind(passkey).first();
+          if (pass) isPassActive = true;
+        }
+
+        // If no active pass, enforce IP rate limiting (Max 5 generations per minute as guard)
+        if (!isPassActive && isClientRateLimited(aiTutorRateLimitMap, clientIp, 10)) {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded: Please wait a moment.' }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' }
+          });
+        }
+
+        const apiKey = env.GEMINI_API_KEY || (typeof process !== 'undefined' && process.env ? process.env.GEMINI_API_KEY : '');
+        if (!apiKey) {
+          return new Response(JSON.stringify({ error: 'AI Tutor service unconfigured (Missing GEMINI_API_KEY)' }), {
+            status: 503,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const cacheKey = await sha256Hex(`${course_code}:${unit_number}:${prompt_type}`);
+        const markdown = await callGeminiStudyTutor(apiKey, course_code, course_title, unit_number, prompt_type, unit_text);
+        const now = Date.now();
+
+        if (env.DB) {
+          await env.DB.prepare(`
+            INSERT INTO ai_cache (
+              cache_key, course_code, unit_number, prompt_type,
+              content_markdown, cached_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(cache_key) DO UPDATE SET
+              content_markdown = excluded.content_markdown,
+              cached_at = excluded.cached_at,
+              updated_at = CURRENT_TIMESTAMP,
+              hit_count = hit_count + 1
+          `).bind(cacheKey, course_code, unit_number, prompt_type, markdown, now).run();
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          content_markdown: markdown,
+          cached_at: now
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message || 'Generation failed' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
       }
     }
 
