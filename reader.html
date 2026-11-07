@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="./css/components/support-modal.css?v=20261107_01">
   <link rel="stylesheet" href="./css/components/partner-modal.css?v=20261105_01">
   <link rel="stylesheet" href="./css/components/toast.css?v=20261105_01">
-  <link rel="stylesheet" href="./css/components/ai-companion.css?v=20261107_01">
+  <link rel="stylesheet" href="./css/components/ai-companion.css?v=20261107_02">
   <style>
     /* ============================================================
        THEME SYSTEM — Synchronized with SGOU Academic Design Tokens
@@ -1214,7 +1214,7 @@
   </div>
 
     <!-- SGOU AI Study Companion Bottom Sheet -->
-    <div id="aiCompanionSheet" class="ai-sheet" role="dialog" aria-modal="true" aria-labelledby="aiSheetTitle" aria-hidden="true">
+    <div id="aiCompanionSheet" class="ai-sheet" role="dialog" aria-modal="true" aria-labelledby="aiSheetTitle" aria-hidden="true" inert>
       <div class="ai-sheet-backdrop" id="aiSheetBackdrop"></div>
       <div class="ai-sheet-panel">
         <div class="ai-sheet-handle-wrap" id="aiSheetHandle">
@@ -1422,7 +1422,7 @@
   <script src="./js/components/theme.js?v=20261105_01"></script>
   <script src="./js/qrcode.min.js?v=20261105_01"></script>
   <script src="./js/components/support-modal.js?v=20261107_01"></script>
-  <script src="./js/components/ai-companion.js?v=20261107_01"></script>
+  <script src="./js/components/ai-companion.js?v=20261107_02"></script>
   <script src="./js/components/partner-modal.js?v=20261105_01"></script>
   <script src="./js/telemetry/analytics-core.js?v=20261105_01"></script>
   <script>
@@ -2395,6 +2395,9 @@
           currentPage = num;
           pageNumEl.textContent = num;
           updateReadingProgress();
+          if (window.AiCompanion && typeof window.AiCompanion.setContext === 'function') {
+            window.AiCompanion.setContext(courseCode, document.title, num, Math.ceil(num / 15));
+          }
 
           // Cancel obsolete renders before jumping
           for (var p in activeRenderTasks) {
@@ -2417,6 +2420,9 @@
           wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
           currentPage = num;
           pageNumEl.textContent = num;
+          if (window.AiCompanion && typeof window.AiCompanion.setContext === 'function') {
+            window.AiCompanion.setContext(courseCode, document.title, num, Math.ceil(num / 15));
+          }
           queuePageRender(num, true);
           if (num + 1 <= totalPages) queuePageRender(num + 1, false);
           if (num - 1 >= 1) queuePageRender(num - 1, false);

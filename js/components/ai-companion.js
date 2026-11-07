@@ -207,6 +207,14 @@
       state.fileInputEl = document.getElementById('aiReceiptUploadInput');
       state.pillBtns = document.querySelectorAll('.ai-pill-btn');
 
+      if (state.sheetEl) {
+        state.sheetEl.setAttribute('aria-hidden', 'true');
+        if ('inert' in state.sheetEl) {
+          state.sheetEl.inert = true;
+        }
+        state.sheetEl.setAttribute('inert', '');
+      }
+
       checkSupporterStatus();
       updateQuotaBadge();
 
@@ -292,8 +300,13 @@
      */
     open: function (initialMode, customText) {
       if (!state.sheetEl) return;
+      state.lastFocusedElement = document.activeElement;
       state.isOpen = true;
       state.selectedText = customText || '';
+      if ('inert' in state.sheetEl) {
+        state.sheetEl.inert = false;
+      }
+      state.sheetEl.removeAttribute('inert');
       state.sheetEl.classList.add('visible', 'active');
       state.sheetEl.setAttribute('aria-hidden', 'false');
 
@@ -304,6 +317,12 @@
       } else {
         // Initial state is completely blank
         AiCompanion.resetToBlankState();
+      }
+
+      // Shift focus inside sheet to close button or first pill for accessibility
+      var firstFocusable = state.sheetEl.querySelector('#aiSheetCloseBtn, .ai-pill-btn');
+      if (firstFocusable && typeof firstFocusable.focus === 'function') {
+        try { firstFocusable.focus(); } catch (_) {}
       }
 
       if (typeof window.gtag === 'function') {
@@ -317,8 +336,30 @@
     close: function () {
       if (!state.sheetEl) return;
       state.isOpen = false;
+
+      // Unfocus and restore focus to previous trigger or blur BEFORE hiding aria
+      if (state.sheetEl.contains(document.activeElement)) {
+        if (state.lastFocusedElement && typeof state.lastFocusedElement.focus === 'function' && document.body.contains(state.lastFocusedElement) && !state.sheetEl.contains(state.lastFocusedElement)) {
+          try {
+            state.lastFocusedElement.focus();
+          } catch (_) {}
+        } else {
+          var openBtn = document.getElementById('aiCompanionBtn');
+          if (openBtn && typeof openBtn.focus === 'function') {
+            try { openBtn.focus(); } catch (_) {}
+          } else if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            try { document.activeElement.blur(); } catch (_) {}
+          }
+        }
+      }
+
       state.sheetEl.classList.remove('visible', 'active');
       state.sheetEl.setAttribute('aria-hidden', 'true');
+      if ('inert' in state.sheetEl) {
+        state.sheetEl.inert = true;
+      }
+      state.sheetEl.setAttribute('inert', '');
+      state.lastFocusedElement = null;
     },
 
     /**
