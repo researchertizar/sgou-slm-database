@@ -1016,7 +1016,7 @@ const server = http.createServer((req, res) => {
           try {
             const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
             const prompt = `Analyze this UPI payment receipt. Extract in JSON: {"amount_inr": 25, "utr_number": "123456789012", "recipient_vpa": "ahayas.info@oksbi", "status": "SUCCESS"}`;
-            const gResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const gResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -1092,7 +1092,7 @@ const server = http.createServer((req, res) => {
         if (apiKey) {
           try {
             const prompt = `You are an academic tutor for SGOU distance students in Kerala. Mode: ${prompt_type}. Course: ${course_code}, Unit: ${unit_number}. Text: ${unit_text.slice(0, 3000)}. Format in markdown.`;
-            const gResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            const gResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
