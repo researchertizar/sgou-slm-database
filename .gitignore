@@ -31,6 +31,8 @@ __pycache__/
 *.db-journal
 *.sqlite
 *.sqlite3
+.wrangler/
+*/.wrangler/
 
 # Screen recordings and media captures
 sr/
