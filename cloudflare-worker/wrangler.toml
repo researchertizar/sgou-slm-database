@@ -17,8 +17,8 @@ compatibility_date = "2026-11-04"
 # 3. Apply schema: npx wrangler d1 execute sgou-telemetry --file=./schema.sql
 [[d1_databases]]
 binding = "DB"
-database_name = "sgou-telemetry"
-database_id = "your-d1-database-uuid"
+database_name = "sgou-analytics-db"
+database_id = "8ea35d4c-3a9c-4338-b0ed-e1a3dc6165d7"
 
 # Cloudflare Worker Secrets
 # Do NOT store secrets in plain text in this file.
