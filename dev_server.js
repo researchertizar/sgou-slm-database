@@ -1159,12 +1159,16 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
 
         let markdown = '';
         const errors = [];
+        let isQuota = false;
+        let isUnavailable = false;
+
         for (const model of GEMINI_MODELS) {
           try {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             const gResp = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              signal: AbortSignal.timeout(18000),
               body: JSON.stringify({
                 contents: [{ parts: [{ text: systemPrompt + '\n\n' + promptText }] }],
                 generationConfig: {
@@ -1179,15 +1183,25 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
               if (markdown) break;
             } else {
               const errText = await gResp.text();
+              if (gResp.status === 429) isQuota = true;
+              if (gResp.status === 503) isUnavailable = true;
               errors.push(`${model} HTTP ${gResp.status}: ${errText}`);
             }
           } catch (e) {
+            if (e.name === 'TimeoutError') isUnavailable = true;
             errors.push(`${model} exception: ${e.message}`);
           }
         }
 
         if (!markdown) {
-          throw new Error(`Gemini API failure: ${errors.join(' | ')}`);
+          const statusCode = isQuota ? 429 : (isUnavailable ? 503 : 500);
+          const errorMsg = isQuota
+            ? 'AI Tutor daily quota reached. Please try again later or unlock with a Study Pass.'
+            : (isUnavailable
+                ? 'AI Tutor service is temporarily experiencing high traffic spikes. Please tap Retry in a moment.'
+                : `Gemini API failure: ${errors.join(' | ')}`);
+          res.writeHead(statusCode, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          return res.end(JSON.stringify({ error: errorMsg, code: isQuota ? 'QUOTA_EXCEEDED' : (isUnavailable ? 'HIGH_DEMAND' : 'API_ERROR') }));
         }
 
         const now = Date.now();
@@ -1204,8 +1218,9 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
         res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         return res.end(JSON.stringify({ success: true, content_markdown: markdown, cached_at: now }));
       } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
-        return res.end(JSON.stringify({ error: err.message }));
+        const statusCode = err.status || 500;
+        res.writeHead(statusCode, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+        return res.end(JSON.stringify({ error: err.message, code: err.code || 'UNKNOWN' }));
       }
     });
     return;

@@ -164,12 +164,16 @@ ${unitText || 'Course material context for ' + courseCode + ' Unit ' + unitNum}
 Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown.`;
 
   const errors = [];
+  let isQuota = false;
+  let isUnavailable = false;
+
   for (const model of GEMINI_MODELS) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(18000),
         body: JSON.stringify({
           contents: [{
             parts: [
@@ -188,14 +192,26 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
         if (text) return text;
       } else {
         const errText = await resp.text();
+        if (resp.status === 429) isQuota = true;
+        if (resp.status === 503) isUnavailable = true;
         errors.push(`${model} HTTP ${resp.status}: ${errText}`);
       }
     } catch (e) {
+      if (e.name === 'TimeoutError') isUnavailable = true;
       errors.push(`${model} exception: ${e.message}`);
     }
   }
 
-  throw new Error(`Gemini API failure: ${errors.join(' | ')}`);
+  const err = new Error(
+    isQuota
+      ? 'Daily AI generation quota reached. Please upgrade to a Study Pass or try again tomorrow.'
+      : (isUnavailable
+          ? 'AI Study Tutor is currently experiencing high demand. Please try again in a few moments.'
+          : `Gemini API failure: ${errors.join(' | ')}`)
+  );
+  err.status = isQuota ? 429 : (isUnavailable ? 503 : 500);
+  err.code = isQuota ? 'QUOTA_EXCEEDED' : (isUnavailable ? 'HIGH_DEMAND' : 'API_ERROR');
+  throw err;
 }
 
 // Edge Rate Limiting Maps (Sliding 60-second window per client IP)
@@ -1399,8 +1415,12 @@ export default {
         }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
       } catch (err) {
-        return new Response(JSON.stringify({ error: err.message || 'Generation failed' }), {
-          status: 500,
+        const statusCode = err.status || 500;
+        return new Response(JSON.stringify({
+          error: err.message || 'Generation failed',
+          code: err.code || 'UNKNOWN'
+        }), {
+          status: statusCode,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       }

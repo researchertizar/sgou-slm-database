@@ -445,6 +445,10 @@
         state.contentEl.style.display = 'block';
         state.contentEl.innerHTML = (
           '<div class="ai-shimmer-wrap">' +
+            '<div class="ai-loading-header">' +
+              '<div class="ai-loading-spinner"></div>' +
+              '<span class="ai-loading-text" id="aiLoadingStatusText">Connecting to SGOU Study Tutor...</span>' +
+            '</div>' +
             '<div class="ai-shimmer-line" style="width: 45%;"></div>' +
             '<div class="ai-shimmer-line" style="width: 90%;"></div>' +
             '<div class="ai-shimmer-line" style="width: 78%;"></div>' +
@@ -506,11 +510,37 @@
         return;
       }
 
-      // 4. Generate Fresh Response via Gemini Flash
+      // Progressive loading status timers
+      var statusTimers = [
+        setTimeout(function () {
+          var t = document.getElementById('aiLoadingStatusText');
+          if (t) t.textContent = 'Reading textbook excerpt for ' + (course !== 'SGOU' ? course : 'this course') + '...';
+        }, 1800),
+        setTimeout(function () {
+          var t = document.getElementById('aiLoadingStatusText');
+          if (t) t.textContent = 'Synthesizing SGOU semester breakdown...';
+        }, 5000),
+        setTimeout(function () {
+          var t = document.getElementById('aiLoadingStatusText');
+          if (t) t.textContent = 'Formatting academic study notes...';
+        }, 10000)
+      ];
+
+      function clearLoadingTimers() {
+        statusTimers.forEach(function (tid) { clearTimeout(tid); });
+      }
+
+      // 4. Generate Fresh Response via Gemini Flash (22s timeout guard)
+      var abortController = new AbortController();
+      var timeoutGuard = setTimeout(function () {
+        abortController.abort();
+      }, 22000);
+
       try {
         var genResp = await fetch('/api/ai-tutor/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: abortController.signal,
           body: JSON.stringify({
             course_code: course,
             course_title: state.courseTitle,
@@ -521,12 +551,20 @@
           })
         });
 
+        clearTimeout(timeoutGuard);
+        clearLoadingTimers();
+
         if (!genResp.ok) {
           if (genResp.status === 429) {
             AiCompanion.showQuotaCard();
             return;
           }
-          throw new Error('AI generation request failed (' + genResp.status + ')');
+          if (genResp.status === 503) {
+            throw { isHighDemand: true, message: 'Google AI is currently experiencing high demand across India. Please tap retry below.' };
+          }
+          var errData = {};
+          try { errData = await genResp.json(); } catch (_) {}
+          throw new Error(errData.error || ('AI request failed (HTTP ' + genResp.status + ')'));
         }
 
         var genData = await genResp.json();
@@ -547,14 +585,28 @@
           throw new Error(genData.error || 'Empty response');
         }
       } catch (err) {
+        clearTimeout(timeoutGuard);
+        clearLoadingTimers();
+
         if (state.contentEl) {
+          var isTimeout = err.name === 'AbortError' || err.code === 20;
+          var isHighDemand = err.isHighDemand;
+          var title = isTimeout
+            ? 'Request Timed Out'
+            : (isHighDemand ? 'Temporary AI Traffic Spike' : 'Could not load study breakdown');
+          var detail = isTimeout
+            ? 'The AI server took longer than expected to respond. Please check your network and tap retry.'
+            : (isHighDemand
+                ? 'Google Gemini is experiencing heavy student traffic. Spikes typically clear within 10–20 seconds.'
+                : (err.message || 'Please check your connection and try again.'));
+
           state.contentEl.innerHTML = (
             '<div class="ai-error-notice" style="color:var(--text-main);padding:24px 16px;text-align:center;">' +
               '<div style="width:36px;height:36px;border-radius:50%;background:rgba(229,114,90,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--ai-sheet-accent);">' +
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' +
               '</div>' +
-              '<p style="color:var(--ai-sheet-accent);margin:0 0 6px 0;font-weight:600;font-size:14px;">Could not load study breakdown</p>' +
-              '<p style="font-size:12px;color:var(--text-muted);margin:0 0 16px 0;line-height:1.5;">' + (err.message || 'Please check your connection and try again.') + '</p>' +
+              '<p style="color:var(--ai-sheet-accent);margin:0 0 6px 0;font-weight:600;font-size:14px;">' + title + '</p>' +
+              '<p style="font-size:12px;color:var(--text-muted);margin:0 0 16px 0;line-height:1.5;">' + detail + '</p>' +
               '<button type="button" class="ai-action-btn" id="aiRetryBtn" style="display:inline-flex;align-items:center;gap:6px;margin:0 auto;padding:8px 18px;background:var(--ai-sheet-accent);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;">' +
                 '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>' +
                 '<span>Retry Breakdown</span>' +
