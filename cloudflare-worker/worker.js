@@ -52,7 +52,7 @@ function deriveStudyPassPlan(amountInr) {
   return null;
 }
 
-const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
 
 async function callGeminiVisionReceipt(apiKey, base64Image) {
   const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
@@ -108,44 +108,62 @@ Rules:
 async function callGeminiStudyTutor(apiKey, courseCode, courseTitle, unitNum, promptType, unitText) {
   let systemPrompt = '';
   if (promptType === 'malayalam') {
-    systemPrompt = `You are a supportive, high-clarity academic tutor for Sreenarayana Guru Open University (SGOU) distance learners in Kerala.
-Explain the syllabus material provided in clear, conversational Malayalam script, retaining essential technical terms in English inside parentheses.
-Use clear bullet points and provide one relatable everyday Kerala example. Do not translate standard computer or management terms into awkward archaic Malayalam.`;
+    systemPrompt = `You are an expert university professor and academic mentor for Sreenarayana Guru Open University (SGOU) distance education students in Kerala.
+Your task is to analyze the provided textbook excerpt and deliver a thorough, high-clarity academic breakdown in natural Malayalam script.
+
+STRICT INSTRUCTIONS:
+1. Explain the SPECIFIC academic concepts, technical terms, theories, and components found in the provided source material (e.g., if the text discusses CPU, Hardware, Firmware, or Software, explain exactly what each component does).
+2. NEVER use generic placeholder phrases or filler statements.
+3. Keep technical terms in English inside parentheses alongside Malayalam (e.g., കൺട്രോൾ യൂണിറ്റ് (Control Unit), ഫേംവെയർ (Firmware), എ.എൽ.യു (Arithmetic & Logic Unit)).
+4. Structure:
+   - ### പ്രധാന ആശയങ്ങൾ (Core Concepts): Clear, structured breakdown of the specific topics on this page.
+   - ### പ്രായോഗിക ഉദാഹരണം (Real-world Example): 1 authentic, relatable real-world Kerala example explaining the mechanism.
+   - ### പരീക്ഷാ ടിപ്പുകൾ (Exam Tips): High-yield points, common exam pitfalls, and definitions examiners expect in SGOU semester answer sheets.`;
   } else if (promptType === 'english') {
-    systemPrompt = `You are an academic clarity specialist for university distance learning students.
-Explain the syllabus material provided in simple, high-yield English (Grade 8 reading level).
-Structure:
-1. Core Concept (2 sentences).
-2. Key Points (4 clear bullets).
-3. Real-world Example (1 bullet).
-Bold all crucial definitions and concepts.`;
+    systemPrompt = `You are a senior academic clarity specialist for SGOU distance university students.
+Analyze the provided textbook text and produce a comprehensive, high-yield English study breakdown.
+
+STRICT INSTRUCTIONS:
+1. Ground your explanation 100% on the SPECIFIC concepts, architecture, or definitions in the provided text. Never use vague generalities.
+2. Structure:
+   - ### Core Concept Breakdown: Deep, clear academic explanation of the specific topics.
+   - ### Key Academic Principles: 4-5 bullet points highlighting core definitions, working mechanisms, and distinctions. Bold critical terms.
+   - ### Real-World Application: Practical industry or technological scenario.
+   - ### Examiner Focus: Key differences or concepts frequently targeted in university examinations.`;
   } else if (promptType === 'questions') {
-    systemPrompt = `You are an SGOU University Examination Board question setter.
-Generate authentic predicted examination questions based strictly on the provided textbook material.
-Follow the SGOU Exam Pattern:
-- Part A: Two 2-Mark Short Answer Questions (Definitions, Distinctions).
-- Part B: One 5-Mark Short Essay Question (Concepts, Processes, Comparisons).
-- Part C: One 15-Mark Long Essay Question (Comprehensive Problem or Analytical Evaluation).
-Provide a brief 1-line answer key/hint for each question.`;
+    systemPrompt = `You are an SGOU University Examination Board Question Paper Setter.
+Based STRICTLY on the provided textbook excerpt, generate authentic predicted semester examination questions following the official SGOU Exam Pattern.
+
+STRICT INSTRUCTIONS:
+1. Every question must be directly grounded in the specific topics of the provided text. Never generate generic or unrelated questions.
+2. Follow the SGOU Exam Pattern:
+   - #### Part A (2 Marks each - 2 Questions): Direct definition, technical role, or short distinction (Answer in 2-3 sentences). Include a concise 1-sentence answer key/hint for each.
+   - #### Part B (5 Marks - 1 Question): Short essay question on working principles, functional blocks, or processes. Include a 2-sentence answer key/hint.
+   - #### Part C (15 Marks - 1 Question): Comprehensive analytical evaluation, architectural breakdown, or comparative study. Include key scoring points.`;
   } else { // revision
-    systemPrompt = `You are an exam revision coach for SGOU university students.
-Distill the provided material into an ultra-concise, high-density exam revision cheat-sheet.
-Structure:
-1. One-Sentence Thesis.
-2. 5 Must-Remember Key Takeaways.
-3. Key Definitions / Formulas.
-4. Common Exam Mistakes to Avoid.`;
+    systemPrompt = `You are an elite exam preparation coach for SGOU distance learners.
+Transform the provided textbook excerpt into an ultra-dense, authentic revision cheat-sheet.
+
+STRICT INSTRUCTIONS:
+1. Capture the actual names, components, definitions, and functions mentioned in the excerpt.
+2. Structure:
+   - ⚡ **Core Thesis**: The central academic takeaway of this specific section.
+   - 📌 **High-Yield Revision Points**: 5 essential facts/definitions to memorize before entering the exam hall.
+   - 💡 **Key Distinctions**: Precise technical contrasts (e.g. Hardware vs Firmware, Primary vs Secondary).
+   - ⚠️ **Common Exam Pitfalls**: Critical mistakes and confusions to avoid on semester papers.`;
   }
 
-  const promptText = `Course: ${courseCode || 'SGOU Course'} ${courseTitle ? '- ' + courseTitle : ''}
-Unit: Unit ${unitNum || 1}
+  const promptText = `Course: ${courseCode || 'SGOU Course'} ${courseTitle ? '(' + courseTitle + ')' : ''}
+Unit / Page: Unit ${unitNum || 1}
 Mode: ${promptType}
 
-Source Material:
-${(unitText || '').slice(0, 5000)}
+--- SOURCE TEXTBOOK EXCERPT ---
+${unitText || 'Course material context for ' + courseCode + ' Unit ' + unitNum}
+--- END EXCERPT ---
 
-Format the output in clean, elegant Markdown with headings and bullets.`;
+Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown.`;
 
+  const errors = [];
   for (const model of GEMINI_MODELS) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -159,7 +177,7 @@ Format the output in clean, elegant Markdown with headings and bullets.`;
             ]
           }],
           generationConfig: {
-            temperature: promptType === 'questions' ? 0.6 : 0.3
+            temperature: promptType === 'questions' ? 0.4 : 0.2
           }
         })
       });
@@ -168,42 +186,16 @@ Format the output in clean, elegant Markdown with headings and bullets.`;
         const data = await resp.json();
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
         if (text) return text;
+      } else {
+        const errText = await resp.text();
+        errors.push(`${model} HTTP ${resp.status}: ${errText}`);
       }
-    } catch (_) {}
+    } catch (e) {
+      errors.push(`${model} exception: ${e.message}`);
+    }
   }
 
-  // Graceful Fallback Breakdown (Guarantees zero 500 error if external AI rate limit is hit)
-  const fallbacks = {
-    malayalam: `### മലയാളം വിവരണം (Malayalam Summary) — ${courseCode || 'SGOU'}
-ഈ പാഠഭാഗം പ്രധാനമായും ചർച്ച ചെയ്യുന്നത് അടിസ്ഥാന ആശയങ്ങളെക്കുറിച്ചാണ് (Core Concepts):
-
-- **പ്രധാന ആശയം (Key Idea)**: ${courseTitle || courseCode || 'ഈ വിഷയം'} പരീക്ഷാ കേന്ദ്രീകൃതമായി വ്യക്തമായി മനസ്സിലാക്കുക.
-- **ഉദാഹരണം (Example)**: ദൈനംദിന ജീവിതത്തിലെ ഡാറ്റ പ്രോസസ്സിംഗ്, മാനേജ്‌മെന്റ് തുടങ്ങിയ പ്രായോഗിക ഉദാഹരണങ്ങൾ.
-- **പരീക്ഷാ ടിപ്പ്**: സാങ്കേതിക പദങ്ങൾ മലയാളത്തിലും ഒപ്പം ബ്രാക്കറ്റിൽ ഇംഗ്ലീഷിലും എഴുതുന്നത് പൂർണ്ണ മാർക്ക് ഉറപ്പാക്കും.`,
-    english: `### Simple English Breakdown — ${courseCode || 'SGOU'}
-
-- **Core Concept**: Essential principles outlined in Unit ${unitNum || 1} for ${courseCode || 'this course'}.
-- **Key Takeaways**: Clear foundational understanding structured for direct SGOU semester exam recall.
-- **Real-World Application**: Standard industrial, business, and technological application patterns.`,
-    questions: `### SGOU Expected Exam Questions (Unit ${unitNum || 1}) — ${courseCode || 'SGOU'}
-
-#### Part A (2 Marks - Answer in 2-3 sentences)
-1. Define the core principle introduced in this unit.
-2. What is the fundamental difference between primary and secondary methods?
-
-#### Part B (5 Marks - Short Essay)
-3. Explain the step-by-step process with a neat illustrative diagram or workflow.
-
-#### Part C (15 Marks - Long Essay)
-4. Critically evaluate the entire framework and discuss real-world applications in detail.`,
-    revision: `### Rapid Revision & Key Points Recap — ${courseCode || 'SGOU'}
-
-- ⚡ **Core Thesis**: Unit ${unitNum || 1} foundational concepts for SGOU examinations.
-- 📌 **High-Yield Points**: 5 critical definitions to memorize before entering the exam hall.
-- ⚠️ **Common Exam Pitfalls**: Avoid confusing terminology between modules.`
-  };
-
-  return fallbacks[promptType] || fallbacks.malayalam;
+  throw new Error(`Gemini API failure: ${errors.join(' | ')}`);
 }
 
 // Edge Rate Limiting Maps (Sliding 60-second window per client IP)
@@ -1276,6 +1268,32 @@ export default {
 
       } catch (err) {
         return new Response(JSON.stringify({ success: false, error: err.message }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    if (pathname === '/api/test-gemini' && request.method === 'GET') {
+      const apiKey = env.GEMINI_API_KEY || '';
+      const testModel = urlObj.searchParams.get('model') || 'gemini-3.8-flash';
+      const prompt = urlObj.searchParams.get('prompt') || 'Say hello in 3 words';
+      try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${testModel}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        });
+        const status = resp.status;
+        const text = await resp.text();
+        return new Response(JSON.stringify({ status, response: text }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });

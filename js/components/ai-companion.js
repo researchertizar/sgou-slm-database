@@ -14,7 +14,7 @@
   'use strict';
 
   var CONFIG = {
-    cachePrefix: 'sgou_ai_cache_v2_',
+    cachePrefix: 'sgou_ai_cache_v3_',
     supporterKey: 'sgou_supporter_pass_v1',
     dailyQuotaKey: 'sgou_ai_daily_quota_v1',
     dailyFreeLimit: 5,
@@ -177,15 +177,53 @@
   /**
    * Extract Text from Current Rendered PDF Page
    */
-  function extractCurrentUnitText() {
+  async function extractCurrentUnitText() {
     if (state.selectedText && state.selectedText.trim()) {
       return state.selectedText.trim();
     }
     var pageNum = state.pageNumber || 1;
-    var wrap = document.getElementById('pageWrap-' + pageNum);
-    if (!wrap) return '';
-    var spans = wrap.querySelectorAll('.textLayer span');
-    var text = Array.from(spans).map(function (s) { return s.textContent; }).join(' ');
+    var text = '';
+
+    // Direct PDF.js document text extraction if reader exposed getPdfPageText
+    if (typeof window.getPdfPageText === 'function') {
+      try {
+        text = (await window.getPdfPageText(pageNum)) || '';
+        if (text.trim().length < 150) {
+          for (var p = Math.max(1, pageNum - 1); p <= pageNum + 2; p++) {
+            if (p === pageNum) continue;
+            var extra = await window.getPdfPageText(p);
+            if (extra && extra.trim().length > 50) {
+              text += ' ' + extra;
+              if (text.length > 2500) break;
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Fallback to DOM .textLayer span elements
+    if (!text || text.trim().length < 50) {
+      var wrap = document.getElementById('pageWrap-' + pageNum);
+      if (wrap) {
+        var spans = wrap.querySelectorAll('.textLayer span');
+        text = Array.from(spans).map(function (s) { return s.textContent; }).join(' ');
+      }
+      // If current page text is sparse (e.g. cover/figure), gather adjacent rendered text
+      if (text.trim().length < 150) {
+        for (var p2 = Math.max(1, pageNum - 1); p2 <= pageNum + 2; p2++) {
+          if (p2 === pageNum) continue;
+          var pWrap = document.getElementById('pageWrap-' + p2);
+          if (pWrap) {
+            var pSpans = pWrap.querySelectorAll('.textLayer span');
+            var pText = Array.from(pSpans).map(function (s) { return s.textContent; }).join(' ');
+            if (pText.trim().length > 50) {
+              text += ' ' + pText;
+              if (text.length > 2500) break;
+            }
+          }
+        }
+      }
+    }
     return text.slice(0, 4500).trim();
   }
 
@@ -197,6 +235,16 @@
       options = options || {};
       state.courseCode = options.courseCode || '';
       state.courseTitle = options.courseTitle || '';
+
+      // Clear legacy dummy cache keys from localStorage
+      try {
+        for (var k = localStorage.length - 1; k >= 0; k--) {
+          var storageKey = localStorage.key(k);
+          if (storageKey && (storageKey.startsWith('sgou_ai_cache_v1_') || storageKey.startsWith('sgou_ai_cache_v2_'))) {
+            localStorage.removeItem(storageKey);
+          }
+        }
+      } catch (_) {}
 
       state.sheetEl = document.getElementById('aiCompanionSheet');
       state.backdropEl = document.getElementById('aiSheetBackdrop');
@@ -414,7 +462,7 @@
     fetchOrGenerate: async function (mode) {
       var course = state.courseCode || 'SGOU';
       var unit = state.unitNumber || 1;
-      var textSnippet = extractCurrentUnitText();
+      var textSnippet = await extractCurrentUnitText();
       var rawKey = course + ':' + unit + ':' + mode + (state.selectedText ? ':' + state.selectedText.slice(0, 60) : '');
       var cacheKey = await sha256(rawKey);
       var localKey = CONFIG.cachePrefix + cacheKey;
@@ -501,10 +549,24 @@
       } catch (err) {
         if (state.contentEl) {
           state.contentEl.innerHTML = (
-            '<div style="color:var(--ai-sheet-accent);padding:12px 0;">' +
-              '<strong>Notice:</strong> Could not load study breakdown. Please check your connection and try again.' +
+            '<div class="ai-error-notice" style="color:var(--text-main);padding:24px 16px;text-align:center;">' +
+              '<div style="width:36px;height:36px;border-radius:50%;background:rgba(229,114,90,0.15);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--ai-sheet-accent);">' +
+                '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>' +
+              '</div>' +
+              '<p style="color:var(--ai-sheet-accent);margin:0 0 6px 0;font-weight:600;font-size:14px;">Could not load study breakdown</p>' +
+              '<p style="font-size:12px;color:var(--text-muted);margin:0 0 16px 0;line-height:1.5;">' + (err.message || 'Please check your connection and try again.') + '</p>' +
+              '<button type="button" class="ai-action-btn" id="aiRetryBtn" style="display:inline-flex;align-items:center;gap:6px;margin:0 auto;padding:8px 18px;background:var(--ai-sheet-accent);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;">' +
+                '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>' +
+                '<span>Retry Breakdown</span>' +
+              '</button>' +
             '</div>'
           );
+          var retryBtn = document.getElementById('aiRetryBtn');
+          if (retryBtn) {
+            retryBtn.addEventListener('click', function () {
+              AiCompanion.selectMode(mode);
+            });
+          }
         }
       }
     },

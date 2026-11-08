@@ -1085,36 +1085,109 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       try {
         const body = JSON.parse(rawData || '{}');
-        const { course_code = 'SGOU', unit_number = 1, prompt_type = 'malayalam', unit_text = '' } = body;
+        const {
+          course_code = 'SGOU',
+          course_title = '',
+          unit_number = 1,
+          prompt_type = 'malayalam',
+          unit_text = ''
+        } = body;
         const apiKey = process.env.GEMINI_API_KEY || '';
 
+        if (!apiKey) {
+          res.writeHead(503, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+          return res.end(JSON.stringify({ error: 'AI Tutor service unconfigured: Missing GEMINI_API_KEY in .env' }));
+        }
+
+        const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
+        let systemPrompt = '';
+        if (prompt_type === 'malayalam') {
+          systemPrompt = `You are an expert university professor and academic mentor for Sreenarayana Guru Open University (SGOU) distance education students in Kerala.
+Your task is to analyze the provided textbook excerpt and deliver a thorough, high-clarity academic breakdown in natural Malayalam script.
+
+STRICT INSTRUCTIONS:
+1. Explain the SPECIFIC academic concepts, technical terms, theories, and components found in the provided source material (e.g., if the text discusses CPU, Hardware, Firmware, or Software, explain exactly what each component does).
+2. NEVER use generic placeholder phrases or filler statements.
+3. Keep technical terms in English inside parentheses alongside Malayalam (e.g., കൺട്രോൾ യൂണിറ്റ് (Control Unit), ഫേംവെയർ (Firmware), എ.എൽ.യു (Arithmetic & Logic Unit)).
+4. Structure:
+   - ### പ്രധാന ആശയങ്ങൾ (Core Concepts): Clear, structured breakdown of the specific topics on this page.
+   - ### പ്രായോഗിക ഉദാഹരണം (Real-world Example): 1 authentic, relatable real-world Kerala example explaining the mechanism.
+   - ### പരീക്ഷാ ടിപ്പുകൾ (Exam Tips): High-yield points, common exam pitfalls, and definitions examiners expect in SGOU semester answer sheets.`;
+        } else if (prompt_type === 'english') {
+          systemPrompt = `You are a senior academic clarity specialist for SGOU distance university students.
+Analyze the provided textbook text and produce a comprehensive, high-yield English study breakdown.
+
+STRICT INSTRUCTIONS:
+1. Ground your explanation 100% on the SPECIFIC concepts, architecture, or definitions in the provided text. Never use vague generalities.
+2. Structure:
+   - ### Core Concept Breakdown: Deep, clear academic explanation of the specific topics.
+   - ### Key Academic Principles: 4-5 bullet points highlighting core definitions, working mechanisms, and distinctions. Bold critical terms.
+   - ### Real-World Application: Practical industry or technological scenario.
+   - ### Examiner Focus: Key differences or concepts frequently targeted in university examinations.`;
+        } else if (prompt_type === 'questions') {
+          systemPrompt = `You are an SGOU University Examination Board Question Paper Setter.
+Based STRICTLY on the provided textbook excerpt, generate authentic predicted semester examination questions following the official SGOU Exam Pattern.
+
+STRICT INSTRUCTIONS:
+1. Every question must be directly grounded in the specific topics of the provided text. Never generate generic or unrelated questions.
+2. Follow the SGOU Exam Pattern:
+   - #### Part A (2 Marks each - 2 Questions): Direct definition, technical role, or short distinction (Answer in 2-3 sentences). Include a concise 1-sentence answer key/hint for each.
+   - #### Part B (5 Marks - 1 Question): Short essay question on working principles, functional blocks, or processes. Include a 2-sentence answer key/hint.
+   - #### Part C (15 Marks - 1 Question): Comprehensive analytical evaluation, architectural breakdown, or comparative study. Include key scoring points.`;
+        } else { // revision
+          systemPrompt = `You are an elite exam preparation coach for SGOU distance learners.
+Transform the provided textbook excerpt into an ultra-dense, authentic revision cheat-sheet.
+
+STRICT INSTRUCTIONS:
+1. Capture the actual names, components, definitions, and functions mentioned in the excerpt.
+2. Structure:
+   - ⚡ **Core Thesis**: The central academic takeaway of this specific section.
+   - 📌 **High-Yield Revision Points**: 5 essential facts/definitions to memorize before entering the exam hall.
+   - 💡 **Key Distinctions**: Precise technical contrasts (e.g. Hardware vs Firmware, Primary vs Secondary).
+   - ⚠️ **Common Exam Pitfalls**: Critical mistakes and confusions to avoid on semester papers.`;
+        }
+
+        const promptText = `Course: ${course_code || 'SGOU Course'} ${course_title ? '(' + course_title + ')' : ''}
+Unit / Page: Unit ${unit_number || 1}
+Mode: ${prompt_type}
+
+--- SOURCE TEXTBOOK EXCERPT ---
+${unit_text || 'Course material context for ' + course_code + ' Unit ' + unit_number}
+--- END EXCERPT ---
+
+Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown.`;
+
         let markdown = '';
-        if (apiKey) {
+        const errors = [];
+        for (const model of GEMINI_MODELS) {
           try {
-            const prompt = `You are an academic tutor for SGOU distance students in Kerala. Mode: ${prompt_type}. Course: ${course_code}, Unit: ${unit_number}. Text: ${unit_text.slice(0, 3000)}. Format in markdown.`;
-            const gResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const gResp = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: systemPrompt + '\n\n' + promptText }] }],
+                generationConfig: {
+                  temperature: prompt_type === 'questions' ? 0.4 : 0.2
+                }
+              })
             });
+
             if (gResp.ok) {
               const d = await gResp.json();
               markdown = d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+              if (markdown) break;
+            } else {
+              const errText = await gResp.text();
+              errors.push(`${model} HTTP ${gResp.status}: ${errText}`);
             }
           } catch (e) {
-            console.warn('[Local Dev Server] Gemini tutor fallback:', e.message);
+            errors.push(`${model} exception: ${e.message}`);
           }
         }
 
         if (!markdown) {
-          // Clean local mock generator for fast testing & offline reading
-          const titles = {
-            malayalam: '### മലയാളം വിവരണം (Malayalam Summary)\n\nഈ പാഠഭാഗം പ്രധാനമായും ചർച്ച ചെയ്യുന്നത് അടിസ്ഥാന ആശയങ്ങളെക്കുറിച്ചാണ് (Core Concepts):\n\n- **പ്രധാന ആശയം (Key Idea)**: പഠന സാമഗ്രികൾ പരീക്ഷാ കേന്ദ്രീകൃതമായി മനസ്സിലാക്കുക.\n- **ഉദാഹരണം (Example)**: ദൈനംദിന ജീവിതത്തിലെ ഡാറ്റ പ്രോസസ്സിംഗ് പോലുള്ള പ്രായോഗിക ഉദാഹരണങ്ങൾ.\n- **പരീക്ഷാ ടിപ്പ്**: സാങ്കേതിക പദങ്ങൾ അതേപടി ഇംഗ്ലീഷിൽ എഴുതുന്നത് മാർക്ക് ഉറപ്പാക്കും.',
-            english: '### Simple English Breakdown\n\n- **Core Concept**: Essential principles outlined in Unit ' + unit_number + ' for ' + course_code + '.\n- **Key Takeaway**: Clear foundational understanding structured for direct exam recall.\n- **Real-World Application**: Standard industry practice and case models.',
-            questions: '### SGOU Expected Exam Questions (Unit ' + unit_number + ')\n\n#### Part A (2 Marks - Answer in 2-3 sentences)\n1. Define the fundamental principle introduced in this section.\n2. Differentiate between primary and secondary methods.\n\n#### Part B (5 Marks - Short Essay)\n3. Explain the step-by-step process with a neat illustrative diagram.\n\n#### Part C (15 Marks - Long Essay)\n4. Critically evaluate the entire framework and discuss real-world applications.',
-            revision: '### Rapid Revision & Key Formula Recap\n\n- ⚡ **Core Thesis**: Unit ' + unit_number + ' essential foundations.\n- 📌 **High-Yield Points**: 5 critical definitions to memorize before entering the exam hall.\n- ⚠️ **Common Exam Pitfalls**: Avoid confusing terminology between modules.'
-          };
-          markdown = titles[prompt_type] || titles.malayalam;
+          throw new Error(`Gemini API failure: ${errors.join(' | ')}`);
         }
 
         const now = Date.now();

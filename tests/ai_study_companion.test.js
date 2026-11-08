@@ -38,7 +38,7 @@ test('AI Study Companion: Cloudflare Worker Endpoint & Logic Integrity', () => {
   // Verify Gemini Flash Vision & Tutor integration
   assert(workerJs.includes('callGeminiVisionReceipt'), 'Worker must implement callGeminiVisionReceipt');
   assert(workerJs.includes('callGeminiStudyTutor'), 'Worker must implement callGeminiStudyTutor');
-  assert(workerJs.includes('gemini-2.0-flash') || workerJs.includes('gemini-1.5-flash'), 'Worker must target active Gemini Flash models');
+  assert(workerJs.includes('gemini-3.8-flash') || workerJs.includes('gemini-flash-latest'), 'Worker must target active Gemini Flash models');
 });
 
 test('AI Study Companion: reader.html UI & Bottom Sheet Integration', () => {
