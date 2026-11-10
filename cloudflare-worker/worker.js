@@ -52,7 +52,12 @@ function deriveStudyPassPlan(amountInr) {
   return null;
 }
 
-const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
+const GEMINI_MODELS = [
+  'gemini-3-flash-preview',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3.8-flash',
+  'gemini-flash-latest'
+];
 
 async function callGeminiVisionReceipt(apiKey, base64Image) {
   const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
@@ -173,7 +178,7 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
       const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(18000),
+        signal: AbortSignal.timeout(8000),
         body: JSON.stringify({
           contents: [{
             parts: [
@@ -1358,10 +1363,12 @@ export default {
           course_code = 'SGOU',
           course_title = '',
           unit_number = 1,
+          page_number = 1,
           prompt_type = 'malayalam',
           unit_text = '',
           user_id = 'anon',
-          passkey = ''
+          passkey = '',
+          cache_key = ''
         } = body;
 
         // Check if user has active pass
@@ -1390,22 +1397,22 @@ export default {
           });
         }
 
-        const cacheKey = await sha256Hex(`${course_code}:${unit_number}:${prompt_type}`);
+        const activeCacheKey = cache_key || await sha256Hex(`${course_code}:p${page_number || unit_number}:${prompt_type}`);
         const markdown = await callGeminiStudyTutor(apiKey, course_code, course_title, unit_number, prompt_type, unit_text);
         const now = Date.now();
 
         if (env.DB) {
           await env.DB.prepare(`
             INSERT INTO ai_cache (
-              cache_key, course_code, unit_number, prompt_type,
+              cache_key, course_code, unit_number, page_number, prompt_type,
               content_markdown, cached_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(cache_key) DO UPDATE SET
               content_markdown = excluded.content_markdown,
               cached_at = excluded.cached_at,
               updated_at = CURRENT_TIMESTAMP,
               hit_count = hit_count + 1
-          `).bind(cacheKey, course_code, unit_number, prompt_type, markdown, now).run();
+          `).bind(activeCacheKey, course_code, unit_number, page_number || 1, prompt_type, markdown, now).run();
         }
 
         return new Response(JSON.stringify({

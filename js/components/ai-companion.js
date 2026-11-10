@@ -181,20 +181,30 @@
     if (state.selectedText && state.selectedText.trim()) {
       return state.selectedText.trim();
     }
-    var pageNum = state.pageNumber || 1;
+    var pageNum = state.pageNumber || (typeof window.currentPage === 'number' ? window.currentPage : 1);
     var text = '';
 
     // Direct PDF.js document text extraction if reader exposed getPdfPageText
     if (typeof window.getPdfPageText === 'function') {
       try {
         text = (await window.getPdfPageText(pageNum)) || '';
-        if (text.trim().length < 150) {
+        if (text.trim().length < 200) {
           for (var p = Math.max(1, pageNum - 1); p <= pageNum + 2; p++) {
             if (p === pageNum) continue;
             var extra = await window.getPdfPageText(p);
             if (extra && extra.trim().length > 50) {
-              text += ' ' + extra;
+              text += '\n\n' + extra;
               if (text.length > 2500) break;
+            }
+          }
+        }
+        // If on cover/front-matter (pages 1-3), scan forward to locate actual unit text
+        if (pageNum <= 3 && text.trim().length < 150) {
+          for (var scanP = 4; scanP <= 14; scanP++) {
+            var scanText = await window.getPdfPageText(scanP);
+            if (scanText && (scanText.includes('UNIT') || scanText.includes('Unit') || scanText.length > 300)) {
+              text = scanText;
+              break;
             }
           }
         }
@@ -208,7 +218,6 @@
         var spans = wrap.querySelectorAll('.textLayer span');
         text = Array.from(spans).map(function (s) { return s.textContent; }).join(' ');
       }
-      // If current page text is sparse (e.g. cover/figure), gather adjacent rendered text
       if (text.trim().length < 150) {
         for (var p2 = Math.max(1, pageNum - 1); p2 <= pageNum + 2; p2++) {
           if (p2 === pageNum) continue;
@@ -217,7 +226,7 @@
             var pSpans = pWrap.querySelectorAll('.textLayer span');
             var pText = Array.from(pSpans).map(function (s) { return s.textContent; }).join(' ');
             if (pText.trim().length > 50) {
-              text += ' ' + pText;
+              text += '\n\n' + pText;
               if (text.length > 2500) break;
             }
           }
@@ -348,6 +357,10 @@
      */
     open: function (initialMode, customText) {
       if (!state.sheetEl) return;
+      if (typeof window.currentPage === 'number' && window.currentPage > 0) {
+        state.pageNumber = window.currentPage;
+        state.unitNumber = Math.max(1, Math.ceil(window.currentPage / 18));
+      }
       state.lastFocusedElement = document.activeElement;
       state.isOpen = true;
       state.selectedText = customText || '';
@@ -465,9 +478,10 @@
      */
     fetchOrGenerate: async function (mode) {
       var course = state.courseCode || 'SGOU';
-      var unit = state.unitNumber || 1;
+      var pageNum = state.pageNumber || (typeof window.currentPage === 'number' ? window.currentPage : 1);
+      var unit = state.unitNumber || Math.max(1, Math.ceil(pageNum / 18));
       var textSnippet = await extractCurrentUnitText();
-      var rawKey = course + ':' + unit + ':' + mode + (state.selectedText ? ':' + state.selectedText.slice(0, 60) : '');
+      var rawKey = course + ':p' + pageNum + ':' + mode + (state.selectedText ? ':sel:' + (await sha256(state.selectedText.trim())) : '');
       var cacheKey = await sha256(rawKey);
       var localKey = CONFIG.cachePrefix + cacheKey;
 
@@ -514,16 +528,16 @@
       var statusTimers = [
         setTimeout(function () {
           var t = document.getElementById('aiLoadingStatusText');
-          if (t) t.textContent = 'Reading textbook excerpt for ' + (course !== 'SGOU' ? course : 'this course') + '...';
-        }, 1800),
+          if (t) t.textContent = 'Reading textbook excerpt for ' + (course !== 'SGOU' ? course : 'this course') + ' (Page ' + pageNum + ')...';
+        }, 1200),
         setTimeout(function () {
           var t = document.getElementById('aiLoadingStatusText');
           if (t) t.textContent = 'Synthesizing SGOU semester breakdown...';
-        }, 5000),
+        }, 3500),
         setTimeout(function () {
           var t = document.getElementById('aiLoadingStatusText');
           if (t) t.textContent = 'Formatting academic study notes...';
-        }, 10000)
+        }, 7000)
       ];
 
       function clearLoadingTimers() {
@@ -545,6 +559,8 @@
             course_code: course,
             course_title: state.courseTitle,
             unit_number: unit,
+            page_number: pageNum,
+            cache_key: cacheKey,
             prompt_type: mode,
             unit_text: textSnippet,
             passkey: state.supporterPlan ? state.supporterPlan.passkey : ''

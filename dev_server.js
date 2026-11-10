@@ -1089,8 +1089,10 @@ const server = http.createServer((req, res) => {
           course_code = 'SGOU',
           course_title = '',
           unit_number = 1,
+          page_number = 1,
           prompt_type = 'malayalam',
-          unit_text = ''
+          unit_text = '',
+          cache_key = ''
         } = body;
         const apiKey = process.env.GEMINI_API_KEY || '';
 
@@ -1099,7 +1101,12 @@ const server = http.createServer((req, res) => {
           return res.end(JSON.stringify({ error: 'AI Tutor service unconfigured: Missing GEMINI_API_KEY in .env' }));
         }
 
-        const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-flash-latest'];
+        const GEMINI_MODELS = [
+          'gemini-3-flash-preview',
+          'gemini-3.1-flash-lite-preview',
+          'gemini-3.8-flash',
+          'gemini-flash-latest'
+        ];
         let systemPrompt = '';
         if (prompt_type === 'malayalam') {
           systemPrompt = `You are an expert university professor and academic mentor for Sreenarayana Guru Open University (SGOU) distance education students in Kerala.
@@ -1168,7 +1175,7 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
             const gResp = await fetch(url, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              signal: AbortSignal.timeout(18000),
+              signal: AbortSignal.timeout(8000),
               body: JSON.stringify({
                 contents: [{ parts: [{ text: systemPrompt + '\n\n' + promptText }] }],
                 generationConfig: {
@@ -1205,14 +1212,14 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
         }
 
         const now = Date.now();
-        const hash = crypto.createHash('sha256').update(`${course_code}:${unit_number}:${prompt_type}`).digest('hex');
+        const hash = cache_key || crypto.createHash('sha256').update(`${course_code}:p${page_number || unit_number}:${prompt_type}`).digest('hex');
 
         try {
           db.prepare(`
-            INSERT INTO ai_cache (cache_key, course_code, unit_number, prompt_type, content_markdown, cached_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            INSERT INTO ai_cache (cache_key, course_code, unit_number, page_number, prompt_type, content_markdown, cached_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(cache_key) DO UPDATE SET content_markdown = excluded.content_markdown, cached_at = excluded.cached_at, updated_at = CURRENT_TIMESTAMP
-          `).run(hash, course_code, unit_number, prompt_type, markdown, now);
+          `).run(hash, course_code, unit_number, page_number || 1, prompt_type, markdown, now);
         } catch (_) {}
 
         res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
