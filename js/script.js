@@ -926,10 +926,15 @@ class CatalogService {
 
     const idx = [];
     this.programmes.forEach(progRecord => {
+      const progAcrs = AcademicQueryParser.getDegreeAcronyms(progRecord.programme_name);
+
       progRecord.semesters.forEach(sem => {
+        const semSyn = AcademicQueryParser.getSemSynonyms(sem.semester);
+
         // 1. Index SLM courses
         sem.courses.forEach(course => {
           if (!course.code) return;
+          const codeVariants = AcademicQueryParser.normalizeCode(course.code).join(' ');
 
           idx.push({
             type: 'SLM',
@@ -939,7 +944,7 @@ class CatalogService {
             progName: progRecord.programme_name,
             level: progRecord.level,
             semName: sem.semester,
-            tokens: `${course.code} ${course.name} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} slm textbook book material`.toLowerCase()
+            tokens: `${course.code} ${codeVariants} ${course.name} ${progRecord.programme_name} ${progAcrs} ${progRecord.level} ${sem.semester} ${semSyn} slm textbook book material text`.toLowerCase()
           });
 
           // 2. Index associated PYQs
@@ -955,13 +960,14 @@ class CatalogService {
               progName: progRecord.programme_name,
               level: progRecord.level,
               semName: sem.semester,
-              tokens: `${course.code} ${py.clean_name} ${py.subject_name} ${py.exam_date} ${py.admission_batch} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} pyq previous question paper exam`.toLowerCase()
+              tokens: `${course.code} ${codeVariants} ${py.clean_name} ${py.subject_name} ${py.exam_date} ${py.admission_batch} ${progRecord.programme_name} ${progAcrs} ${progRecord.level} ${sem.semester} ${semSyn} pyq previous question paper exam questions`.toLowerCase()
             });
           });
         });
 
         // 3. Index Semester General PYQs
         sem.generalPyqs.forEach(py => {
+          const codeVariants = AcademicQueryParser.normalizeCode(py.code || '').join(' ');
           idx.push({
             type: 'PYQ',
             code: py.code || '',
@@ -973,7 +979,7 @@ class CatalogService {
             progName: progRecord.programme_name,
             level: progRecord.level,
             semName: sem.semester,
-            tokens: `${py.code} ${py.clean_name} ${py.subject_name} ${py.exam_date} ${py.admission_batch} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} pyq previous question paper exam`.toLowerCase()
+            tokens: `${py.code} ${codeVariants} ${py.clean_name} ${py.subject_name} ${py.exam_date} ${py.admission_batch} ${progRecord.programme_name} ${progAcrs} ${progRecord.level} ${sem.semester} ${semSyn} pyq previous question paper exam questions`.toLowerCase()
           });
         });
 
@@ -991,7 +997,7 @@ class CatalogService {
             progName: progRecord.programme_name,
             level: progRecord.level,
             semName: sem.semester,
-            tokens: `${asgn.title} ${asgn.clean_title} ${asgn.admission_batch} ${asgn.academic_year} ${progRecord.programme_name} ${progRecord.level} ${sem.semester} assignment booklet cia continuous assessment questions`.toLowerCase()
+            tokens: `${asgn.title} ${asgn.clean_title} ${asgn.admission_batch} ${asgn.academic_year} ${progRecord.programme_name} ${progAcrs} ${progRecord.level} ${sem.semester} ${semSyn} assignment booklet cia continuous assessment questions question`.toLowerCase()
           });
         });
       });
@@ -1052,6 +1058,94 @@ class CatalogService {
 const Catalog = new CatalogService();
 
 // ============================================================================
+//  4.5 ACADEMIC QUERY PARSER (Course Code Typos, Natural Language & Acronyms)
+// ============================================================================
+
+class AcademicQueryParser {
+  static normalizeCode(code) {
+    if (!code) return [];
+    const clean = code.toUpperCase().trim();
+    const variants = [clean.toLowerCase()];
+
+    if (clean.startsWith('SG')) {
+      variants.push(clean.slice(2).toLowerCase());
+    }
+
+    const match = clean.match(/^([SGBM]{1,3})?([BM])(\d{2})([A-Z]{2})(\d{2,3})([A-Z]{2})?$/);
+    if (match) {
+      const [_, sg, level, year, dept, num, type] = match;
+      variants.push((level + dept + num + (type || '')).toLowerCase());
+      variants.push((level + '2' + dept + num + (type || '')).toLowerCase());
+      variants.push((level + '22' + dept + num + (type || '')).toLowerCase());
+      variants.push((level + '23' + dept + num + (type || '')).toLowerCase());
+      variants.push((level + '24' + dept + num + (type || '')).toLowerCase());
+      variants.push((level + '26' + dept).toLowerCase());
+      variants.push((dept + year).toLowerCase());
+      variants.push((year + dept).toLowerCase());
+      variants.push((dept + num).toLowerCase());
+      if (type) {
+        variants.push((level + year + dept + type).toLowerCase());
+        variants.push((level + year + dept + '03' + type).toLowerCase());
+        variants.push((level + dept + type).toLowerCase());
+      }
+    }
+    return [...new Set(variants)];
+  }
+
+  static getDegreeAcronyms(progName) {
+    const p = (progName || '').toLowerCase();
+    const acrs = [];
+    if (p.includes('business administration')) acrs.push('bba');
+    if (p.includes('bachelor of commerce')) acrs.push('bcom');
+    if (p.includes('bachelor of computer applications')) acrs.push('bca');
+    if (p.includes('bachelor of arts')) acrs.push('ba');
+    if (p.includes('master of arts')) acrs.push('ma');
+    if (p.includes('master of commerce')) acrs.push('mcom');
+    if (p.includes('master of computer applications')) acrs.push('mca');
+    if (p.includes('master of business administration')) acrs.push('mba');
+    if (p.includes('social work')) acrs.push('msw');
+    return acrs.join(' ');
+  }
+
+  static getSemSynonyms(sem) {
+    const m = (sem || '').match(/S([1-6])/i);
+    if (!m) return '';
+    const num = m[1];
+    const words = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
+    const ords = ['', '1st', '2nd', '3rd', '4th', '5th', '6th'];
+    return `s${num} sem${num} semester${num} ${words[num]} ${ords[num]} ${words[num]} semester ${ords[num]} sem`;
+  }
+
+  static parse(query) {
+    let q = (query || '').toLowerCase().trim();
+    if (!q) return '';
+
+    // Typo corrections & slang mappings
+    q = q.replace(/semister/g, 'semester');
+    q = q.replace(/assignmnet/g, 'assignment');
+    q = q.replace(/\btext\b/g, 'slm');
+    q = q.replace(/\btextbook\b/g, 'slm');
+    q = q.replace(/\bquestion paper\b/g, 'pyq');
+    q = q.replace(/\bprevious question\b/g, 'pyq');
+
+    // Natural language ordinals
+    q = q.replace(/\bfirst\s+(?:sem|semester)\b/g, 's1');
+    q = q.replace(/\bsecond\s+(?:sem|semester)\b/g, 's2');
+    q = q.replace(/\bthird\s+(?:sem|semester)\b/g, 's3');
+    q = q.replace(/\bfourth\s+(?:sem|semester)\b/g, 's4');
+    q = q.replace(/\bfifth\s+(?:sem|semester)\b/g, 's5');
+    q = q.replace(/\bsixth\s+(?:sem|semester)\b/g, 's6');
+
+    // Numbered semester phrases like 'of2', 'of2nd sem', 'sem 2'
+    q = q.replace(/\b(?:of\s*|sem\s*)?([1-6])(?:st|nd|rd|th)?\s*sem(?:ester)?\b/g, (_, p1) => 's' + p1);
+    q = q.replace(/\bof\s*([1-6])\b/g, (_, p1) => 's' + p1);
+    q = q.replace(/\bof([1-6])(?:st|nd|rd|th)?\b/g, (_, p1) => 's' + p1);
+
+    return q;
+  }
+}
+
+// ============================================================================
 //  5. SEARCH ENGINE (S.O.L.I.D: Chunked Virtualization)
 // ============================================================================
 
@@ -1077,10 +1171,10 @@ class SearchEngine {
    * @returns {Array} Matching records
    */
   search(query, levelFilter = 'ALL', typeFilter = 'ALL') {
-    const q = (query || '').toLowerCase().trim();
-    if (!q && typeFilter === 'ALL' && levelFilter === 'ALL') return [];
+    const rawQ = (query || '').toLowerCase().trim();
+    if (!rawQ && typeFilter === 'ALL' && levelFilter === 'ALL') return [];
 
-    const cacheKey = `${q}::${levelFilter}::${typeFilter}`;
+    const cacheKey = `${rawQ}::${levelFilter}::${typeFilter}`;
     if (this._memoCache.has(cacheKey)) {
       this.currentMatches = this._memoCache.get(cacheKey);
       this.renderedCount = 0;
@@ -1092,35 +1186,40 @@ class SearchEngine {
       this.catalog.buildSearchIndex();
     }
 
-    const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
-    const results = [];
-    const seenUrls = new Set();
+    const parsedQ = AcademicQueryParser.parse(rawQ);
+    const tokens = parsedQ ? parsedQ.split(/\s+/).filter(Boolean) : [];
 
-    for (let i = 0; i < this.catalog.searchIndex.length; i++) {
-      const item = this.catalog.searchIndex[i];
+    const executeFilter = (lvl, typ) => {
+      const matched = [];
+      const seenUrls = new Set();
+      for (let i = 0; i < this.catalog.searchIndex.length; i++) {
+        const item = this.catalog.searchIndex[i];
+        if (lvl !== 'ALL' && item.level !== lvl) continue;
+        if (typ !== 'ALL' && item.type !== typ) continue;
 
-      // Level category check
-      if (levelFilter !== 'ALL' && item.level !== levelFilter) {
-        continue;
-      }
+        let matchesAll = true;
+        for (let j = 0; j < tokens.length; j++) {
+          if (!item.tokens.includes(tokens[j])) {
+            matchesAll = false;
+            break;
+          }
+        }
 
-      // Material type check
-      if (typeFilter !== 'ALL' && item.type !== typeFilter) {
-        continue;
-      }
-
-      // Search tokens check
-      let matchesAll = true;
-      for (let j = 0; j < tokens.length; j++) {
-        if (!item.tokens.includes(tokens[j])) {
-          matchesAll = false;
-          break;
+        if (matchesAll && !seenUrls.has(item.pdf_url)) {
+          seenUrls.add(item.pdf_url);
+          matched.push(item);
         }
       }
+      return matched;
+    };
 
-      if (matchesAll && !seenUrls.has(item.pdf_url)) {
-        seenUrls.add(item.pdf_url);
-        results.push(item);
+    let results = executeFilter(levelFilter, typeFilter);
+
+    // Cross-level or cross-type fallback: if zero results found under active filters, fallback to ALL levels and/or ALL types
+    if (results.length === 0 && (levelFilter !== 'ALL' || typeFilter !== 'ALL') && tokens.length > 0) {
+      const fallbackResults = executeFilter('ALL', 'ALL');
+      if (fallbackResults.length > 0) {
+        results = fallbackResults;
       }
     }
 
@@ -1153,6 +1252,100 @@ class SearchEngine {
       hasMore: this.renderedCount < this.currentMatches.length,
       total: this.currentMatches.length
     };
+  }
+
+  /**
+   * Levenshtein edit distance between strings for typo tolerance.
+   * @param {string} a
+   * @param {string} b
+   * @returns {number}
+   */
+  levenshteinDistance(a, b) {
+    if (a === b) return 0;
+    if (!a.length) return b.length;
+    if (!b.length) return a.length;
+
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+          matrix[i][j] = matrix[i - 1][j - 1];
+        } else {
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j - 1] + 1,
+            Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+          );
+        }
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  /**
+   * Fuzzy matches token against target string.
+   * @param {string} token
+   * @param {string} target
+   * @returns {boolean}
+   */
+  fuzzyMatch(token, target) {
+    if (!token || !target) return false;
+    const t = token.toLowerCase();
+    const g = target.toLowerCase();
+    if (g.includes(t)) return true;
+    if (t.length >= 4 && this.levenshteinDistance(t, g) <= 2) return true;
+    return false;
+  }
+
+  /**
+   * Suggests "Did you mean?" corrections when a search query returns 0 hits.
+   * @param {string} rawQuery
+   * @returns {Array<string>}
+   */
+  suggestDidYouMean(rawQuery) {
+    const q = (rawQuery || '').toLowerCase().trim();
+    if (!q || q.length < 3) return [];
+
+    if (!this._vocabulary && this.catalog && this.catalog.searchIndex) {
+      const vocab = new Set();
+      for (let i = 0; i < this.catalog.searchIndex.length; i++) {
+        const item = this.catalog.searchIndex[i];
+        if (item.course_code) vocab.add(item.course_code.toLowerCase());
+        const words = (item.name || '').toLowerCase().split(/[^a-z0-9]+/);
+        for (const w of words) {
+          if (w.length >= 3 && w.length <= 16) vocab.add(w);
+        }
+      }
+      this._vocabulary = Array.from(vocab);
+    }
+
+    if (!this._vocabulary || !this._vocabulary.length) return [];
+
+    const qTokens = q.split(/\s+/).filter(t => t.length >= 3);
+    const suggestions = [];
+
+    for (const token of qTokens) {
+      let bestWord = null;
+      let minDistance = 3;
+      for (const word of this._vocabulary) {
+        if (word === token) continue;
+        const dist = this.levenshteinDistance(token, word);
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestWord = word;
+        }
+      }
+      if (bestWord && minDistance <= 2) {
+        const suggestedQuery = q.replace(new RegExp('\\b' + er(token) + '\\b', 'gi'), bestWord);
+        if (suggestedQuery !== q && !suggestions.includes(suggestedQuery)) {
+          suggestions.push(suggestedQuery);
+        }
+      }
+    }
+
+    return suggestions.slice(0, 3);
   }
 }
 
@@ -1852,22 +2045,9 @@ class FilterService {
    * Generates level filter pills with dynamic count badges for the active material category.
    */
   buildFilters() {
-    const container = $('filters');
-    if (!container) return;
-    container.innerHTML = '';
-
-    const counts = Catalog.getLevelCounts(this.activeType);
-
-    Catalog.levels.forEach(lv => {
-      const count = counts[lv] || 0;
-      const pill = document.createElement('button');
-      const isActive = this.activeLevel === lv;
-      pill.className = 'pill' + (isActive ? ' active' : '');
-      pill.dataset.level = lv;
-      pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-      pill.innerHTML = `${lv === 'ALL' ? 'All' : lv} <span class="pill-count">${count}</span>`;
-      container.appendChild(pill);
-    });
+    if (this.ui && typeof this.ui.buildFilters === 'function') {
+      return this.ui.buildFilters();
+    }
   }
 
   /**
@@ -2545,7 +2725,220 @@ class UIController {
     this.initBackToTop();
     this.initOfflineDetection();
     this.initInstallPrompt();
+    this.initMobileBottomNav();
+    this.initContinueReadingShelf();
+    this.initOnboarding();
+    this.updateFavoritesCount();
     this.updateDownloadStats();
+  }
+
+  initOnboarding() {
+    const modal = $('onboardingModal');
+    if (!modal) return;
+
+    let hasOnboarded = false;
+    try {
+      hasOnboarded = !!localStorage.getItem('sgou-onboarded');
+    } catch (_) {}
+
+    if (!hasOnboarded) {
+      modal.classList.add('visible');
+
+      const finishOnboarding = (level) => {
+        try {
+          localStorage.setItem('sgou-onboarded', 'true');
+        } catch (_) {}
+        modal.classList.remove('visible');
+        if (level && level !== 'ALL') {
+          this.activeLevel = level;
+          document.querySelectorAll('#filters .pill').forEach(p => {
+            const isActive = p.dataset.level === this.activeLevel;
+            p.classList.toggle('active', isActive);
+            p.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+          });
+          this.executeSearch();
+          this.syncUrlFromState();
+        }
+      };
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          finishOnboarding('ALL');
+          return;
+        }
+        const card = e.target.closest('[data-level]');
+        if (card) {
+          e.preventDefault();
+          const lvl = card.dataset.level;
+          finishOnboarding(lvl);
+        }
+      });
+    }
+  }
+
+  updateFavoritesCount() {
+    const el = $('favoritesCount');
+    if (el) {
+      const pinned = Storage.getPinnedProgrammes();
+      el.textContent = pinned.length;
+    }
+  }
+
+  initContinueReadingShelf() {
+    const shelf = $('continueReadingShelf');
+    const container = $('recentCardsContainer');
+    const dismissBtn = $('dismissRecentShelfBtn');
+    if (!shelf || !container) return;
+
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', () => {
+        shelf.style.display = 'none';
+        sessionStorage.setItem('sgou_dismiss_shelf', 'true');
+      });
+    }
+
+    if (sessionStorage.getItem('sgou_dismiss_shelf') === 'true') {
+      shelf.style.display = 'none';
+      return;
+    }
+
+    this.renderContinueReading();
+  }
+
+  renderContinueReading() {
+    const shelf = $('continueReadingShelf');
+    const container = $('recentCardsContainer');
+    if (!shelf || !container) return;
+
+    let reads = [];
+    try {
+      reads = JSON.parse(localStorage.getItem('sgou-recent-reads') || '[]');
+      if (!Array.isArray(reads)) reads = [];
+    } catch (_) {
+      reads = [];
+    }
+
+    if (!reads.length) {
+      shelf.style.display = 'none';
+      return;
+    }
+
+    shelf.style.display = 'block';
+    container.innerHTML = reads.slice(0, 3).map((r) => {
+      const page = Math.max(1, parseInt(r.page, 10) || 1);
+      const total = Math.max(1, parseInt(r.totalPages, 10) || 1);
+      const pct = Math.min(100, Math.round((page / total) * 100));
+      const readUrl = `reader.html?file=${encodeURIComponent(r.url)}&code=${encodeURIComponent(r.courseCode || '')}&title=${encodeURIComponent(r.title || '')}&page=${page}`;
+
+      return `
+        <a href="${ea(readUrl)}" class="shelf-card" aria-label="Resume reading ${ea(r.title)}">
+          <div class="shelf-card-title">${esc(r.title)}</div>
+          <div class="shelf-card-meta">
+            <span>${r.courseCode ? esc(r.courseCode) + ' &middot; ' : ''}Page ${page} of ${total}</span>
+            <span>${pct}% complete</span>
+          </div>
+          <div class="shelf-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100">
+            <div class="reading-progress-fill" style="width: ${pct}%"></div>
+          </div>
+        </a>
+      `;
+    }).join('');
+  }
+
+  initMobileBottomNav() {
+    const nav = $('mobileBottomNav');
+    if (!nav) return;
+
+    nav.addEventListener('click', (e) => {
+      const btn = e.target.closest('.mobile-nav-btn');
+      if (!btn) return;
+      const tab = btn.dataset.tab;
+
+      // If viewer panel is open, dismiss it gracefully
+      const viewerPanel = $('viewerPanel');
+      if (viewerPanel && viewerPanel.classList.contains('visible')) {
+        this.hideViewerPanel(true);
+      }
+
+      if (tab === 'browse') {
+        nav.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (this._filterFavoritesOnly) {
+          this._filterFavoritesOnly = false;
+          const favFilterBtn = $('filterFavoritesBtn');
+          if (favFilterBtn) {
+            favFilterBtn.classList.remove('active');
+            favFilterBtn.setAttribute('aria-pressed', 'false');
+          }
+        }
+
+        const searchInput = $('searchInput');
+        if (searchInput && searchInput.value) {
+          searchInput.value = '';
+          this.filters.query = '';
+        }
+
+        const tbLeft = document.querySelector('.toolbar-left');
+        if (tbLeft) {
+          try { tbLeft.scrollTo({ left: 0, behavior: 'smooth' }); } catch (_) { tbLeft.scrollLeft = 0; }
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.executeSearch();
+      } else if (tab === 'recent') {
+        const shelf = $('continueReadingShelf');
+        if (shelf && shelf.style.display !== 'none') {
+          nav.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          shelf.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          this.showToast('No recent reading history found yet');
+        }
+      } else if (tab === 'favorites') {
+        this.toggleFavoritesFilter();
+      } else if (tab === 'support') {
+        if (window.SupportModal && typeof window.SupportModal.open === 'function') {
+          window.SupportModal.open();
+        }
+      }
+    });
+  }
+
+  toast(message, durationMs) {
+    this.showToast(message, durationMs);
+  }
+
+  applyFilters() {
+    this.executeSearch();
+  }
+
+  toggleFavoritesFilter() {
+    this._filterFavoritesOnly = !this._filterFavoritesOnly;
+    const btn = $('filterFavoritesBtn');
+    if (btn) {
+      btn.classList.toggle('active', !!this._filterFavoritesOnly);
+      btn.setAttribute('aria-pressed', this._filterFavoritesOnly ? 'true' : 'false');
+    }
+    const pinned = Storage.getPinnedProgrammes();
+    if (this._filterFavoritesOnly && (!pinned || pinned.length === 0)) {
+      this.showToast('You have no pinned programmes yet. Tap the star icon on any card to favorite it.');
+      this._filterFavoritesOnly = false;
+      if (btn) {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+    }
+
+    // Sync mobile bottom nav buttons
+    const mobFavBtn = document.querySelector('.mobile-nav-btn[data-tab="favorites"]');
+    const mobBrowseBtn = document.querySelector('.mobile-nav-btn[data-tab="browse"]');
+    if (mobFavBtn && mobBrowseBtn) {
+      mobFavBtn.classList.toggle('active', !!this._filterFavoritesOnly);
+      mobBrowseBtn.classList.toggle('active', !this._filterFavoritesOnly);
+    }
+
+    this.executeSearch();
   }
 
   initSwitcher() {
@@ -2740,6 +3133,26 @@ class UIController {
       setTimeout(() => this.hideRecentSearches(), 200);
     });
 
+    const recent = $('recentSearches');
+    if (recent) {
+      recent.addEventListener('pointerdown', (e) => {
+        // Prevent search input from losing focus / blurring before tap/click can register
+        if (e.target.closest('.recent-pill, #clearRecentBtn')) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    const searchResults = $('searchResults');
+    if (searchResults) {
+      searchResults.addEventListener('pointerdown', (e) => {
+        // Prevent search input from blurring and dropping mobile touch clicks
+        if (e.target.closest('.search-result-item, .search-result-code, .btn-view, .btn-download, .btn-share')) {
+          e.preventDefault();
+        }
+      });
+    }
+
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         const q = input.value.trim();
@@ -2780,6 +3193,7 @@ class UIController {
 
       if (!matches.length) {
         const typeWord = this.activeType === 'PYQ' ? 'question papers' : this.activeType === 'ASSIGNMENT' ? 'assignments' : this.activeType === 'SLM' ? 'course textbooks' : 'materials';
+        const didYouMean = Search.suggestDidYouMean(q);
 
         let altSuggestion = null;
         if (this.activeType && this.activeType !== 'ALL') {
@@ -2809,6 +3223,12 @@ class UIController {
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>
             </svg>
             <div class="empty-state-text">No ${typeWord} match &ldquo;${esc(q)}&rdquo;</div>
+            ${didYouMean && didYouMean.length ? `
+              <div class="search-did-you-mean" style="margin:0.85rem 0;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+                <span class="dym-label" style="font-size:13px;color:var(--text-muted,#64748b)">Did you mean:</span>
+                ${didYouMean.map(s => `<button class="dym-chip" type="button" data-query="${ea(s)}" style="background:var(--surface,#fff);border:1px solid var(--border-color,#cbd5e1);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--primary,#2563eb)">${esc(s)}</button>`).join('')}
+              </div>
+            ` : ''}
             ${altSuggestion ? `
               <div class="search-fallback-banner">
                 <div class="sf-msg">
@@ -2844,7 +3264,11 @@ class UIController {
         results.innerHTML = '';
       }
       if (viewControls) viewControls.style.display = '';
-      const filteredProgrammes = Catalog.filter(this.activeLevel, this.activeType);
+      let filteredProgrammes = Catalog.filter(this.activeLevel, this.activeType);
+      if (this._filterFavoritesOnly) {
+        const pinnedList = Storage.getPinnedProgrammes();
+        filteredProgrammes = filteredProgrammes.filter(p => pinnedList.includes(p.programme_name));
+      }
       if (grid) {
         grid.style.display = '';
         this.renderProgrammes(filteredProgrammes, '', this.activeType);
@@ -2995,13 +3419,30 @@ class UIController {
       const count = counts[lv] || 0;
 
       const pill = document.createElement('button');
-      const isActive = this.activeLevel === lv;
+      const isActive = this.activeLevel === lv && !this._filterFavoritesOnly;
       pill.className = 'pill' + (isActive ? ' active' : '');
       pill.dataset.level = lv;
       pill.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       pill.innerHTML = `${lv === 'ALL' ? 'All' : lv} <span class="pill-count">${count}</span>`;
       container.appendChild(pill);
     });
+
+    // Dedicated Favorites Filter Pill (H-07)
+    const pinned = Storage.getPinnedProgrammes();
+    const favBtn = document.createElement('button');
+    favBtn.className = 'pill btn-favorites-filter' + (this._filterFavoritesOnly ? ' active' : '');
+    favBtn.id = 'filterFavoritesBtn';
+    favBtn.type = 'button';
+    favBtn.setAttribute('aria-pressed', this._filterFavoritesOnly ? 'true' : 'false');
+    favBtn.setAttribute('title', 'Show Pinned / Favorited Programmes');
+    favBtn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="${this._filterFavoritesOnly ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+      </svg>
+      <span>Favorites</span>
+      <span class="pill-count" id="favoritesCount">${pinned.length}</span>
+    `;
+    container.appendChild(favBtn);
   }
 
   // --- Programme Cards Rendering ---
@@ -3114,7 +3555,7 @@ class UIController {
                           </div>
                           ${py.override ? `
                             <div class="pyq-override-notice">
-                              <span class="pyq-notice-icon">⚠️</span>
+                              <span class="pyq-notice-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                               <div class="pyq-notice-body">
                                 <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
                                 ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
@@ -3161,7 +3602,7 @@ class UIController {
                         </div>
                         ${py.override ? `
                           <div class="pyq-override-notice">
-                            <span class="pyq-notice-icon">⚠️</span>
+                            <span class="pyq-notice-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                             <div class="pyq-notice-body">
                               <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
                               ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
@@ -3310,7 +3751,7 @@ class UIController {
                               </div>
                               ${py.override ? `
                                 <div class="pyq-override-notice">
-                                  <span class="pyq-notice-icon">⚠️</span>
+                                  <span class="pyq-notice-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                                   <div class="pyq-notice-body">
                                     <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
                                     ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
@@ -3360,7 +3801,7 @@ class UIController {
                       </div>
                       ${py.override ? `
                         <div class="pyq-override-notice">
-                          <span class="pyq-notice-icon">⚠️</span>
+                          <span class="pyq-notice-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
                           <div class="pyq-notice-body">
                             <span class="pyq-notice-text"><strong>University Portal Error:</strong> ${esc(py.override.reason)}</span>
                             ${py.override.recommendation ? `<span class="pyq-notice-hint">${esc(py.override.recommendation)}</span>` : ''}
@@ -3451,58 +3892,89 @@ class UIController {
 
     this._renderedProgrammes = sortedList;
 
-    grid.innerHTML = sortedList.map((prog, idx) => {
-      let sems;
-      if (activeType === 'ASSIGNMENT') {
-        sems = prog.semesters.filter(s => s.assignments && s.assignments.length > 0);
-      } else if (activeType === 'PYQ') {
-        sems = prog.semesters.filter(s => (s.courses && s.courses.some(c => c.pyqs && c.pyqs.length > 0)) || (s.generalPyqs && s.generalPyqs.length > 0));
-      } else if (activeType === 'SLM') {
-        sems = prog.semesters.filter(s => s.courses && s.courses.length > 0);
-      } else {
-        sems = prog.semesters;
-      }
+    const CHUNK_SIZE = 12;
+    const initialBatch = sortedList.slice(0, CHUNK_SIZE);
+    grid.innerHTML = initialBatch.map((prog, idx) => this.renderProgrammeCard(prog, idx, query, activeType, pinnedList)).join('');
 
-      if (!sems.length) return '';
+    if (sortedList.length > CHUNK_SIZE) {
+      let offset = CHUNK_SIZE;
+      const renderNextChunk = () => {
+        if (offset >= sortedList.length) {
+          this.initScrollReveal();
+          return;
+        }
+        const nextBatch = sortedList.slice(offset, offset + 8);
+        const html = nextBatch.map((prog, i) => this.renderProgrammeCard(prog, offset + i, query, activeType, pinnedList)).join('');
+        if (typeof document !== 'undefined' && document.createRange) {
+          const fragment = document.createRange().createContextualFragment(html);
+          grid.appendChild(fragment);
+        } else if (grid.insertAdjacentHTML) {
+          grid.insertAdjacentHTML('beforeend', html);
+        }
+        offset += 8;
+        if (offset < sortedList.length) {
+          requestAnimationFrame(renderNextChunk);
+        } else {
+          this.initScrollReveal();
+        }
+      };
+      requestAnimationFrame(renderNextChunk);
+    } else {
+      this.initScrollReveal();
+    }
+  }
 
-      let metaParts = [`${sems.length} sem`];
-      if (activeType === 'PYQ') {
-        metaParts.push(`${prog.totalPyq} Question Papers`);
-      } else if (activeType === 'ASSIGNMENT') {
-        metaParts.push(`${prog.totalAsgn} Assignment Booklets`);
-      } else if (activeType === 'SLM') {
-        metaParts.push(`${prog.totalSlm} Course Textbooks`);
-      } else {
-        if (prog.totalSlm > 0) metaParts.push(`${prog.totalSlm} SLM`);
-        if (prog.totalPyq > 0) metaParts.push(`${prog.totalPyq} PYQ`);
-        if (prog.totalAsgn > 0) metaParts.push(`${prog.totalAsgn} Asgn`);
-      }
+  renderProgrammeCard(prog, idx, query, activeType, pinnedList) {
+    let sems;
+    if (activeType === 'ASSIGNMENT') {
+      sems = prog.semesters.filter(s => s.assignments && s.assignments.length > 0);
+    } else if (activeType === 'PYQ') {
+      sems = prog.semesters.filter(s => (s.courses && s.courses.some(c => c.pyqs && c.pyqs.length > 0)) || (s.generalPyqs && s.generalPyqs.length > 0));
+    } else if (activeType === 'SLM') {
+      sems = prog.semesters.filter(s => s.courses && s.courses.length > 0);
+    } else {
+      sems = prog.semesters;
+    }
 
-      const isPinned = pinnedList.includes(prog.programme_name);
+    if (!sems.length) return '';
 
-      return `
-        <div class="programme-card${isPinned ? ' pinned' : ''}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-idx="${idx}" role="listitem">
-          <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
-            <div class="card-header-main">
-              <div class="card-badge-row">
-                <span class="level-tag level-${ea(prog.level.toLowerCase())}">${esc(prog.level)}</span>
-                <span class="card-meta-text">${metaParts.join(' &middot; ')}</span>
-              </div>
-              <h2 class="programme-title">${hl(formatProgName(prog.programme_name), query)}</h2>
+    let metaParts = [`${sems.length} sem`];
+    if (activeType === 'PYQ') {
+      metaParts.push(`${prog.totalPyq} Question Papers`);
+    } else if (activeType === 'ASSIGNMENT') {
+      metaParts.push(`${prog.totalAsgn} Assignment Booklets`);
+    } else if (activeType === 'SLM') {
+      metaParts.push(`${prog.totalSlm} Course Textbooks`);
+    } else {
+      if (prog.totalSlm > 0) metaParts.push(`${prog.totalSlm} SLM`);
+      if (prog.totalPyq > 0) metaParts.push(`${prog.totalPyq} PYQ`);
+      if (prog.totalAsgn > 0) metaParts.push(`${prog.totalAsgn} Asgn`);
+    }
+
+    const isPinned = pinnedList.includes(prog.programme_name);
+
+    return `
+      <div class="programme-card${isPinned ? ' pinned' : ''}" data-prog="${ea(prog.programme_name)}" data-level="${ea(prog.level)}" data-idx="${idx}" role="listitem">
+        <div class="card-header" role="button" tabindex="0" aria-expanded="false" aria-controls="cb-${idx}">
+          <div class="card-header-main">
+            <div class="card-badge-row">
+              <span class="level-tag level-${ea(prog.level.toLowerCase())}">${esc(prog.level)}</span>
+              <span class="card-meta-text">${metaParts.join(' &middot; ')}</span>
             </div>
-            <button class="btn-pin-programme${isPinned ? ' active' : ''}" type="button" aria-label="${isPinned ? 'Unpin programme' : 'Pin to top of catalog'}" title="${isPinned ? 'Unpin programme' : 'Pin to top of catalog'}" data-prog="${ea(prog.programme_name)}">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="${isPinned ? '#f59e0b' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-            </button>
-            <div class="card-chevron" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
+            <h2 class="programme-title">${hl(formatProgName(prog.programme_name), query)}</h2>
           </div>
-          <div class="card-body" id="cb-${idx}" aria-hidden="true" data-rendered="false"></div>
+          <button class="btn-pin-programme${isPinned ? ' active' : ''}" type="button" aria-label="${isPinned ? 'Unpin programme' : 'Pin to top of catalog'}" title="${isPinned ? 'Unpin programme' : 'Pin to top of catalog'}" data-prog="${ea(prog.programme_name)}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="${isPinned ? '#f59e0b' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </button>
+          <div class="card-chevron" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
         </div>
-      `;
-    }).join('');
+        <div class="card-body" id="cb-${idx}" aria-hidden="true" data-rendered="false"></div>
+      </div>
+    `;
 
     this.initScrollReveal();
   }
@@ -4444,7 +4916,7 @@ class UIController {
     const typeLabel = type === 'PYQ' ? 'Previous Year Exam Paper' : type === 'ASSIGNMENT' ? 'Assignment Booklet' : 'Course SLM';
 
     // Polished, authoritative academic share card formatted for instant student messaging
-    const text = `📚 *SGOU Academic Database*\n*${name}*${cleanCode ? ' (' + cleanCode + ')' : ''} — ${typeLabel}\n${cleanProg} · SNGOU\n\nDownload & read free:\n👉 ${shareUrl}`;
+    const text = `*SGOU Academic Database*\n*${name}*${cleanCode ? ' (' + cleanCode + ')' : ''} — ${typeLabel}\n${cleanProg} · SNGOU\n\nDownload & read free:\n${shareUrl}`;
 
     if (navigator.share) {
       try {
@@ -4469,7 +4941,7 @@ class UIController {
     const shareUrl = cleanCode
       ? `${location.origin}/?course=${encodeURIComponent(cleanCode)}${typeParam}`
       : `${location.origin}/?q=${encodeURIComponent(name)}${typeParam}`;
-    const text = `📚 *SGOU Academic Database*\n*${name}*${cleanCode ? ' (' + cleanCode + ')' : ''} — ${typeLabel}\n${prog} · SNGOU\n\nDownload & read free:\n👉 ${shareUrl}`;
+    const text = `*SGOU Academic Database*\n*${name}*${cleanCode ? ' (' + cleanCode + ')' : ''} — ${typeLabel}\n${prog} · SNGOU\n\nDownload & read free:\n${shareUrl}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
     Analytics.trackShare(name, 'whatsapp');
   }
@@ -4643,11 +5115,25 @@ class UIController {
     const update = () => {
       const isOnline = navigator.onLine;
       if (bar) bar.classList.toggle('visible', !isOnline);
+      const pills = document.querySelectorAll('#networkPill, .network-pill');
+      pills.forEach(pill => {
+        if (isOnline) {
+          pill.classList.remove('offline');
+          const textEl = pill.querySelector('.network-text');
+          if (textEl) textEl.textContent = 'Online';
+          pill.setAttribute('title', 'Connection active — cloud features enabled');
+        } else {
+          pill.classList.add('offline');
+          const textEl = pill.querySelector('.network-text');
+          if (textEl) textEl.textContent = 'Offline';
+          pill.setAttribute('title', 'Offline — reading from cached device storage');
+        }
+      });
       Analytics.trackNetwork(isOnline);
     };
     window.addEventListener('online', update);
     window.addEventListener('offline', update);
-    if (bar) bar.classList.toggle('visible', !navigator.onLine);
+    update();
   }
 
   initInstallPrompt() {
@@ -5142,10 +5628,20 @@ class UIController {
         return;
       }
 
-      // Viewer Download (Direct 1-Click Streaming)
+      // Viewer Download (Direct 1-Click Streaming with optimistic state)
       if (e.target.closest('#viewerPanelDownload')) {
+        const dlBtn = e.target.closest('#viewerPanelDownload');
+        if (dlBtn && dlBtn.classList.contains('is-downloading')) return;
         const panel = $('viewerPanel');
         if (panel?._data) {
+          if (dlBtn) {
+            dlBtn.classList.add('is-downloading');
+            dlBtn.setAttribute('aria-busy', 'true');
+            setTimeout(() => {
+              dlBtn.classList.remove('is-downloading');
+              dlBtn.removeAttribute('aria-busy');
+            }, 3000);
+          }
           Downloader.startDirectDownload(panel._data);
         }
         return;
@@ -5323,6 +5819,16 @@ class UIController {
         return;
       }
 
+      // Search Result Item Card Body Tap: Forward tap to in-card .btn-view
+      const searchItem = e.target.closest('.search-result-item');
+      if (searchItem && !e.target.closest('.btn-download, .btn-share, .search-result-code, a, button')) {
+        const itemBtn = searchItem.querySelector('.btn-view');
+        if (itemBtn) {
+          itemBtn.click();
+          return;
+        }
+      }
+
       // Hash Navigation
       const navLink = e.target.closest('a[href^="#/"]');
       if (navLink) {
@@ -5342,11 +5848,12 @@ class UIController {
         if (!card || !grid) return;
 
         const isNowPinned = Storage.togglePinProgramme(progName);
+        this.updateFavoritesCount();
         Analytics.event('pin_programme', {
           programme: progName,
           is_pinned: isNowPinned
         });
-        this.showToast(isNowPinned ? `★ Pinned ${formatProgName(progName)} to top` : `Unpinned ${formatProgName(progName)}`);
+        this.showToast(isNowPinned ? `Pinned ${formatProgName(progName)} to top` : `Unpinned ${formatProgName(progName)}`);
 
         // Update star state and card styling immediately
         const svg = pinBtn.querySelector('svg');
@@ -5429,6 +5936,27 @@ class UIController {
           search_term: $('searchInput')?.value || ''
         });
         this.setMaterialType(nextType);
+        return;
+      }
+
+      // Did You Mean Search Suggestion Chip
+      const dymBtn = e.target.closest('.dym-chip');
+      if (dymBtn && dymBtn.dataset.query) {
+        e.preventDefault();
+        const searchInput = $('searchInput');
+        if (searchInput) {
+          searchInput.value = dymBtn.dataset.query;
+          this.executeSearch();
+          searchInput.focus();
+        }
+        return;
+      }
+
+      // Favorites Filter Button
+      const favFilterBtn = e.target.closest('#filterFavoritesBtn');
+      if (favFilterBtn) {
+        e.preventDefault();
+        this.toggleFavoritesFilter();
         return;
       }
 

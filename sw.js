@@ -1,21 +1,21 @@
-const CACHE = 'sgou-v159';
+const CACHE = 'sgou-v162';
 const SHELL = [
     './',
     './index.html',
     './js/config.js',
-    './css/style.css?v=20261105_01',
-    './css/components/support-modal.css?v=20261105_01',
-    './css/components/partner-modal.css?v=20261105_01',
-    './css/components/toast.css?v=20261105_01',
-    './js/utils/clipboard.js?v=20261105_01',
-    './js/components/toast.js?v=20261105_01',
-    './js/components/theme.js?v=20261105_01',
-    './js/components/support-modal.js?v=20261105_01',
-    './js/components/partner-modal.js?v=20261105_01',
-    './js/telemetry/analytics-core.js?v=20261105_01',
-    './js/script.js?v=20261105_01',
+    './css/style.css?v=20261117_01',
+    './css/components/support-modal.css?v=20261117_01',
+    './css/components/partner-modal.css?v=20261117_01',
+    './css/components/toast.css?v=20261117_01',
+    './js/utils/clipboard.js?v=20261117_01',
+    './js/components/toast.js?v=20261117_01',
+    './js/components/theme.js?v=20261117_01',
+    './js/components/support-modal.js?v=20261117_01',
+    './js/components/partner-modal.js?v=20261117_01',
+    './js/telemetry/analytics-core.js?v=20261117_01',
+    './js/script.js?v=20261117_01',
     './js/qrcode.min.js',
-    './manifest.json?v=20261105_01',
+    './manifest.json?v=20261117_01',
     './assets/icons/icon.svg?v=20260904_10',
     './assets/icons/icon-192.png?v=20260904_10',
     './assets/icons/icon-512.png?v=20260904_10',
@@ -28,7 +28,9 @@ const SHELL = [
     './pdfjs/pdf.min.js',
     './pdfjs/pdf.worker.min.js',
     './opensearch.xml',
-    './data/pyq_overrides.json'
+    './data/pyq_overrides.json',
+    './data/sgou_slm_data.json',
+    './data/sgou_questions_cleaned.json'
 ];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 

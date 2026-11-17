@@ -152,10 +152,10 @@ Transform the provided textbook excerpt into an ultra-dense, authentic revision 
 STRICT INSTRUCTIONS:
 1. Capture the actual names, components, definitions, and functions mentioned in the excerpt.
 2. Structure:
-   - ⚡ **Core Thesis**: The central academic takeaway of this specific section.
-   - 📌 **High-Yield Revision Points**: 5 essential facts/definitions to memorize before entering the exam hall.
-   - 💡 **Key Distinctions**: Precise technical contrasts (e.g. Hardware vs Firmware, Primary vs Secondary).
-   - ⚠️ **Common Exam Pitfalls**: Critical mistakes and confusions to avoid on semester papers.`;
+   - **Core Thesis**: The central academic takeaway of this specific section.
+   - **High-Yield Revision Points**: 5 essential facts/definitions to memorize before entering the exam hall.
+   - **Key Distinctions**: Precise technical contrasts (e.g. Hardware vs Firmware, Primary vs Secondary).
+   - **Common Exam Pitfalls**: Critical mistakes and confusions to avoid on semester papers.`;
   }
 
   const promptText = `Course: ${courseCode || 'SGOU Course'} ${courseTitle ? '(' + courseTitle + ')' : ''}

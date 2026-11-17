@@ -196,7 +196,7 @@ html[data-theme="dark"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all .15s ease;
+  transition: background .15s ease, color .15s ease, transform .12s ease;
 }
 
 .ai-sheet-close-btn:hover {
@@ -233,7 +233,7 @@ html[data-theme="dark"] {
   font-weight: 550;
   white-space: nowrap;
   cursor: pointer;
-  transition: all .16s ease;
+  transition: background .16s ease, border-color .16s ease, color .16s ease, transform .12s ease;
   touch-action: manipulation;
   flex-shrink: 0;
 }
@@ -416,7 +416,7 @@ html[data-theme="dark"] {
   font-weight: 550;
   color: var(--ai-sheet-text-muted);
   cursor: pointer;
-  transition: all .15s ease;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .12s ease;
 }
 
 .ai-action-btn:hover {
@@ -503,7 +503,15 @@ html[data-theme="dark"] {
   font-size: 11.5px;
   font-weight: 550;
   cursor: pointer;
-  transition: all .15s ease;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .12s ease;
+}
+
+.ai-pill-btn:active,
+.ai-action-btn:active,
+.ai-quota-support-btn:active,
+.ai-upload-receipt-btn:active,
+.ai-sheet-close-btn:active {
+  transform: scale(0.97);
 }
 
 .ai-upload-receipt-btn:hover {

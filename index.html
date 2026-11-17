@@ -92,7 +92,7 @@
     <link rel="stylesheet" href="css/components/support-modal.css?v=20261107_01">
     <link rel="stylesheet" href="css/components/partner-modal.css?v=20261105_01">
     <link rel="stylesheet" href="css/components/toast.css?v=20261105_01">
-    <link rel="stylesheet" href="css/style.css?v=20261105_01">
+    <link rel="stylesheet" href="css/style.css?v=20261117_01">
 
     <!-- Schema.org Knowledge Graph (JSON-LD) for Search Engines & AI Crawlers -->
     <!-- Search Engine Webmaster Verification Hooks -->
@@ -386,6 +386,10 @@
                 </div>
                 <div class="header-actions">
                     <div class="action-island">
+                        <div id="networkPill" class="network-pill" aria-live="polite" title="Connection active — online">
+                            <span class="network-dot"></span>
+                            <span class="network-text">Online</span>
+                        </div>
                         <button class="header-action-btn" id="myDownloadsBtn" aria-label="My Downloads"
                             title="My Saved Downloads (D)">
                             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -504,6 +508,13 @@
                         <button class="pill" data-level="FYUG" aria-pressed="false">FYUG <span class="pill-count">24</span></button>
                         <button class="pill" data-level="UG" aria-pressed="false">UG <span class="pill-count">2</span></button>
                         <button class="pill" data-level="PG" aria-pressed="false">PG <span class="pill-count">11</span></button>
+                        <button class="pill btn-favorites-filter" id="filterFavoritesBtn" type="button" aria-pressed="false" title="Show Pinned / Favorited Programmes">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            <span>Favorites</span>
+                            <span class="pill-count" id="favoritesCount">0</span>
+                        </button>
                     </div>
                 </div>
                 <div class="toolbar-center">
@@ -547,7 +558,58 @@
                 (UG), and Postgraduate (PG) degree programmes.</p>
         </section>
         <div class="search-results" id="searchResults" role="region" aria-label="Search results"></div>
-        <div class="programme-grid" id="grid" role="list" aria-label="Programmes"></div>
+        <!-- Continue Reading Shelf (H-04 Seamless Reading Resume) -->
+        <section id="continueReadingShelf" class="continue-reading-shelf" aria-label="Continue Reading" style="display:none;">
+            <div class="shelf-header">
+                <div class="shelf-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Jump Back In</span>
+                </div>
+                <button class="shelf-dismiss-btn" id="dismissRecentShelfBtn" type="button" aria-label="Dismiss reading shelf" title="Dismiss">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="shelf-cards" id="recentCardsContainer"></div>
+        </section>
+        <div class="programme-grid" id="grid" role="list" aria-label="Programmes">
+            <!-- Initial CSS Skeleton Cards (Instant 0ms FCP on slow 3G / low-end Android) -->
+            <div class="programme-card skeleton-card" aria-hidden="true">
+                <div class="card-header"><div class="skel skel-tag"></div><div class="skel skel-code"></div></div>
+                <div class="skel skel-title"></div>
+                <div class="skel skel-sub"></div>
+            </div>
+            <div class="programme-card skeleton-card" aria-hidden="true">
+                <div class="card-header"><div class="skel skel-tag"></div><div class="skel skel-code"></div></div>
+                <div class="skel skel-title"></div>
+                <div class="skel skel-sub"></div>
+            </div>
+            <div class="programme-card skeleton-card" aria-hidden="true">
+                <div class="card-header"><div class="skel skel-tag"></div><div class="skel skel-code"></div></div>
+                <div class="skel skel-title"></div>
+                <div class="skel skel-sub"></div>
+            </div>
+            <div class="programme-card skeleton-card" aria-hidden="true">
+                <div class="card-header"><div class="skel skel-tag"></div><div class="skel skel-code"></div></div>
+                <div class="skel skel-title"></div>
+                <div class="skel skel-sub"></div>
+            </div>
+            <div class="programme-card skeleton-card" aria-hidden="true">
+                <div class="card-header"><div class="skel skel-tag"></div><div class="skel skel-code"></div></div>
+                <div class="skel skel-title"></div>
+                <div class="skel skel-sub"></div>
+            </div>
+            <div class="programme-card skeleton-card" aria-hidden="true">
+                <div class="card-header"><div class="skel skel-tag"></div><div class="skel skel-code"></div></div>
+                <div class="skel skel-title"></div>
+                <div class="skel skel-sub"></div>
+            </div>
+        </div>
 
         <!-- Semantic Zero-JS Search & AI Crawler Directory Fallback -->
         <noscript>
@@ -1216,6 +1278,40 @@
         </div>
     </div>
 
+    <!-- ============ FIRST-VISIT ONBOARDING MODAL (H-06) ============ -->
+    <div class="modal-backdrop" id="onboardingModal" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+        <div class="modal-card onboarding-dialog">
+            <div class="modal-header">
+                <div class="modal-header-main">
+                    <h2 class="modal-title" id="onboardingTitle">Welcome to SGOU Database</h2>
+                    <p class="modal-subtitle">Select your degree to focus your textbook and question paper catalog.</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="onboarding-grid">
+                    <button class="onboarding-card" type="button" data-level="FYUG">
+                        <span class="onboarding-card-badge">4-Year</span>
+                        <h3 class="onboarding-card-title">FYUG Degree</h3>
+                        <p class="onboarding-card-desc">Four Year Undergraduate Programmes (Semesters 1&ndash;8)</p>
+                    </button>
+                    <button class="onboarding-card" type="button" data-level="UG">
+                        <span class="onboarding-card-badge">3-Year</span>
+                        <h3 class="onboarding-card-title">UG Degree</h3>
+                        <p class="onboarding-card-desc">Bachelor Programmes: BA, BCom, BBA, BCA (Semesters 1&ndash;6)</p>
+                    </button>
+                    <button class="onboarding-card" type="button" data-level="PG">
+                        <span class="onboarding-card-badge">2-Year</span>
+                        <h3 class="onboarding-card-title">PG Degree</h3>
+                        <p class="onboarding-card-desc">Master Programmes: MA, MCom, MSW (Semesters 1&ndash;4)</p>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-secondary full-width" id="onboardingBrowseAllBtn" type="button" data-level="ALL">Browse Everything (All Degrees)</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ============ KEYBOARD SHORTCUTS MODAL ============ -->
     <div class="modal-backdrop" id="shortcutsModal" role="dialog" aria-modal="true"
         aria-labelledby="shortcutsModalTitle">
@@ -1338,18 +1434,53 @@
         </div>
     </div>
 
+    <!-- Mobile Bottom Navigation Bar (H-03 Ergonomic Native App Bar) -->
+    <nav id="mobileBottomNav" class="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <button class="mobile-nav-btn active" data-tab="browse" type="button" aria-label="Browse Catalog">
+            <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span class="mobile-nav-label">Browse</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="recent" type="button" aria-label="Continue Reading">
+            <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span class="mobile-nav-label">Recent</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="favorites" type="button" aria-label="Starred Materials">
+            <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            <span class="mobile-nav-label">Favorites</span>
+        </button>
+        <button class="mobile-nav-btn" data-tab="support" type="button" aria-label="Support SGOU Database">
+            <svg class="mobile-nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span class="mobile-nav-label">Support</span>
+        </button>
+    </nav>
+
+    <!-- Accessibility Live Region for Screen Readers -->
+    <div id="a11yAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
     <!-- Toast & Update Notification Container -->
     <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/config.js?v=20261105_01" defer></script>
-    <script src="js/utils/clipboard.js?v=20261105_01" defer></script>
-    <script src="js/components/toast.js?v=20261105_01" defer></script>
-    <script src="js/components/theme.js?v=20261105_01" defer></script>
-    <script src="js/qrcode.min.js?v=20261105_01" defer></script>
-    <script src="js/components/support-modal.js?v=20261107_01" defer></script>
-    <script src="js/components/partner-modal.js?v=20261105_01" defer></script>
-    <script src="js/telemetry/analytics-core.js?v=20261105_01" defer></script>
-    <script src="js/script.js?v=20261105_01" defer></script>
+    <script src="js/config.js?v=20261117_01" defer></script>
+    <script src="js/utils/clipboard.js?v=20261117_01" defer></script>
+    <script src="js/components/toast.js?v=20261117_01" defer></script>
+    <script src="js/components/theme.js?v=20261117_01" defer></script>
+    <script src="js/qrcode.min.js?v=20261117_01" defer></script>
+    <script src="js/components/support-modal.js?v=20261117_01" defer></script>
+    <script src="js/components/partner-modal.js?v=20261117_01" defer></script>
+    <script src="js/telemetry/analytics-core.js?v=20261117_01" defer></script>
+    <script src="js/script.js?v=20261117_01" defer></script>
 </body>
 
 </html>

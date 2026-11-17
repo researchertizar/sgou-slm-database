@@ -1148,10 +1148,10 @@ Transform the provided textbook excerpt into an ultra-dense, authentic revision 
 STRICT INSTRUCTIONS:
 1. Capture the actual names, components, definitions, and functions mentioned in the excerpt.
 2. Structure:
-   - ⚡ **Core Thesis**: The central academic takeaway of this specific section.
-   - 📌 **High-Yield Revision Points**: 5 essential facts/definitions to memorize before entering the exam hall.
-   - 💡 **Key Distinctions**: Precise technical contrasts (e.g. Hardware vs Firmware, Primary vs Secondary).
-   - ⚠️ **Common Exam Pitfalls**: Critical mistakes and confusions to avoid on semester papers.`;
+   - **Core Thesis**: The central academic takeaway of this specific section.
+   - **High-Yield Revision Points**: 5 essential facts/definitions to memorize before entering the exam hall.
+   - **Key Distinctions**: Precise technical contrasts (e.g. Hardware vs Firmware, Primary vs Secondary).
+   - **Common Exam Pitfalls**: Critical mistakes and confusions to avoid on semester papers.`;
         }
 
         const promptText = `Course: ${course_code || 'SGOU Course'} ${course_title ? '(' + course_title + ')' : ''}
@@ -1246,11 +1246,14 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
 
     try {
       const upstream = new URL(raw);
-      const ALLOWED_HOSTS = new Set(['d198y4z1gpgoxg.cloudfront.net', 'sgou.ac.in', 'www.sgou.ac.in']);
+      const host = upstream.hostname.toLowerCase();
+      const isAllowedHost = host === 'd198y4z1gpgoxg.cloudfront.net' ||
+        host === 'sgou.ac.in' ||
+        host.endsWith('.sgou.ac.in') ||
+        host.endsWith('.workers.dev');
 
-      if (upstream.protocol !== 'https:' || !ALLOWED_HOSTS.has(upstream.hostname.toLowerCase())) {
-        res.writeHead(403, { 'Content-Type': 'application/json' });
-        if (!res.headersSent) res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      if (upstream.protocol !== 'https:' || !isAllowedHost) {
+        res.writeHead(403, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         return res.end(JSON.stringify({ error: 'Host or protocol forbidden' }));
       }
 
@@ -1274,7 +1277,17 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
         getOptions.headers['Range'] = req.headers.range;
       }
 
-      const upstreamReq = https.get(upstream, getOptions, upstreamRes => {
+      let targetUpstream = upstream;
+      if (host.endsWith('.workers.dev') && upstream.searchParams.has('url')) {
+        try {
+          const innerUrl = new URL(upstream.searchParams.get('url'));
+          if (innerUrl.protocol === 'https:' && (innerUrl.hostname === 'd198y4z1gpgoxg.cloudfront.net' || innerUrl.hostname.endsWith('sgou.ac.in'))) {
+            targetUpstream = innerUrl;
+          }
+        } catch (_) {}
+      }
+
+      const upstreamReq = https.get(targetUpstream, getOptions, upstreamRes => {
         if (upstreamRes.statusCode >= 300 && upstreamRes.statusCode < 400 && upstreamRes.headers.location) {
           if (!res.headersSent) {
             res.writeHead(302, { Location: upstreamRes.headers.location });
@@ -1304,19 +1317,25 @@ Generate the comprehensive study breakdown now in clean GitHub-flavored Markdown
 
         res.writeHead(upstreamRes.statusCode || 200, headers);
         upstreamRes.pipe(res);
+
+        upstreamRes.on('error', (err) => {
+          if (!res.destroyed) res.destroy(err);
+        });
       });
 
       upstreamReq.on('error', err => {
         if (!res.headersSent) {
           res.writeHead(502, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Upstream fetch failed', message: err.message }));
-        } else {
+        } else if (!res.destroyed) {
           res.destroy();
         }
       });
 
-      req.on('close', () => {
-        upstreamReq.destroy();
+      res.on('close', () => {
+        if (!res.writableEnded) {
+          upstreamReq.destroy();
+        }
       });
       return;
     } catch (err) {

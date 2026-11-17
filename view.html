@@ -1555,6 +1555,10 @@
             </div>
 
             <div class="topbar-actions">
+                <div id="networkPill" class="network-pill" aria-live="polite" title="Connection active — online">
+                    <span class="network-dot"></span>
+                    <span class="network-text">Online</span>
+                </div>
                 <button class="topbar-btn icon-only" id="topbarThemeToggle" aria-label="Toggle theme"
                     title="Toggle theme (T)" type="button">
                     <svg class="icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -1823,6 +1827,26 @@
             var rawCode = params.get('code') || params.get('course') || pathCode || decodeURIComponent(hash || '');
             var courseCode = rawCode.trim();
 
+            function syncNetworkPill() {
+                var p = document.getElementById('networkPill');
+                if (!p) return;
+                var isOnline = navigator.onLine;
+                if (isOnline) {
+                    p.classList.remove('offline');
+                    var t = p.querySelector('.network-text');
+                    if (t) t.textContent = 'Online';
+                    p.title = 'Connection active — online';
+                } else {
+                    p.classList.add('offline');
+                    var t = p.querySelector('.network-text');
+                    if (t) t.textContent = 'Offline';
+                    p.title = 'Offline — reading from cached device storage';
+                }
+            }
+            window.addEventListener('online', syncNetworkPill);
+            window.addEventListener('offline', syncNetworkPill);
+            syncNetworkPill();
+
             function isValidPdfUrl(rawUrl) {
                 if (!rawUrl || typeof rawUrl !== 'string') return false;
                 var trimmed = rawUrl.trim();
@@ -1842,7 +1866,7 @@
                     }
                     var host = parsed.hostname.toLowerCase();
                     var allowedHosts = ['sgou.ac.in', 'www.sgou.ac.in', 'd198y4z1gpgoxg.cloudfront.net'];
-                    if (allowedHosts.indexOf(host) !== -1) return true;
+                    if (allowedHosts.indexOf(host) !== -1 || host.endsWith('.workers.dev')) return true;
                     if (typeof window !== 'undefined' && window.location && host === window.location.hostname.toLowerCase()) return true;
                     return false;
                 } catch (e) {
@@ -1850,18 +1874,43 @@
                 }
             }
 
-            var rawPdfUrl = params.get('url') || '';
+            var rawPdfUrl = params.get('url') || params.get('file') || params.get('pdf') || params.get('src') || '';
             var pdfUrl = isValidPdfUrl(rawPdfUrl) ? rawPdfUrl : '';
             if (rawPdfUrl && !pdfUrl) {
                 console.warn('[Security] Rejected untrusted or invalid PDF URL:', rawPdfUrl);
             }
-            var name = params.get('name') || '';
+            var name = params.get('name') || params.get('title') || '';
             var code = courseCode;
             var prog = params.get('prog') || '';
             var level = params.get('level') || '';
             var matType = (params.get('type') || (params.get('examdate') ? 'PYQ' : (params.get('semester') && !code ? 'ASSIGNMENT' : 'SLM'))).toUpperCase();
             var examDate = params.get('examdate') || params.get('date') || '';
             var batch = params.get('batch') || '';
+
+            function normalizeCode(raw) {
+                if (!raw) return '';
+                return String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
+            }
+
+            function cleanCodeMatch(a, b) {
+                var na = normalizeCode(a);
+                var nb = normalizeCode(b);
+                if (!na || !nb) return false;
+                return na === nb || (na.length >= 5 && nb.length >= 5 && (na.startsWith(nb) || nb.startsWith(na)));
+            }
+
+            function renderFallbackMeta() {
+                if (pdfUrl || (rawPdfUrl && isValidPdfUrl(rawPdfUrl))) {
+                    name = name || courseCode || 'SGOU Course Document';
+                    code = code || courseCode;
+                    prog = prog || 'Sreenarayana Guru Open University';
+                    level = level || (courseCode && (courseCode.startsWith('M') || courseCode.includes('PG')) ? 'PG' : 'UG');
+                    pdfUrl = pdfUrl || rawPdfUrl;
+                    showCourse();
+                    return true;
+                }
+                return false;
+            }
 
             // Clean legacy hash from URL bar if present
             if (hash) {
@@ -1910,12 +1959,13 @@
             // ============================================
             // Resolve course from data if we only have a code
             // ============================================
-            if (courseCode && !pdfUrl) {
+            if (pdfUrl) {
+                showCourse();
+                return;
+            } else if (courseCode) {
                 if (titleEl) titleEl.textContent = 'Loading\u2026';
                 var dataPaths = ['./data/sgou_slm_data.json', '/data/sgou_slm_data.json', '/sgou_slm_data.json', '/data.json'];
                 tryFetch(0);
-            } else if (pdfUrl) {
-                showCourse();
             } else {
                 showError('No course code or PDF URL provided.');
             }
@@ -1949,7 +1999,7 @@
                                     if (found) return;
                                     var cCode = (c.code || '').toUpperCase().trim();
                                     var cName = (c.name || '').toUpperCase().trim();
-                                    if (cCode === target || (target.length > 4 && cName === target) || (target.length > 4 && cName.includes(target))) {
+                                    if (cCode === target || cleanCodeMatch(cCode, target) || (target.length > 4 && cName === target) || (target.length > 4 && cName.includes(target))) {
                                         found = {
                                             pdfUrl: c.pdf_url,
                                             name: c.name,
@@ -1987,6 +2037,7 @@
             function tryFetchQ(j) {
                 var qPaths = ['./data/sgou_questions_cleaned.json', '/data/sgou_questions_cleaned.json', '/sgou_questions_cleaned.json'];
                 if (j >= qPaths.length) {
+                    if (renderFallbackMeta()) return;
                     showError('Material "' + courseCode + '" not found in database.');
                     return;
                 }
@@ -2051,6 +2102,7 @@
                             });
                         });
                         if (!foundQ) {
+                            if (renderFallbackMeta()) return;
                             showError('Material "' + courseCode + '" not found in database.');
                             return;
                         }
@@ -2275,8 +2327,8 @@
                 }
                 if (dlBtn) dlBtn.onclick = triggerDownload;
                 if (bDl) bDl.onclick = triggerDownload;
+                var ldDl = document.getElementById('loadingDownload');
                 if (ldDl) ldDl.onclick = triggerDownload;
-                if (cmfDl) cmfDl.onclick = triggerDownload;
 
                 var bShare = document.getElementById('bottomShare');
                 var bCopy = document.getElementById('btnCopyLink');
@@ -2333,7 +2385,9 @@
             var activeBlobUrl = null;
 
             async function loadPDF(url) {
-                loadTimers.forEach(function (t) { clearTimeout(t); });
+                if (Array.isArray(loadTimers)) {
+                    loadTimers.forEach(function (t) { clearTimeout(t); });
+                }
                 loadTimers = [];
 
                 if (activeBlobUrl) {

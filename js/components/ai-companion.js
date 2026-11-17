@@ -736,7 +736,7 @@
               updateQuotaBadge();
 
               if (window.Toast && typeof window.Toast.show === 'function') {
-                window.Toast.show('🎉 ' + res.plan + ' Unlocked! Thank you for supporting.');
+                window.Toast.show(res.plan + ' Unlocked! Thank you for supporting.');
               }
 
               // Auto-run previous selected mode

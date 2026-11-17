@@ -237,7 +237,7 @@
       });
 
       // Format WhatsApp deep link
-      var text = '🤝 *SGOU Academic Database — B2B Academy Placement Inquiry*\n\n' +
+      var text = '*SGOU Academic Database — B2B Academy Placement Inquiry*\n\n' +
                  '*Academy / Brand:* ' + brandName + '\n' +
                  '*Category:* ' + category + '\n' +
                  '*Target District:* ' + district + '\n' +
