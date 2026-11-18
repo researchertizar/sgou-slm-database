@@ -1023,6 +1023,17 @@
 
     <!-- Perspective 2: Unmet Searches (Progressively Disclosed) -->
     <div class="perspective-panel" id="tabSearches">
+      <!-- Syllabus Gap Clusters & Topic Intelligence -->
+      <div class="panel" style="margin-bottom:1rem;">
+        <div class="panel-header">
+          <h2 class="panel-title">Syllabus Gap Clusters &amp; Topic Intelligence</h2>
+          <span class="badge badge-accent">NLP Search Clustering</span>
+        </div>
+        <div id="searchClusterContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0.85rem;">
+          <p style="color:var(--ink-muted); padding:0.5rem 0;">Analyzing query clusters…</p>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-header">
           <h2 class="panel-title">Unmet Student Searches (Zero Results)</h2>
@@ -1048,6 +1059,17 @@
 
     <!-- Perspective 3: UI Friction & Rage (Progressively Disclosed) -->
     <div class="perspective-panel" id="tabFriction">
+      <!-- Composite Friction Index Summary -->
+      <div class="panel" style="margin-bottom:1rem;">
+        <div class="panel-header">
+          <h2 class="panel-title">UX Stability &amp; Mathematical Friction Index</h2>
+          <span class="badge badge-danger" id="frictionScoreBadge">Score: 0.0 (LOW)</span>
+        </div>
+        <div id="frictionSummaryContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0.85rem;">
+          <p style="color:var(--ink-muted); padding:0.5rem 0;">Computing composite friction score…</p>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel-header">
           <h2 class="panel-title">UI Friction &amp; Rage Taps Radar</h2>
@@ -1127,7 +1149,7 @@
           <h3 id="drilldownTitle" style="font-size:1.05rem; font-weight:700;">Deep Signal Breakdown</h3>
           <p id="drilldownSubtitle" style="font-size:0.76rem; color:var(--ink-muted);">Detailed session telemetry</p>
         </div>
-        <button class="btn" id="drilldownCloseBtn" style="padding:4px 9px; font-weight:700;" aria-label="Close modal">✕</button>
+        <button class="btn" id="drilldownCloseBtn" style="padding:4px 9px; font-weight:700;" aria-label="Close modal">&times;</button>
       </div>
       <div class="drilldown-body" id="drilldownBody">
         <!-- Content inserted dynamically -->
@@ -1277,15 +1299,23 @@
           } catch (e) { console.warn(e); }
         } else if (tabId === 'tabSearches') {
           try {
-            const zeroData = await fetchApi('zero_searches');
+            const periodParam = '&period=' + encodeURIComponent(currentPeriod) + '&timeframe=' + encodeURIComponent(currentPeriod);
+            const zeroData = await fetchApi('zero_searches', periodParam);
             zeroSearchCache = zeroData.zero_searches || [];
             renderZeroSearches(zeroSearchCache);
+
+            const clusterData = await fetchApi('search_clustering', periodParam);
+            renderSearchClustering(clusterData.clustering || {});
           } catch (e) { console.warn(e); }
         } else if (tabId === 'tabFriction') {
           try {
-            const rageData = await fetchApi('frictions');
+            const periodParam = '&period=' + encodeURIComponent(currentPeriod) + '&timeframe=' + encodeURIComponent(currentPeriod);
+            const rageData = await fetchApi('frictions', periodParam);
             rageClickCache = rageData.rage_clicks || [];
             renderRageClicks(rageClickCache);
+
+            const fData = await fetchApi('friction_index', periodParam);
+            renderFrictionIndex(fData.friction || {});
           } catch (e) { console.warn(e); }
         } else if (tabId === 'tabGeo') {
           try {
@@ -1401,7 +1431,7 @@
           if (!res.ok) throw new Error('Failed to fetch AI prompt');
           const text = await res.text();
           await navigator.clipboard.writeText(text);
-          showToast('✓ AI Optimization Brief copied to clipboard!');
+          showToast('[OK] AI Optimization Brief copied to clipboard!');
         } catch (err) {
           showToast('Error copying AI prompt: ' + err.message);
         }
@@ -1442,7 +1472,7 @@
         const res = await fetch(url);
         if (res.status === 401) {
           if (authStatusBadge) {
-            authStatusBadge.innerHTML = '<span class="badge badge-danger">✗ 401 Unauthorized — Invalid Token</span>';
+            authStatusBadge.innerHTML = '<span class="badge badge-danger">[FAIL] 401 Unauthorized — Invalid Token</span>';
           }
           throw new Error('HTTP 401 Unauthorized: Invalid Secret Token');
         }
@@ -1450,20 +1480,20 @@
           const errData = await res.json().catch(() => ({}));
           const errMsg = errData.error || 'Server error';
           if (authStatusBadge) {
-            authStatusBadge.innerHTML = '<span class="badge badge-danger">⚠️ ' + escapeHtml(errMsg) + '</span>';
+            authStatusBadge.innerHTML = '<span class="badge badge-danger">[500 Error] ' + escapeHtml(errMsg) + '</span>';
           }
           throw new Error(errMsg);
         }
         if (res.status === 429) {
           if (authStatusBadge) {
-            authStatusBadge.innerHTML = '<span class="badge badge-danger">⛔ 429 Rate Limited</span>';
+            authStatusBadge.innerHTML = '<span class="badge badge-danger">[429 Rate Limited]</span>';
           }
           throw new Error('HTTP 429 Rate Limited');
         }
         if (!res.ok) throw new Error('HTTP ' + res.status);
         if (authStatusBadge) {
           const sourceLabel = (isLocalHost && activeDataSource === 'local') ? 'Local SQLite (.db)' : 'Cloudflare D1 Edge';
-          authStatusBadge.innerHTML = '<span class="badge badge-success">✓ Online (' + sourceLabel + ')</span>';
+          authStatusBadge.innerHTML = '<span class="badge badge-success">[OK] Online (' + sourceLabel + ')</span>';
         }
         const data = await res.json();
         queryClientCache.set(cacheKey, { ts: Date.now(), data: data });
@@ -1738,7 +1768,7 @@
       function renderPossibilities(list) {
         const wrap = document.getElementById('possibilitiesContainer');
         if (!list || !list.length) {
-          wrap.innerHTML = '<div style="background:var(--surface-elevated); padding:1rem; border-radius:8px; color:var(--ink-muted); grid-column:span 3;">✓ Zero friction points or content gaps detected in active horizon!</div>';
+          wrap.innerHTML = '<div style="background:var(--surface-elevated); padding:1rem; border-radius:8px; color:var(--ink-muted); grid-column:span 3;">[OK] Zero friction points or content gaps detected in active horizon!</div>';
           return;
         }
 
@@ -2193,6 +2223,96 @@
           '<span style="color:var(--ink-muted); font-size:0.7rem; font-family:var(--font-mono);">(' + d.toLocaleTimeString() + ')</span>';
       }
 
+      function renderSearchClustering(clustering) {
+        const container = document.getElementById('searchClusterContainer');
+        if (!container) return;
+        const clusters = clustering.clusters || {};
+        const uniqueQueries = clustering.unique_unmet_queries || 0;
+
+        if (uniqueQueries === 0) {
+          container.innerHTML = '<div style="background:var(--surface-elevated); padding:1rem; border-radius:8px; color:var(--ink-muted); grid-column:span 3;">All queries currently resolved by catalog! No unmet search clusters detected.</div>';
+          return;
+        }
+
+        const cards = [
+          {
+            title: 'Course Code Gaps',
+            badge: 'badge-accent',
+            data: clusters.course_codes || { count: 0, total_hits: 0, items: [], recommendation: '' }
+          },
+          {
+            title: 'Semester Intent Gaps',
+            badge: 'badge-info',
+            data: clusters.semesters || { count: 0, total_hits: 0, items: [], recommendation: '' }
+          },
+          {
+            title: 'Natural Language Topics',
+            badge: 'badge-warning',
+            data: clusters.topics || { count: 0, total_hits: 0, items: [], recommendation: '' }
+          }
+        ];
+
+        container.innerHTML = cards.map(c => {
+          const itemsList = (c.data.items || []).slice(0, 5).map(item =>
+            '<div style="display:flex; justify-content:space-between; font-size:0.75rem; padding:2px 0;">' +
+              '<code>' + escapeHtml(item.query) + '</code>' +
+              '<span class="badge">' + item.hit_count + ' hits</span>' +
+            '</div>'
+          ).join('');
+
+          return '<div class="panel" style="padding:0.85rem; border-radius:8px; display:flex; flex-direction:column; gap:0.4rem;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+              '<strong style="font-size:0.84rem;">' + escapeHtml(c.title) + '</strong>' +
+              '<span class="badge ' + c.badge + '">' + (c.data.total_hits || 0) + ' total hits</span>' +
+            '</div>' +
+            '<div style="font-size:0.73rem; color:var(--ink-muted);">' + (c.data.count || 0) + ' unique patterns identified</div>' +
+            '<div style="margin:0.4rem 0; display:flex; flex-direction:column; gap:2px;">' + (itemsList || '<span style="font-size:0.73rem; color:var(--ink-muted);">No queries in this cluster</span>') + '</div>' +
+            '<div style="font-size:0.73rem; color:var(--success); border-top:1px solid var(--border); padding-top:0.35rem; font-weight:600;">' +
+              'Fix: ' + escapeHtml(c.data.recommendation || 'Map aliases in catalog') +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      function renderFrictionIndex(friction) {
+        const container = document.getElementById('frictionSummaryContainer');
+        const badge = document.getElementById('frictionScoreBadge');
+        if (!friction) return;
+
+        const score = friction.score || 0;
+        const status = friction.status || 'LOW';
+        const rages = friction.rage_clicks || 0;
+        const deads = friction.dead_clicks || 0;
+        const errors = friction.js_errors || 0;
+
+        if (badge) {
+          badge.textContent = 'Score: ' + score + ' (' + status + ')';
+          badge.className = 'badge ' + (status === 'LOW' ? 'badge-success' : (status === 'MODERATE' ? 'badge-warning' : 'badge-danger'));
+        }
+
+        if (!container) return;
+        container.innerHTML = '<div class="panel" style="padding:0.85rem;">' +
+          '<div style="font-size:0.74rem; color:var(--ink-muted);">Composite Score (F)</div>' +
+          '<div style="font-size:1.8rem; font-weight:800; color:' + (status === 'LOW' ? 'var(--success)' : (status === 'MODERATE' ? 'var(--warning)' : 'var(--danger)')) + ';">' + score + '</div>' +
+          '<div style="font-size:0.72rem; color:var(--ink-muted);">per 100 sessions</div>' +
+        '</div>' +
+        '<div class="panel" style="padding:0.85rem;">' +
+          '<div style="font-size:0.74rem; color:var(--ink-muted);">Rage Taps (x3.0)</div>' +
+          '<div style="font-size:1.4rem; font-weight:800; color:var(--danger);">' + rages + '</div>' +
+          '<div style="font-size:0.72rem; color:var(--ink-muted);">Rapid click bursts</div>' +
+        '</div>' +
+        '<div class="panel" style="padding:0.85rem;">' +
+          '<div style="font-size:0.74rem; color:var(--ink-muted);">Dead Clicks (x1.5)</div>' +
+          '<div style="font-size:1.4rem; font-weight:800; color:var(--warning);">' + deads + '</div>' +
+          '<div style="font-size:0.72rem; color:var(--ink-muted);">Clicks on inert text</div>' +
+        '</div>' +
+        '<div class="panel" style="padding:0.85rem;">' +
+          '<div style="font-size:0.74rem; color:var(--ink-muted);">JS Errors (x5.0)</div>' +
+          '<div style="font-size:1.4rem; font-weight:800; color:var(--info);">' + errors + '</div>' +
+          '<div style="font-size:0.72rem; color:var(--ink-muted);">Runtime exceptions</div>' +
+        '</div>';
+      }
+
       function escapeHtml(str) {
         return String(str || '').replace(/[&<>"']/g, m => ({
           '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -2202,12 +2322,13 @@
       // Initial load & smart lightweight poller (respects document visibility to preserve limits)
       loadAllData();
       setInterval(() => {
-        if (!document.hidden) {
-          fetchJson('/api/analytics/query?action=realtime').then(data => {
-            if (data) {
-              const live = data.live_sessions || 0;
-              const active = data.active_30m || 0;
-              const users = data.live_users || 0;
+        if (!document.hidden && currentToken) {
+          fetchApi('realtime').then(data => {
+            if (data && data.realtime) {
+              const rt = data.realtime;
+              const live = rt.live_sessions || rt.active_5m || 0;
+              const active = rt.active_30m || 0;
+              const users = rt.live_users || 0;
               const liveRibbonEl = document.getElementById('liveRibbonTicker');
               if (liveRibbonEl) {
                 liveRibbonEl.innerHTML = '<span>Live: ' + live + '</span><span>Active (30m): ' + active + '</span><span>Learners: ' + users + '</span>';

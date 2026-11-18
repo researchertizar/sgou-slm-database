@@ -433,10 +433,13 @@ export default {
 
             // Track Reading Dwell
             if (evt.t === 'reader_page_dwell' && d.course_code) {
-              dbBatch.push(env.DB.prepare(`
-                INSERT INTO reading_dwell_ledger (session_id, course_code, page_number, dwell_seconds)
-                VALUES (?, ?, ?, ?)
-              `).bind(sid, d.course_code, d.page || 1, d.duration_ms ? (d.duration_ms / 1000) : 0));
+              const dwellSec = Number(d.dwell_seconds ?? d.dwell_sec ?? (d.duration_ms ? d.duration_ms / 1000 : 0)) || 0;
+              if (dwellSec >= 1 && dwellSec <= 1800) {
+                dbBatch.push(env.DB.prepare(`
+                  INSERT INTO reading_dwell_ledger (session_id, course_code, page_number, dwell_seconds)
+                  VALUES (?, ?, ?, ?)
+                `).bind(sid, d.course_code, d.page || 1, dwellSec));
+              }
             }
           }
 
@@ -519,35 +522,73 @@ export default {
         });
       }
 
+      function getTimeFilter(param, col = 'start_time') {
+        const p = (param || 'all').toLowerCase();
+        if (p === 'today' || p === '24h') return `${col} >= date('now', 'start of day')`;
+        if (p === '7d') return `${col} >= date('now', '-7 days')`;
+        if (p === '30d') return `${col} >= date('now', '-30 days')`;
+        return '1=1';
+      }
+
       try {
         if (action === 'funnel') {
-          const landing = await env.DB.prepare('SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions').first('total') || 0;
-          const searched = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE event_type IN ('search', 'search_focused', 'search_hesitation')").first('total') || 0;
-          const inspected = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE event_type = 'click' AND (selector LIKE '%card%' OR selector LIKE '%item%' OR details_json LIKE '%card%')").first('total') || 0;
-          const completed = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE event_type IN ('document_download', 'reader_page_dwell', 'consumption_choice')").first('total') || 0;
+          const tf = urlObj.searchParams.get('timeframe') || urlObj.searchParams.get('period') || 'all';
+          const sessCond = getTimeFilter(tf, 'start_time');
+          const evtCond = getTimeFilter(tf, 'created_at');
+
+          const landing = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE ${sessCond}`).first('total') || 0;
+          const searched = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE ${evtCond} AND (event_type IN ('search', 'search_focused', 'search_hesitation', 'filter_change') OR selector LIKE '%search%' OR selector LIKE '%filter%')`).first('total') || 0;
+          const inspected = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE ${evtCond} AND (event_type = 'click' AND (selector LIKE '%card%' OR selector LIKE '%item%' OR details_json LIKE '%card%' OR details_json LIKE '%code%') OR event_type = 'view_item')`).first('total') || 0;
+          const completed = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_events WHERE ${evtCond} AND (event_type IN ('document_download', 'reader_page_dwell', 'consumption_choice', 'file_download'))`).first('total') || 0;
+
+          const pctSearched = landing > 0 ? Math.min(100, Math.round((searched / landing) * 100)) : 0;
+          const pctInspected = searched > 0 ? Math.min(100, Math.round((inspected / searched) * 100)) : (landing > 0 ? Math.min(100, Math.round((inspected / landing) * 100)) : 0);
+          const pctCompleted = inspected > 0 ? Math.min(100, Math.round((completed / inspected) * 100)) : (landing > 0 ? Math.min(100, Math.round((completed / landing) * 100)) : 0);
+          const overallConversion = landing > 0 ? Math.min(100, Math.round((completed / landing) * 100)) : 0;
 
           return new Response(JSON.stringify({
             funnel: {
+              timeframe: tf,
               landing,
               searched,
               inspected,
               completed,
-              pct_searched: landing ? Math.round((searched / landing) * 100) : 0,
-              pct_inspected: landing ? Math.round((inspected / landing) * 100) : 0,
-              pct_completed: landing ? Math.round((completed / landing) * 100) : 0
+              pct_searched: pctSearched,
+              pct_inspected: pctInspected,
+              pct_completed: pctCompleted,
+              overall_conversion: overallConversion,
+              step_1_to_2_drop: landing > 0 ? Math.max(0, 100 - pctSearched) : 0,
+              step_2_to_3_drop: searched > 0 ? Math.max(0, 100 - pctInspected) : 0,
+              step_3_to_4_drop: inspected > 0 ? Math.max(0, 100 - pctCompleted) : 0
             }
           }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
         if (action === 'overview') {
-          const sessionsCount = await env.DB.prepare('SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions').first('total');
+          const tf = urlObj.searchParams.get('timeframe') || urlObj.searchParams.get('period') || 'all';
+          const sessCond = getTimeFilter(tf, 'start_time');
+          const evtCond = getTimeFilter(tf, 'created_at');
+
+          const sessionsCount = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE ${sessCond}`).first('total');
           const todayCount = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as today FROM telemetry_sessions WHERE start_time >= date('now', 'start of day')").first('today');
           const liveSessions = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE last_active >= datetime('now', '-3 minutes')").first('total');
-          const activeSessions = await env.DB.prepare("SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE is_active = 1").first('total');
-          const totalUsers = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE user_id IS NOT NULL AND user_id != ''").first('total');
-          const returningUsers = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE is_returning = 1 OR visit_count > 1").first('total');
+          const activeSessions = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE is_active = 1 AND ${sessCond}`).first('total');
+          const totalUsers = await env.DB.prepare(`SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE user_id IS NOT NULL AND user_id != '' AND ${sessCond}`).first('total');
+          const returningUsers = await env.DB.prepare(`SELECT COUNT(DISTINCT user_id) as total FROM telemetry_sessions WHERE (is_returning = 1 OR visit_count > 1) AND ${sessCond}`).first('total');
           const zeroCount = await env.DB.prepare('SELECT COUNT(*) as total FROM zero_search_ledger').first('total');
           const rageCount = await env.DB.prepare('SELECT SUM(rage_count) as total FROM rage_click_ledger').first('total');
-          const avgDwell = await env.DB.prepare('SELECT AVG(dwell_seconds) as avg FROM reading_dwell_ledger').first('avg');
+          const avgDwell = await env.DB.prepare('SELECT AVG(dwell_seconds) as avg FROM reading_dwell_ledger WHERE dwell_seconds BETWEEN 2 AND 1800').first('avg');
+
+          const totalSess = sessionsCount || 0;
+          const rages = (await env.DB.prepare(`SELECT COUNT(*) as c FROM telemetry_events WHERE event_type = 'rage_click' AND ${evtCond}`).first('c')) || (rageCount || 0);
+          const deads = (await env.DB.prepare(`SELECT COUNT(*) as c FROM telemetry_events WHERE event_type = 'dead_click' AND ${evtCond}`).first('c')) || 0;
+          const errors = (await env.DB.prepare(`SELECT COUNT(*) as c FROM telemetry_events WHERE event_type IN ('js_error', 'promise_rejection') AND ${evtCond}`).first('c')) || 0;
+          const frictionScore = totalSess > 0
+            ? Math.round((((rages * 3) + (deads * 1.5) + (errors * 5)) / totalSess) * 10) / 10
+            : 0;
+
+          let frictionStatus = 'LOW';
+          if (frictionScore >= 15) frictionStatus = 'ELEVATED';
+          else if (frictionScore >= 5) frictionStatus = 'MODERATE';
 
           return new Response(JSON.stringify({
             overview: {
@@ -559,7 +600,117 @@ export default {
               returning_users: returningUsers || 0,
               zero_searches_count: zeroCount || 0,
               rage_clicks_count: rageCount || 0,
-              avg_dwell_seconds: Math.round(avgDwell || 0)
+              avg_dwell_seconds: Math.round(avgDwell || 0),
+              friction_index: {
+                score: frictionScore,
+                status: frictionStatus,
+                rages,
+                deads,
+                errors
+              }
+            }
+          }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'friction_index') {
+          const tf = urlObj.searchParams.get('timeframe') || urlObj.searchParams.get('period') || 'all';
+          const sessCond = getTimeFilter(tf, 'start_time');
+          const evtCond = getTimeFilter(tf, 'created_at');
+
+          const totalSessions = await env.DB.prepare(`SELECT COUNT(DISTINCT session_id) as total FROM telemetry_sessions WHERE ${sessCond}`).first('total') || 0;
+          const rages = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type = 'rage_click' AND ${evtCond}`).first('total') || 0;
+          const deads = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type = 'dead_click' AND ${evtCond}`).first('total') || 0;
+          const jsErrors = await env.DB.prepare(`SELECT COUNT(*) as total FROM telemetry_events WHERE event_type IN ('js_error', 'promise_rejection') AND ${evtCond}`).first('total') || 0;
+
+          const score = totalSessions > 0
+            ? Math.round((((rages * 3) + (deads * 1.5) + (jsErrors * 5)) / totalSessions) * 10) / 10
+            : 0;
+
+          let status = 'LOW';
+          let recommendation = 'UI interaction telemetry is exceptionally smooth. Zero major friction points.';
+          if (score >= 15) {
+            status = 'ELEVATED';
+            recommendation = 'Critical friction detected. Inspect top rage and dead click targets to repair broken interactions.';
+          } else if (score >= 5) {
+            status = 'MODERATE';
+            recommendation = 'Moderate user friction observed. Review dead click text targets and add visual feedback cues.';
+          }
+
+          const topRageTargets = (await env.DB.prepare(`
+            SELECT element_selector, text_sample, rage_count, last_rage
+            FROM rage_click_ledger
+            ORDER BY rage_count DESC
+            LIMIT 10
+          `).all()).results || [];
+
+          return new Response(JSON.stringify({
+            friction: {
+              timeframe: tf,
+              score,
+              status,
+              total_sessions: totalSessions,
+              rage_clicks: rages,
+              dead_clicks: deads,
+              js_errors: jsErrors,
+              recommendation,
+              top_targets: topRageTargets
+            }
+          }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        if (action === 'search_clustering') {
+          const rawZeros = (await env.DB.prepare(`
+            SELECT query, category, hit_count, last_searched
+            FROM zero_search_ledger
+            ORDER BY hit_count DESC
+          `).all()).results || [];
+
+          const clusters = {
+            course_codes: [],
+            semesters: [],
+            topics: []
+          };
+
+          const codeRegex = /^[a-z]{2,5}\s*\d{2,4}|bca|bba|mca|mcom|bsc|msc|ba\s|ma\s/i;
+          const semRegex = /sem(ester)?\s*[1-6]|s[1-6]\b/i;
+
+          rawZeros.forEach(z => {
+            const q = (z.query || '').trim();
+            if (semRegex.test(q)) {
+              clusters.semesters.push(z);
+            } else if (codeRegex.test(q)) {
+              clusters.course_codes.push(z);
+            } else {
+              clusters.topics.push(z);
+            }
+          });
+
+          const totalZeros = rawZeros.reduce((sum, item) => sum + (item.hit_count || 1), 0);
+
+          return new Response(JSON.stringify({
+            clustering: {
+              total_unmet_attempts: totalZeros,
+              unique_unmet_queries: rawZeros.length,
+              clusters: {
+                course_codes: {
+                  count: clusters.course_codes.length,
+                  total_hits: clusters.course_codes.reduce((a, b) => a + (b.hit_count || 1), 0),
+                  items: clusters.course_codes.slice(0, 15),
+                  recommendation: 'Map alternative course codes and semester aliases into syllabus catalog.'
+                },
+                semesters: {
+                  count: clusters.semesters.length,
+                  total_hits: clusters.semesters.reduce((a, b) => a + (b.hit_count || 1), 0),
+                  items: clusters.semesters.slice(0, 15),
+                  recommendation: 'Enable direct semester chip filtering from quick search suggestions.'
+                },
+                topics: {
+                  count: clusters.topics.length,
+                  total_hits: clusters.topics.reduce((a, b) => a + (b.hit_count || 1), 0),
+                  items: clusters.topics.slice(0, 15),
+                  recommendation: 'Verify if missing textbooks exist in university archives for ingestion.'
+                }
+              }
             }
           }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
         }
@@ -856,16 +1007,7 @@ export default {
             LIMIT 15
           `).all();
 
-          const fallback = [
-            { programme: 'BCA (Bachelor of Computer Applications)', session_count: 420, download_count: 185, search_count: 310, avg_dwell_sec: 142.5, tier: 'TIER-1' },
-            { programme: 'B.Com (Finance & Co-operation)', session_count: 395, download_count: 160, search_count: 275, avg_dwell_sec: 128.0, tier: 'TIER-1' },
-            { programme: 'BA English Language & Literature', session_count: 310, download_count: 140, search_count: 215, avg_dwell_sec: 165.2, tier: 'TIER-2' },
-            { programme: 'BBA (Bachelor of Business Administration)', session_count: 280, download_count: 115, search_count: 190, avg_dwell_sec: 110.8, tier: 'TIER-2' },
-            { programme: 'M.Com (Master of Commerce)', session_count: 245, download_count: 98, search_count: 160, avg_dwell_sec: 155.0, tier: 'TIER-2' },
-            { programme: 'MA History', session_count: 190, download_count: 82, search_count: 130, avg_dwell_sec: 178.4, tier: 'TIER-3' }
-          ];
-
-          return new Response(JSON.stringify({ leaderboard: (results && results.length > 0) ? results : fallback }), {
+          return new Response(JSON.stringify({ leaderboard: results || [] }), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' }
           });
@@ -885,18 +1027,7 @@ export default {
             LIMIT 14
           `).all();
 
-          const fallback = [
-            { district: 'Malappuram', primary_hub: 'Manjeri / Tirur', student_reach: 640, suggested_sponsorship_fee_inr: 4500, status: 'HIGH DEMAND' },
-            { district: 'Kollam', primary_hub: 'SGOU HQ / City', student_reach: 580, suggested_sponsorship_fee_inr: 4000, status: 'HIGH DEMAND' },
-            { district: 'Ernakulam', primary_hub: 'Kochi / Aluva', student_reach: 510, suggested_sponsorship_fee_inr: 3500, status: 'ACTIVE' },
-            { district: 'Kozhikode', primary_hub: 'City / Vadakara', student_reach: 480, suggested_sponsorship_fee_inr: 3500, status: 'ACTIVE' },
-            { district: 'Thiruvananthapuram', primary_hub: 'Trivandrum City', student_reach: 420, suggested_sponsorship_fee_inr: 3000, status: 'MODERATE' },
-            { district: 'Palakkad', primary_hub: 'Palakkad / Ottapalam', student_reach: 360, suggested_sponsorship_fee_inr: 2500, status: 'MODERATE' },
-            { district: 'Thrissur', primary_hub: 'Thrissur Town', student_reach: 330, suggested_sponsorship_fee_inr: 2500, status: 'MODERATE' },
-            { district: 'Kannur', primary_hub: 'Kannur / Thalassery', student_reach: 290, suggested_sponsorship_fee_inr: 2000, status: 'GROWING' }
-          ];
-
-          return new Response(JSON.stringify({ regional_valuation: (results && results.length > 0) ? results : fallback }), {
+          return new Response(JSON.stringify({ regional_valuation: results || [] }), {
             status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' }
           });
@@ -977,21 +1108,10 @@ export default {
             }
           });
 
-          if (impressions === 0) {
-            impressions = 28;
-            contextCounts = { download: 18, reader: 6, home: 4, manual: 0 };
-            chipCounts = { '15': 5, '25': 16, '50': 4, '100': 2, 'custom': 1 };
-            channelCounts = { upi_tap: 7, qr_download: 2, vpa_copy: 3, qr_view: 5 };
-            dismissalCounts = { close_btn: 12, done_btn: 8, backdrop: 5, escape_key: 3 };
-            grossIntentInr = 310;
-            dwellBeforePay = [4.2, 5.8, 3.5, 6.1, 4.9];
-            dwellBounced = [2.1, 1.8, 3.2, 2.4, 1.9];
-          }
-
           const totalIntents = channelCounts.upi_tap + channelCounts.qr_download + channelCounts.vpa_copy;
           const conversionRate = impressions > 0 ? Math.round((totalIntents / impressions) * 1000) / 10 : 0;
-          const avgDwellPay = dwellBeforePay.length > 0 ? Math.round(dwellBeforePay.reduce((a, b) => a + b, 0) / dwellBeforePay.length) : 5;
-          const avgDwellBounce = dwellBounced.length > 0 ? Math.round(dwellBounced.reduce((a, b) => a + b, 0) / dwellBounced.length) : 2;
+          const avgDwellPay = dwellBeforePay.length > 0 ? Math.round(dwellBeforePay.reduce((a, b) => a + b, 0) / dwellBeforePay.length) : 0;
+          const avgDwellBounce = dwellBounced.length > 0 ? Math.round(dwellBounced.reduce((a, b) => a + b, 0) / dwellBounced.length) : 0;
 
           return new Response(JSON.stringify({
             monetization: {
@@ -1069,22 +1189,6 @@ export default {
             }))
             .sort((a, b) => b.clicks - a.clicks)
             .slice(0, 10);
-
-          if (topElements.length === 0) {
-            topElements = [
-              { selector: 'button#searchInput', text: 'Search SGOU Syllabi', zone: 'search', clicks: 84, avg_x_pct: 50, avg_y_pct: 22 },
-              { selector: 'button.amount-chip[data-amount="25"]', text: '₹25 Server', zone: 'support_modal', clicks: 52, avg_x_pct: 42, avg_y_pct: 35 },
-              { selector: 'button.filter-chip[data-sem="1"]', text: 'Semester 1', zone: 'filters', clicks: 48, avg_x_pct: 28, avg_y_pct: 30 },
-              { selector: 'button#supportDirectPayBtn', text: 'Pay ₹25 via UPI', zone: 'support_modal', clicks: 39, avg_x_pct: 50, avg_y_pct: 48 },
-              { selector: 'button.amount-chip[data-amount="15"]', text: '₹15 Chai', zone: 'support_modal', clicks: 27, avg_x_pct: 22, avg_y_pct: 35 },
-              { selector: 'button#downloadBtn', text: 'Download PDF', zone: 'course_card', clicks: 24, avg_x_pct: 82, avg_y_pct: 64 }
-            ];
-            zoneMap.search = 84;
-            zoneMap.support_modal = 118;
-            zoneMap.filters = 48;
-            zoneMap.course_card = 42;
-            zoneMap.header = 22;
-          }
 
           const { results: zeroSearches } = await env.DB.prepare(`
             SELECT query, category, hit_count, last_searched

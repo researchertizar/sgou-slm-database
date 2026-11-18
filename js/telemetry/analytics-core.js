@@ -292,13 +292,17 @@
   function deriveZone(el) {
     if (!el || !el.closest) return 'content';
     if (el.closest('#supportModal, .support-modal')) return 'support_modal';
+    if (el.closest('#onboardingModal, .onboarding-modal')) return 'onboarding_modal';
+    if (el.closest('#continueReadingShelf, .continue-reading-shelf')) return 'continue_shelf';
+    if (el.closest('#pyqDrawer, .drawer-panel, .bottom-sheet')) return 'drawer';
+    if (el.closest('#mobileBottomNav, .mobile-bottom-nav')) return 'mobile_nav';
     if (el.closest('header, .app-header, .cockpit-header')) return 'header';
-    if (el.closest('.search-container, #searchSection, #searchWrap, .search-box')) return 'search';
-    if (el.closest('.filter-group, .filter-chips, .programme-filters, .tag-filters, #quickFilters')) return 'filters';
-    if (el.closest('.programme-card, .card, .syllabus-card')) return 'course_card';
+    if (el.closest('.search-container, #searchSection, #searchWrap, .search-box, #quickFilters, .search-pills')) return 'search';
+    if (el.closest('.filter-group, .filter-chips, .programme-filters, .tag-filters, .filter-category-pills, .sem-tabs, .category-filter-group')) return 'filters';
+    if (el.closest('.programme-card, .card, .syllabus-card, .course-item')) return 'course_card';
     if (el.closest('#readerTopBar, .viewer-topbar, #readerToolbar')) return 'reader_toolbar';
     if (el.closest('#viewerCanvas, #pdfCanvas, #readerPanel, .pdf-canvas-container')) return 'reader_canvas';
-    if (el.closest('footer, .footer')) return 'footer';
+    if (el.closest('footer, .footer, .legal-links')) return 'footer';
     return 'content';
   }
 
@@ -308,15 +312,23 @@
            el.getAttribute('data-price') ||
            el.getAttribute('data-code') ||
            el.getAttribute('data-programme') ||
+           el.getAttribute('data-sem') ||
+           el.getAttribute('data-level') ||
+           el.getAttribute('data-tab') ||
+           el.getAttribute('data-type') ||
+           el.getAttribute('data-action') ||
            (el.closest && el.closest('[data-amount]') ? el.closest('[data-amount]').getAttribute('data-amount') : null) ||
            (el.closest && el.closest('[data-code]') ? el.closest('[data-code]').getAttribute('data-code') : null) ||
+           (el.closest && el.closest('[data-sem]') ? el.closest('[data-sem]').getAttribute('data-sem') : null) ||
+           (el.closest && el.closest('[data-level]') ? el.closest('[data-level]').getAttribute('data-level') : null) ||
+           (el.closest && el.closest('[data-tab]') ? el.closest('[data-tab]').getAttribute('data-tab') : null) ||
            null;
   }
 
   document.addEventListener('click', (e) => {
     const now = performance.now();
-    const target = e.target.closest('button, a, input, select, [role="button"], summary, [data-action], .programme-card, .search-result-item, .amount-chip, .filter-chip') || e.target;
-    const isInteractive = target.matches('button, a, input, select, [role="button"], summary, [data-action], input[type="text"], .amount-chip, .filter-chip');
+    const target = e.target.closest('button, a, input, select, [role="button"], summary, [data-action], .programme-card, .search-result-item, .amount-chip, .filter-chip, .tab-btn, .tab-item, .sem-btn, .nav-item, .action-btn') || e.target;
+    const isInteractive = target.matches('button, a, input, select, [role="button"], summary, [data-action], input[type="text"], .amount-chip, .filter-chip, .tab-btn, .tab-item, .sem-btn, .nav-item, .action-btn');
     const selector = deriveSelector(target);
     const textSnippet = (target.innerText || target.value || target.getAttribute('title') || target.getAttribute('aria-label') || '').trim().substring(0, 35);
     const zone = deriveZone(target);
@@ -370,7 +382,7 @@
     }
   }, { passive: true });
 
-  // 7. Text Selection Observer
+  // 7. Text Selection & Copy Observer
   let selectionDebounce = null;
   document.addEventListener('selectionchange', () => {
     clearTimeout(selectionDebounce);
@@ -387,6 +399,57 @@
     }, 600);
   });
 
+  document.addEventListener('copy', () => {
+    try {
+      const sel = window.getSelection();
+      const text = sel ? sel.toString().trim() : '';
+      if (text.length > 0) {
+        log('text_copied', {
+          length: text.length,
+          snippet: text.substring(0, 40),
+          zone: deriveZone(sel?.anchorNode?.parentElement)
+        });
+      }
+    } catch (_) {}
+  }, { passive: true });
+
+  // 7b. Passive Scroll Depth Milestone Observer (25%, 50%, 75%, 100%)
+  const scrollMilestones = { 25: false, 50: false, 75: false, 100: false };
+  let scrollTicking = false;
+
+  function evaluateScrollDepth() {
+    scrollTicking = false;
+    try {
+      const docHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        1
+      );
+      const winHeight = window.innerHeight || 1;
+      const scrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+      const scrollPct = Math.min(100, Math.round(((scrollTop + winHeight) / docHeight) * 100));
+
+      [25, 50, 75, 100].forEach(milestone => {
+        if (scrollPct >= milestone && !scrollMilestones[milestone]) {
+          scrollMilestones[milestone] = true;
+          log('scroll_milestone', { percent: milestone });
+          if (typeof window.gtag === 'function') {
+            try {
+              window.gtag('event', 'scroll', { percent_scrolled: milestone });
+            } catch (_) {}
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!scrollTicking) {
+      scrollTicking = true;
+      requestAnimationFrame(evaluateScrollDepth);
+    }
+  }, { passive: true });
+
   // 8. Section Viewport Visibility (IntersectionObserver)
   if ('IntersectionObserver' in window) {
     const visibilityObserver = new IntersectionObserver((entries) => {
@@ -399,7 +462,7 @@
     }, { threshold: 0.5 });
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('header, section, .programme-grid, .search-container, #viewerPanel, footer').forEach(el => {
+      document.querySelectorAll('header, section, .programme-grid, .search-container, #viewerPanel, #continueReadingShelf, #mobileBottomNav, footer').forEach(el => {
         visibilityObserver.observe(el);
       });
     });
@@ -411,13 +474,30 @@
   window.addEventListener('sgou:reader_page_rendered', (e) => {
     const newPage = e.detail?.page || 1;
     const courseCode = e.detail?.courseCode || 'unknown';
+    const totalPages = e.detail?.totalPages || 1;
     const dwellMs = Math.round(performance.now() - lastReaderPageEnter);
+    const dwellSec = Math.round(dwellMs / 1000);
 
-    log('reader_page_dwell', {
-      course_code: courseCode,
-      page: lastReaderPage,
-      dwell_seconds: Math.round(dwellMs / 1000)
-    });
+    // Only log dwell if student spent at least 1 second on the page (guards against fast scrolling noise)
+    if (dwellSec >= 1) {
+      log('reader_page_dwell', {
+        course_code: courseCode,
+        page: lastReaderPage,
+        dwell_seconds: dwellSec
+      });
+    }
+
+    // Reading progress milestone (25%, 50%, 75%, 100%)
+    if (totalPages > 1) {
+      const completionPct = Math.round((newPage / totalPages) * 100);
+      [25, 50, 75, 100].forEach(m => {
+        const milestoneKey = `_read_${courseCode}_${m}`;
+        if (completionPct >= m && !window[milestoneKey]) {
+          window[milestoneKey] = true;
+          log('reader_progress_milestone', { course_code: courseCode, milestone_pct: m, page: newPage, total_pages: totalPages });
+        }
+      });
+    }
 
     lastReaderPage = newPage;
     lastReaderPageEnter = performance.now();
