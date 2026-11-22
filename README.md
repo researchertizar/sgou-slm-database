@@ -190,7 +190,7 @@ To keep the platform ad-free, independent, and free for all students, a voluntar
 ### Desktop & Mobile Frictionless Flow
 - **Mobile (1-Tap Deep Linking)**: Dynamic UPI URI (`upi://pay?pa=ahayas.info@oksbi&pn=Ahayas&am=25...`) opens Google Pay, PhonePe, Paytm, BHIM, or CRED directly with one tap.
 - **Desktop (Vector QR Code)**: Dynamic 145px crisp SVG QR generated in-memory via vendored `qrcode.min.js`, allowing instant scanning from phone cameras without third-party gateways.
-- **Resilient VPA Copying**: One-click clipboard copy of UPI ID (`ahayas.info@oksbi`) with visual feedback (`Copied! ✓`) and non-blocking toast notifications.
+- **Resilient VPA Copying**: One-click clipboard copy of UPI ID (`ahayas.info@oksbi`) with visual feedback (`Copied! [OK]`) and non-blocking toast notifications.
 
 ---
 
@@ -223,7 +223,7 @@ To ensure flawless reading across all devices without external service dependenc
   - *Zoomed In*: Double-tap smoothly restores back to **Fit Width**.
 - **Pre-Emptive 600px Pre-Rendering & Sequential Queue**: `queuePageRender` processes pages sequentially with single-worker priority, cancelling obsolete tasks instantly on navigation/zoom. IntersectionObserver pre-renders pages 600px ahead, while a sliding window (`keepDistance = 6`) caches adjacent pages for 60fps butter-smooth scrolling with zero placeholder flashes.
 - **Eye-Comfort Modes**: Instant toggling between Normal, Parchment Sepia, and Obsidian Dark reading modes with persistent local preferences.
-- **Distraction-Free Controls Bar**: Streamlined floating toolbar `< 1 / 243 > | ➖ 57% ➕ | 🌙 🏳️ ⛶` focused purely on reading, navigation, and page rendering.
+- **Distraction-Free Controls Bar**: Streamlined floating toolbar `< 1 / 243 > | [-] 57% [+] | [Theme] [Flag] [Fullscreen]` focused purely on reading, navigation, and page rendering.
 
 ### 2. Direct CloudFront Native Streaming
 - Embeds the document directly inside `<iframe id="viewerPanelFrame">` using the canonical CloudFront URL (`pdfUrl + '#toolbar=1&navpanes=0'`).
@@ -273,7 +273,7 @@ Students can "star" or "pin" their degree programmes to keep them anchored at th
 The platform operates as a standalone Progressive Web App with zero external runtime dependencies.
 
 ### Cache Strategy
-- **Service Worker Version**: `sgou-v153` with asset versioning query parameters (`v=20261009_01`).
+- **Service Worker Version**: `sgou-v163` with asset versioning query parameters (`v=20261122_01`).
 - **Static Shell (Cache-First)**: `index.html`, `style.css`, `script.js`, `css/components/*`, `js/components/*`, `js/utils/*`, `js/qrcode.min.js`, `view.html`, `reader.html`, `pdfjs/pdf.min.js`, `pdfjs/pdf.worker.min.js`, `manifest.json`, `opensearch.xml`, `data/pyq_overrides.json`, and touch icons are served instantaneously from CacheStorage.
 - **Academic Datasets (Network-First with Cache Fallback)**: `data/sgou_slm_data.json` and `data/sgou_questions_cleaned.json` fetch latest updates from the network with instant fallback to local cached versions if offline.
 - **Google Fonts (Stale-While-Revalidate)**: Font stylesheets and `.woff2` files are cached with strict Content Security Policy (`connect-src https://fonts.googleapis.com https://fonts.gstatic.com`).
