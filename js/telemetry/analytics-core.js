@@ -109,8 +109,10 @@
     // Categorize active user engagement events
     const activeEventTypes = [
       'click', 'search_focused', 'search_hesitation', 'zero_search',
-      'document_download', 'consumption_choice', 'text_selected',
-      'reader_page_dwell', 'rage_click', 'section_in_view'
+      'document_download', 'consumption_choice', 'text_selected', 'text_copied',
+      'reader_page_dwell', 'rage_click', 'section_in_view',
+      'support_modal_open', 'support_chip_select', 'support_upi_click',
+      'support_qr_share', 'support_qr_save'
     ];
     if (activeEventTypes.includes(eventType)) {
       markSessionActive();

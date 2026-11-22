@@ -30,17 +30,18 @@
   };
 
   /**
-   * Situation-aware dynamic messages matched to the user's immediate action
+   * Situation-aware dynamic messages matched to the user's immediate action.
+   * Leverages psychological value realization, gratitude, and community reciprocity.
    */
   var CONTEXT_MESSAGES = {
     // 1. Post-Download: Triggered after syllabus PDF download
-    download: 'Downloaded! Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution directly funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
+    download: 'Saved to device! You just saved ~₹280 in local photocopy costs. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution directly funds high-speed cloud bandwidth and regular syllabus updates.',
     // 2. Document Reader / Standalone Viewer: Triggered from reader topbar or canvas dwell
-    reader: 'Preparing for exams? Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
+    reader: 'Preparing for exams? Enjoy zero distraction study access. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution keeps all 1,270+ textbooks open and free for all students.',
     // 3. Home Page / Catalog / Header / Footer: Direct exploration
-    home: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
+    home: 'Community Sustained Archive. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
     // 4. Default fallback
-    default: 'Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.'
+    default: 'Community Sustained Archive. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.'
   };
 
   function sendTelemetry(name, params) {
@@ -350,17 +351,17 @@
                 '<span class="chip-sub">Chai</span>' +
               '</button>' +
               '<button type="button" class="amount-chip popular active" data-amount="25">' +
-                '<span class="chip-badge">Popular</span>' +
+                '<span class="chip-badge">Best</span>' +
                 '<span class="chip-val">₹25</span>' +
-                '<span class="chip-sub">Server</span>' +
+                '<span class="chip-sub">Booster</span>' +
               '</button>' +
               '<button type="button" class="amount-chip" data-amount="50">' +
                 '<span class="chip-val">₹50</span>' +
-                '<span class="chip-sub">Hero</span>' +
+                '<span class="chip-sub">Scholar</span>' +
               '</button>' +
               '<button type="button" class="amount-chip" data-amount="100">' +
                 '<span class="chip-val">₹100</span>' +
-                '<span class="chip-sub">Patron</span>' +
+                '<span class="chip-sub">Hero</span>' +
               '</button>' +
               '<button type="button" class="amount-chip chip-custom" data-amount="custom">' +
                 '<span class="chip-val">Any</span>' +
