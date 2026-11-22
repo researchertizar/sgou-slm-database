@@ -108,9 +108,9 @@
   function log(eventType, details = {}) {
     // Categorize active user engagement events
     const activeEventTypes = [
-      'click', 'search_focused', 'search_hesitation', 'zero_search',
+      'click', 'search_focused', 'search_hesitation', 'search_query_dwell', 'zero_search',
       'document_download', 'consumption_choice', 'text_selected', 'text_copied',
-      'reader_page_dwell', 'rage_click', 'section_in_view',
+      'reader_page_dwell', 'reader_progress_milestone', 'rage_click', 'section_in_view',
       'support_modal_open', 'support_chip_select', 'support_upi_click',
       'support_qr_share', 'support_qr_save'
     ];
@@ -363,24 +363,52 @@
     lastClickTimestamp = now;
   }, { passive: true });
 
-  // 6. Focus, Keystroke Dwell & Search Hesitation
+  // 6. Focus, Keystroke Dwell, Search Hesitation & Query Backspacing
   let searchFocusStart = 0;
   let searchFirstInputFired = false;
+  let searchBackspaceCount = 0;
+  let lastSearchLength = 0;
+  let searchDebounceTimer = null;
+
   document.addEventListener('focusin', (e) => {
     if (e.target && e.target.id === 'searchInput') {
       searchFocusStart = performance.now();
       searchFirstInputFired = false;
+      searchBackspaceCount = 0;
+      lastSearchLength = (e.target.value || '').length;
       log('search_focused');
     }
   }, { passive: true });
 
   document.addEventListener('input', (e) => {
     if (e.target && e.target.id === 'searchInput') {
+      const currentVal = e.target.value || '';
+      const currentLen = currentVal.length;
+
+      // Track backspaces indicating student hesitation or typos
+      if (currentLen < lastSearchLength) {
+        searchBackspaceCount += (lastSearchLength - currentLen);
+      }
+      lastSearchLength = currentLen;
+
+      // First keystroke hesitation latency
       if (!searchFirstInputFired && searchFocusStart > 0) {
         const hesitationMs = Math.round(performance.now() - searchFocusStart);
         log('search_hesitation', { ms: hesitationMs });
         searchFirstInputFired = true;
       }
+
+      // Debounced search query dwell telemetry
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        if (currentLen >= 2) {
+          log('search_query_dwell', {
+            len: currentLen,
+            backspaces: searchBackspaceCount,
+            hesitation_ms: searchFocusStart > 0 ? Math.round(performance.now() - searchFocusStart) : 0
+          });
+        }
+      }, 1200);
     }
   }, { passive: true });
 
