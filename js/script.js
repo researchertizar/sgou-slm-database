@@ -1071,11 +1071,13 @@ class AcademicQueryParser {
       variants.push(clean.slice(2).toLowerCase());
     }
 
+    // 1. Full Standard Course Code: e.g. B21ML01DC, M21ML04DC, SGB24UC201SE
     const match = clean.match(/^([SGBM]{1,3})?([BM])(\d{2})([A-Z]{2})(\d{2,3})([A-Z]{2})?$/);
     if (match) {
       const [_, sg, level, year, dept, num, type] = match;
       variants.push((level + dept + num + (type || '')).toLowerCase());
       variants.push((level + '2' + dept + num + (type || '')).toLowerCase());
+      variants.push((level + '21' + dept + num + (type || '')).toLowerCase());
       variants.push((level + '22' + dept + num + (type || '')).toLowerCase());
       variants.push((level + '23' + dept + num + (type || '')).toLowerCase());
       variants.push((level + '24' + dept + num + (type || '')).toLowerCase());
@@ -1083,12 +1085,36 @@ class AcademicQueryParser {
       variants.push((dept + year).toLowerCase());
       variants.push((year + dept).toLowerCase());
       variants.push((dept + num).toLowerCase());
+      variants.push((dept + '21').toLowerCase());
+      variants.push((dept + '22').toLowerCase());
+      variants.push((dept + '24').toLowerCase());
       if (type) {
         variants.push((level + year + dept + type).toLowerCase());
         variants.push((level + year + dept + '03' + type).toLowerCase());
         variants.push((level + dept + type).toLowerCase());
+        variants.push((level + '2' + dept + num + type).toLowerCase());
+        variants.push((level + '21' + dept + num + type).toLowerCase());
+        variants.push((level + '22' + dept + num + type).toLowerCase());
+        variants.push((level + '23' + dept + num + type).toLowerCase());
+        variants.push((level + '24' + dept + num + type).toLowerCase());
+        variants.push((level + '26' + dept + num + type).toLowerCase());
       }
     }
+
+    // 2. FYUG 2024 Course variations: e.g. SGB24UC201SE -> b24uc03se, uc201, uc03se
+    const fyugMatch = clean.match(/^(?:SG)?([BM])(\d{2})([A-Z]{2})(\d{2,3})([A-Z]{2})?$/);
+    if (fyugMatch) {
+      const [_, lvl, yr, dept, num, type] = fyugMatch;
+      variants.push((dept + num).toLowerCase());
+      variants.push((dept + yr).toLowerCase());
+      if (type) {
+        variants.push((lvl + yr + dept + type).toLowerCase());
+        variants.push((lvl + yr + dept + '03' + type).toLowerCase());
+        variants.push((lvl + yr + dept + '01' + type).toLowerCase());
+        variants.push((dept + type).toLowerCase());
+      }
+    }
+
     return [...new Set(variants)];
   }
 
@@ -1104,6 +1130,7 @@ class AcademicQueryParser {
     if (p.includes('master of computer applications')) acrs.push('mca');
     if (p.includes('master of business administration')) acrs.push('mba');
     if (p.includes('social work')) acrs.push('msw');
+    if (p.includes('sociology')) acrs.push('sociology ba sociology');
     return acrs.join(' ');
   }
 
@@ -1140,6 +1167,11 @@ class AcademicQueryParser {
     q = q.replace(/\b(?:of\s*|sem\s*)?([1-6])(?:st|nd|rd|th)?\s*sem(?:ester)?\b/g, (_, p1) => 's' + p1);
     q = q.replace(/\bof\s*([1-6])\b/g, (_, p1) => 's' + p1);
     q = q.replace(/\bof([1-6])(?:st|nd|rd|th)?\b/g, (_, p1) => 's' + p1);
+
+    // Map common student shorthand search variations to canonical course query tokens
+    q = q.replace(/\bm22ml03dc\b/g, 'm21ml03dc');
+    q = q.replace(/\bm22ml04dc\b/g, 'm21ml04dc');
+    q = q.replace(/\bm2ml04dc\b/g, 'm21ml04dc');
 
     return q;
   }
