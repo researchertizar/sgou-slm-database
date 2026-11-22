@@ -2084,6 +2084,11 @@
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/8evEXxszJFMRVslgaV8YdChcRXTEfENlunptueG4.pdf"
           },
           {
+            "name": "व्याकरणपरिचयः",
+            "code": "B21SN03DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/gLSo3XoXHufsmbVEKVtASRyO7qa7hTz3Q6bHYL1h.pdf"
+          },
+          {
             "name": "श्रीनारायणगुरुदर्शनमर्श ्",
             "code": "B21SN01SE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/emxzeqZ96YOChJ1hwvYCUbdia9wdkpYK9udiaBVE.pdf"
@@ -3873,7 +3878,7 @@
           {
             "name": "Co-operative Banking Systems",
             "code": "B21CM13DE",
-            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/n3qiqLbg6Ck98FXZSUyblBfU7asJ8j6PJAZE6tHB.pdf"
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/IKXl0OCGCLG3AwXQF5sB74uQnDfCRSh9io5aW3tH.pdf"
           },
           {
             "name": "Financial Services and Market",
@@ -4156,6 +4161,26 @@
             "name": "Machine Learning",
             "code": "B21CA04DE",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/xMW5Xz18vS4iAncPBnMvFVYty2zJ0MBjtydzqhh3.pdf"
+          },
+          {
+            "name": "Data Analytics and Visualization",
+            "code": "B21CA03DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/QVY0lk7E47DUn67i6uVsDUygQ9vsA9FQVTUb3qyj.pdf"
+          },
+          {
+            "name": "Internet of Things",
+            "code": "B21CA24DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/dbEfiyDIDwvQsYeKylLNRNAo5ryiFB4DrHm8lZV6.pdf"
+          },
+          {
+            "name": "Quality Control",
+            "code": "B21CA15DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/OUEgLiBlZ8ccCQSawAFFDgTw6THN4Kzh6ksRJvVN.pdf"
+          },
+          {
+            "name": "High Performance Computing",
+            "code": "B21CA05DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/tiGvdPLuMPYuj9aGMbT2V1PRu0iYTaw5SoNz1rml.pdf"
           }
         ]
       }
@@ -4373,6 +4398,16 @@
             "name": "AML LAB WITH PYTHON",
             "code": "B24DS05PC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/oYwUrq7ainf5Ge5fkCQlgkrCKGlGANtUzZAK3iWr.pdf"
+          },
+          {
+            "name": "Introduction to Cloud Computing",
+            "code": "B24DS02DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Z5EJWpxTlrNbFdHcZbvhIIvWTRMtW8OvW9jey9n0.pdf"
+          },
+          {
+            "name": "Natural Language Processing (NLP)",
+            "code": "B24DS04DE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/1OicoUGLHTX3rMdSuBpyf0ZoQFgyqxUIB5I9vOzI.pdf"
           }
         ]
       }
@@ -7331,29 +7366,84 @@
         "semester": "S1",
         "courses": [
           {
-            "name": "Management Principles & Organisational Behaviour",
+            "name": "Management Principles & Organisational Behaviour 2025 Admission Onwards (Scheme 1)",
             "code": "M25BS01DC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/i1LxPWXyYG7k1rWhie8sjD4j4WqFb15jgeBgjHG6.pdf"
           },
           {
-            "name": "Accounting for Managers",
+            "name": "Accounting for Managers 2025 Admission Onwards (Scheme 1)",
             "code": "M25BS02DC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/fE0X1R7oFPIVNWVGDaZG9Xq8OkmfzAqSdG32wDTH.pdf"
           },
           {
-            "name": "Business Environment",
+            "name": "Business Environment 2025 Admission Onwards (Scheme 1)",
             "code": "M25BS03DC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/vHkh9DgkFfwUtNQNuqXjPuaFH6DCnVoiKNUEP0aY.pdf"
           },
           {
-            "name": "Quantitative Techniques",
+            "name": "Quantitative Techniques 2025 Admission Onwards (Scheme 1)",
             "code": "M25BS04DC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/q9LmCUhwTNdeoaM1m3A4BEDFPbFSZoazDFM2KHK8.pdf"
           },
           {
-            "name": "Business Communication",
+            "name": "Business Communication 2025 Admission Onwards (Scheme 1)",
             "code": "M25BS01AC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/jIYe833i35fb9nGf25g7OVzr39y8qEM72x3bk9Cs.pdf"
+          },
+          {
+            "name": "Management Principles & Organisational Behaviour 2026 Admission Onwards (Scheme 2)",
+            "code": "M26BS01DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/gR6CEg2rX3JG7QNSoIaYTnyRlsjoqaTU2Vn5Qqw8.pdf"
+          },
+          {
+            "name": "Accounting for Managers 2026 Admission Onwards (Scheme 2)",
+            "code": "M26BS02DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/7AofSzIUDSbZLSpvA7HKTjPHddP8SyUvtyMG8ndf.pdf"
+          },
+          {
+            "name": "Business Environment 2026 Admission Onwards (Scheme 2)",
+            "code": "M26BS03DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/VpyOO5iTviuXmInL8TLs98Ar5qZNiXgzSBgJO1yH.pdf"
+          },
+          {
+            "name": "Quantitative Techniques 2026 Admission Onwards (Scheme 2)",
+            "code": "M26BS04DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/mVvgMeQdywHJTShubuBLFvI33qBh4uNWgBSHg46d.pdf"
+          },
+          {
+            "name": "Business Communication 2026 Admission Onwards (Scheme 2)",
+            "code": "M26BS01AC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/NOEE7wyDuWgfkA9Saz8uCFm5LYNys7TBBsy8Uyxy.pdf"
+          },
+          {
+            "name": "Stock Market Operations 2026 Admission Onwards (Scheme 2)",
+            "code": "M26BS02AC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/gECJJqfwGcNrIXSbsS8WWj76RuPpswhtW1Z19186.pdf"
+          }
+        ]
+      },
+      {
+        "semester": "S2",
+        "courses": [
+          {
+            "name": "Financial Management 2025 Admission Onwards (Scheme 1)",
+            "code": "M25BS05DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/D0kWq2D43J4YFJ7C3BQYmuYXAGfeguz65Vfcfadd.pdf"
+          },
+          {
+            "name": "Marketing Management 2025 Admission Onwards (Scheme 1)",
+            "code": "M25BS07DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/otgKpY9iIvOmHYtBBEMZOgXgHeT87rfTW0MPZAK3.pdf"
+          },
+          {
+            "name": "Production and Operations Management 2025 Admission Onwards (Scheme 1)",
+            "code": "M25BS08DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/RP5Fr8foKdlcHUDIUsQWKfHUtVmoHQJ1aEyVyDaz.pdf"
+          },
+          {
+            "name": "Stock Market Operations 2025 Admission Onwards (Scheme 1)",
+            "code": "M25BS02AC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/IeuoDqF9Iwwc955yN3B768FN5gylmqepG6E6GBoN.pdf"
           }
         ]
       }
@@ -7538,6 +7628,71 @@
             "name": "Operating System Design (T)  2026 Admission Onwards (Scheme 2)",
             "code": "M26CA01DC",
             "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/hCNivIVFHchXZLRKqIhbZWCr18Je52QJZIjEMfiu.pdf"
+          },
+          {
+            "name": "Mathematical Foundation for Computer Applications (T ) 2026 Admission Onwards (Scheme 2)",
+            "code": "M26CA02DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/33prgQ1gZH4WDfomjwJgcFFZApTiAqgKjr5roRhi.pdf"
+          },
+          {
+            "name": "Python Programming (T) 2026 Admission Onwards (Scheme 2)",
+            "code": "M26CA03DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/xRzAQncwEBdxrWtiVf1RShSM6QcJveqj88eKd7Ng.pdf"
+          },
+          {
+            "name": "Industry Best Practices (T) 2026 Admission Onwards (Scheme 2)",
+            "code": "M26CA01AC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/NL2CS78qovKa4LBi3dtstFSi5iCbg8Brirg68zRI.pdf"
+          },
+          {
+            "name": "Web Programming (T) 2026 Admission Onwards (Scheme 2)",
+            "code": "M26CA01SE",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/oPDwaY8GZhWKdPUdIpxx0U1ieUYXl330saONZdqP.pdf"
+          },
+          {
+            "name": "Web Programming Lab (P) 2026 Admission Onwards (Scheme 2)",
+            "code": "M26CA01PC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/UMOqwQdbKEj2eZUa5ih798xlyLQQDLpvLGbwLYBp.pdf"
+          },
+          {
+            "name": "Python Programming Lab (P) 2026 Admission Onwards (Scheme 2)",
+            "code": "M26CA02PC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/euuYP7zUcBk33XUDTRvPjLqLIVrI0lrjxh8hFdRC.pdf"
+          }
+        ]
+      },
+      {
+        "semester": "S2",
+        "courses": [
+          {
+            "name": "Foundational Skills for Research and Writing",
+            "code": "M21UC01AC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/r4XPZAtGNW2QbU8Sxo0MXaHxKXEYBxBt9v7RLytJ.pdf"
+          },
+          {
+            "name": "Operating System Design (T)  (2025 Scheme)",
+            "code": "M25CA04DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/rfvTFU2PYum1kLRbdLqxmZ3SnU7iOqW03sX8Fa0i.pdf"
+          },
+          {
+            "name": "Database Technologies (T) (2025 Scheme)",
+            "code": "M25CA05DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/xWSeRatfpYLXEownKEpYYaYr0GxAkqxUF1EpNE0x.pdf"
+          },
+          {
+            "name": "Machine Learning (T) (2025 Scheme)",
+            "code": "M25CA06DC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Gi2UeCrWLHDRx8U0WspxabL8UfFtaiyW5AN6wF4n.pdf"
+          },
+          {
+            "name": "DBMS Lab (P)  5(2025 Scheme)",
+            "code": "M25CA03PC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/QfWaBlba7UHMY8lw98haIsMn0kOk6Pa5K7vTTIKz.pdf"
+          },
+          {
+            "name": "Machine Learning Lab (P) (2025 Scheme)",
+            "code": "M25CA04PC",
+            "pdf_url": "https://d198y4z1gpgoxg.cloudfront.net/uploads/slm/Rf0FIoLdT5Ts7QTcevDlbBE9Eb9lJodFBDZAvJCz.pdf"
           }
         ]
       }
