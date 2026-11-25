@@ -1,5 +1,5 @@
 // ============================================================================
-// SGOU Academic Database — Progressive Web App Service Worker (v165)
+// SGOU Academic Database â€” Progressive Web App Service Worker (v165)
 // ============================================================================
 // Multi-tier caching architecture:
 // 1. Core Shell (Cache-First): Instant 0ms loading of core HTML, CSS, JS runtime.
@@ -8,24 +8,24 @@
 // 4. Analytics & Proxy Bypass: Direct network tunneling for telemetry and CDN stream.
 // ============================================================================
 
-const CACHE = 'sgou-v165';
+const CACHE = 'sgou-v166';
 const SHELL = [
     './',
     './index.html',
     './js/config.js',
-    './css/style.css?v=20261125_01',
-    './css/components/support-modal.css?v=20261125_01',
-    './css/components/partner-modal.css?v=20261125_01',
-    './css/components/toast.css?v=20261125_01',
-    './js/utils/clipboard.js?v=20261125_01',
-    './js/components/toast.js?v=20261125_01',
-    './js/components/theme.js?v=20261125_01',
-    './js/components/support-modal.js?v=20261125_01',
-    './js/components/partner-modal.js?v=20261125_01',
-    './js/telemetry/analytics-core.js?v=20261125_01',
-    './js/script.js?v=20261125_01',
+    './css/style.css?v=20261125_02',
+    './css/components/support-modal.css?v=20261125_02',
+    './css/components/partner-modal.css?v=20261125_02',
+    './css/components/toast.css?v=20261125_02',
+    './js/utils/clipboard.js?v=20261125_02',
+    './js/components/toast.js?v=20261125_02',
+    './js/components/theme.js?v=20261125_02',
+    './js/components/support-modal.js?v=20261125_02',
+    './js/components/partner-modal.js?v=20261125_02',
+    './js/telemetry/analytics-core.js?v=20261125_02',
+    './js/script.js?v=20261125_02',
     './js/qrcode.min.js',
-    './manifest.json?v=20261125_01',
+    './manifest.json?v=20261125_02',
     './assets/icons/icon.svg?v=20260904_10',
     './assets/icons/icon-192.png?v=20260904_10',
     './assets/icons/icon-512.png?v=20260904_10',

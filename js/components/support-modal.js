@@ -37,7 +37,7 @@
     // 1. Post-Download: Triggered after syllabus PDF download
     download: 'Saved to device! You just saved ~₹280 in local photocopy costs. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution directly funds high-speed cloud bandwidth and regular syllabus updates.',
     // 2. Document Reader / Standalone Viewer: Triggered from reader topbar or canvas dwell
-    reader: 'Preparing for exams? Enjoy zero distraction study access. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution keeps all 1,270+ textbooks open and free for all students.',
+    reader: 'Preparing for exams? Enjoy zero distraction study access. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution keeps all 1,300+ textbooks open and free for all students.',
     // 3. Home Page / Catalog / Header / Footer: Direct exploration
     home: 'Community Sustained Archive. Maintained by <strong>' + CONFIG.payee + '</strong> as a free public utility. Your voluntary contribution funds high-speed cloud bandwidth, domain renewal, and regular syllabus updates.',
     // 4. Default fallback
@@ -410,31 +410,34 @@
             '<!-- QR Code Display Box (Desktop always visible, Mobile toggled) -->' +
             '<div class="support-qr-section" id="supportQrSection">' +
               '<div class="support-qr-card">' +
-                '<!-- Corner Controls: Info + Share + Save (PNG) -->' +
-                '<div class="support-qr-corner-actions">' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Contribution guide" aria-label="Contribution guide">' +
-                    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-                      '<circle cx="12" cy="12" r="10"></circle>' +
-                      '<line x1="12" y1="16" x2="12" y2="12"></line>' +
-                      '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
-                    '</svg>' +
-                  '</button>' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportShareQrBtn" title="Share QR" aria-label="Share QR image">' +
-                    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-                      '<circle cx="18" cy="5" r="3"></circle>' +
-                      '<circle cx="6" cy="12" r="3"></circle>' +
-                      '<circle cx="18" cy="19" r="3"></circle>' +
-                      '<line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>' +
-                      '<line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>' +
-                    '</svg>' +
-                  '</button>' +
-                  '<button type="button" class="support-qr-icon-btn" id="supportSaveQrBtn" title="Save QR (PNG)" aria-label="Save QR image">' +
-                    '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
-                      '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
-                      '<polyline points="7 10 12 15 17 10"></polyline>' +
-                      '<line x1="12" y1="15" x2="12" y2="3"></line>' +
-                    '</svg>' +
-                  '</button>' +
+                '<!-- Balanced Card Header: Label + Aligned Utility Controls -->' +
+                '<div class="support-qr-header">' +
+                  '<span class="support-qr-label">Scan UPI QR</span>' +
+                  '<div class="support-qr-corner-actions">' +
+                    '<button type="button" class="support-qr-icon-btn" id="supportQrInfoBtn" title="Contribution guide" aria-label="Contribution guide">' +
+                      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<circle cx="12" cy="12" r="10"></circle>' +
+                        '<line x1="12" y1="16" x2="12" y2="12"></line>' +
+                        '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
+                      '</svg>' +
+                    '</button>' +
+                    '<button type="button" class="support-qr-icon-btn" id="supportShareQrBtn" title="Share QR" aria-label="Share QR image">' +
+                      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<circle cx="18" cy="5" r="3"></circle>' +
+                        '<circle cx="6" cy="12" r="3"></circle>' +
+                        '<circle cx="18" cy="19" r="3"></circle>' +
+                        '<line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>' +
+                        '<line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>' +
+                      '</svg>' +
+                    '</button>' +
+                    '<button type="button" class="support-qr-icon-btn" id="supportSaveQrBtn" title="Save QR (PNG)" aria-label="Save QR image">' +
+                      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>' +
+                        '<polyline points="7 10 12 15 17 10"></polyline>' +
+                        '<line x1="12" y1="15" x2="12" y2="3"></line>' +
+                      '</svg>' +
+                    '</button>' +
+                  '</div>' +
                 '</div>' +
                 '<div class="support-qr-popover" id="supportQrPopover" role="tooltip" aria-hidden="true">' +
                   '<span class="support-popover-title">PhonePe &amp; Gallery Scan Help</span>' +
@@ -453,12 +456,12 @@
 
             '<!-- PhonePe / Payment App Guidance Notice -->' +
             '<div class="support-phonepe-notice" id="supportPhonepeNotice" role="note">' +
-              '<svg class="support-notice-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+              '<svg class="support-notice-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
                 '<circle cx="12" cy="12" r="10"></circle>' +
                 '<line x1="12" y1="16" x2="12" y2="12"></line>' +
                 '<line x1="12" y1="8" x2="12.01" y2="8"></line>' +
               '</svg>' +
-              '<span class="support-notice-text" id="supportNoticeText">PhonePe prompt? Tap <strong>DISMISS</strong> and tap <strong>Pay</strong> below, or tap <strong>Copy UPI ID</strong> to support directly.</span>' +
+              '<span class="support-notice-text" id="supportNoticeText">PhonePe prompt? Tap <strong>DISMISS</strong> and use <strong>Share QR</strong> or <strong>Copy UPI ID</strong> below.</span>' +
             '</div>' +
 
             '<!-- UPI ID Copy Section -->' +
@@ -681,7 +684,7 @@
       if (state.mobileSection) state.mobileSection.classList.remove('share-prioritized');
       if (state.noticeCard) state.noticeCard.classList.remove('alert-mode');
       if (state.noticeText) {
-        state.noticeText.innerHTML = 'PhonePe prompt? Tap <strong>DISMISS</strong> and tap <strong>Pay</strong> below, or tap <strong>Copy UPI ID</strong> to support directly.';
+        state.noticeText.innerHTML = 'PhonePe prompt? Tap <strong>DISMISS</strong> and use <strong>Share QR</strong> or <strong>Copy UPI ID</strong> below.';
       }
       if (state.mobileShareBtnText) {
         state.mobileShareBtnText.textContent = 'Share QR to PhonePe / App';

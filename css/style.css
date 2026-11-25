@@ -187,6 +187,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
+  scroll-padding-top: 168px;
   overscroll-behavior-y: none;
   font-size: 16px;
 }
@@ -1504,7 +1505,7 @@ main {
   word-break: break-word;
   min-height: 2.7em;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 }
 
 /* Card Chevron Indicator */
@@ -2653,8 +2654,11 @@ footer {
   }
 
   .network-pill {
-    padding: 4px 6px;
-    min-width: 0;
+    padding: 5px;
+    border-radius: 50%;
+    min-width: 22px;
+    min-height: 22px;
+    justify-content: center;
   }
 
   .network-pill .network-text {
@@ -2766,6 +2770,9 @@ footer {
     scroll-behavior: smooth;
     flex-wrap: nowrap;
     padding-bottom: 2px;
+    padding-right: 18px;
+    mask-image: linear-gradient(to right, black calc(100% - 20px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 20px), transparent);
   }
 
   .toolbar-left::-webkit-scrollbar {
@@ -2848,7 +2855,7 @@ footer {
     margin-top: 4px;
     min-height: 2.7em;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
   }
 
   .card-chevron {
@@ -3473,6 +3480,8 @@ body:has(.support-modal-backdrop.visible) .back-to-top {
 .modal-card {
   width: 100%;
   max-width: 500px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -3489,6 +3498,7 @@ body:has(.support-modal-backdrop.visible) .back-to-top {
 }
 
 .modal-header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: .75rem;
@@ -3564,11 +3574,15 @@ body:has(.support-modal-backdrop.visible) .back-to-top {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-height: 75vh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-footer {
+  flex-shrink: 0;
   padding: .9rem 1.25rem;
   border-top: 1px solid var(--border-light);
   background: var(--bg);
@@ -4390,8 +4404,11 @@ body:has(.modal-backdrop.visible) .download-progress-card {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-height: 70vh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .shortcuts-section {
@@ -5169,6 +5186,10 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 11px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .report-field-group {
@@ -5546,38 +5567,8 @@ kbd {
   transform: scale(1.12);
 }
 
-/* Responsive Adaptive Display Rules */
-@media (min-width: 641px) {
-  .support-mobile-section {
-    display: none;
-  }
-  .support-qr-section {
-    display: flex !important;
-  }
-}
-
+/* Responsive Adaptive Display Rules (SupportModal styles live in ./css/components/support-modal.css) */
 @media (max-width: 640px) {
-  .support-modal-backdrop {
-    padding: 16px 12px;
-    align-items: center;
-    justify-content: center;
-  }
-  .support-modal,
-  .support-modal-card {
-    max-width: 100%;
-    border-radius: 16px !important;
-    margin: auto;
-  }
-  .support-mobile-section {
-    display: block;
-  }
-  .support-qr-section {
-    display: none;
-    margin-top: 4px;
-  }
-  .support-qr-section.show {
-    display: flex !important;
-  }
   .view-controls #shortcutsBtn .toggle-text {
     display: none;
   }
@@ -5650,6 +5641,24 @@ kbd {
 @media (max-width: 768px) {
   body {
     padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Clear Mobile Bottom Navigation Bar for floating pills, toast & progress card */
+  .toast {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .back-to-top {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    right: 12px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .download-progress-card {
+    bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    right: 12px;
+    width: calc(100vw - 24px);
   }
 
   .mobile-bottom-nav {

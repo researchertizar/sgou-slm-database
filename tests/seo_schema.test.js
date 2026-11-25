@@ -114,7 +114,7 @@ test('Zero-Emoji Compliance: SEO schema and metadata files contains zero emojis'
 
 test('Platform Upgrade & Intelligence Cockpit: v165 ServiceWorker and Advanced Analytics Integration', () => {
     const swContent = fs.readFileSync(path.join(ROOT_DIR, 'sw.js'), 'utf-8');
-    assert.ok(swContent.includes("CACHE = 'sgou-v165'"), 'ServiceWorker must be upgraded to cache version sgou-v165');
+    assert.ok(swContent.includes("CACHE = 'sgou-v166'"), 'ServiceWorker must be upgraded to cache version sgou-v166');
 
     const dashPath = path.join(ROOT_DIR, 'admin', 'dashboard.html');
     const dashContent = fs.readFileSync(dashPath, 'utf-8');
