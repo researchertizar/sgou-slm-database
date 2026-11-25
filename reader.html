@@ -5,6 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' blob: https://www.googletagmanager.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https: https://www.google-analytics.com https://*.google-analytics.com; connect-src 'self' blob: data: https://d198y4z1gpgoxg.cloudfront.net https://fonts.googleapis.com https://fonts.gstatic.com https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com https://www.google.com https://*.google.com https://analytics.google.com https://*.workers.dev; frame-src 'self' https://docs.google.com; form-action 'self' https://docs.google.com; object-src 'none'; base-uri 'self';">
   <title>Academic Reader — SGOU</title>
+  <meta name="description" content="SGOU Academic Reader: Read and study official SGOU SLM textbooks, question papers, and assignments offline with distraction-free reading modes.">
+  <meta name="author" content="Ahayas">
+  <link rel="canonical" href="https://sgou-slm-database.vercel.app/reader">
+
+  <!-- Schema.org Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": "https://sgou-slm-database.vercel.app/reader#webpage",
+        "url": "https://sgou-slm-database.vercel.app/reader",
+        "name": "SGOU Academic PDF Reader & Viewer",
+        "description": "Distraction-free digital reader for SGOU self-learning materials and textbooks with offline capabilities.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "SGOU Academic Database",
+          "url": "https://sgou-slm-database.vercel.app/",
+          "publisher": {
+            "@id": "https://sgou-slm-database.vercel.app/#organization"
+          }
+        }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://sgou-slm-database.vercel.app/#organization",
+        "name": "SGOU Academic Database",
+        "legalName": "SGOU Academic Database",
+        "url": "https://sgou-slm-database.vercel.app/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://sgou-slm-database.vercel.app/assets/icons/icon-512.png",
+          "width": 512,
+          "height": 512
+        },
+        "sameAs": [
+          "https://github.com/researchertizar/sgou-slm-database",
+          "https://twitter.com/ahayas",
+          "https://sgou.ac.in"
+        ]
+      }
+    ]
+  }
+  </script>
   <!-- Google Analytics 4 (GA4) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-E2N7NJNRQB"></script>
   <script>
@@ -21,10 +66,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261107_01">
-  <link rel="stylesheet" href="./css/components/partner-modal.css?v=20261105_01">
-  <link rel="stylesheet" href="./css/components/toast.css?v=20261105_01">
-  <link rel="stylesheet" href="./css/components/ai-companion.css?v=20261107_02">
+  <link rel="stylesheet" href="./css/components/support-modal.css?v=20261125_01">
+  <link rel="stylesheet" href="./css/components/partner-modal.css?v=20261125_01">
+  <link rel="stylesheet" href="./css/components/toast.css?v=20261125_01">
+  <link rel="stylesheet" href="./css/components/ai-companion.css?v=20261125_01">
   <style>
     /* ============================================================
        THEME SYSTEM — Synchronized with SGOU Academic Design Tokens
@@ -1429,16 +1474,16 @@
       } catch (_) {}
     })();
   </script>
-  <script src="./js/config.js?v=20261105_01"></script>
+  <script src="./js/config.js?v=20261125_01"></script>
   <script src="./pdfjs/pdf.min.js"></script>
-  <script src="./js/utils/clipboard.js?v=20261105_01"></script>
-  <script src="./js/components/toast.js?v=20261105_01"></script>
-  <script src="./js/components/theme.js?v=20261105_01"></script>
-  <script src="./js/qrcode.min.js?v=20261105_01"></script>
-  <script src="./js/components/support-modal.js?v=20261107_01"></script>
-  <script src="./js/components/ai-companion.js?v=20261107_02"></script>
-  <script src="./js/components/partner-modal.js?v=20261105_01"></script>
-  <script src="./js/telemetry/analytics-core.js?v=20261105_01"></script>
+  <script src="./js/utils/clipboard.js?v=20261125_01"></script>
+  <script src="./js/components/toast.js?v=20261125_01"></script>
+  <script src="./js/components/theme.js?v=20261125_01"></script>
+  <script src="./js/qrcode.min.js?v=20261125_01"></script>
+  <script src="./js/components/support-modal.js?v=20261125_01"></script>
+  <script src="./js/components/ai-companion.js?v=20261125_01"></script>
+  <script src="./js/components/partner-modal.js?v=20261125_01"></script>
+  <script src="./js/telemetry/analytics-core.js?v=20261125_01"></script>
   <script>
     (function () {
       'use strict';

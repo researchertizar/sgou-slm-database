@@ -7,7 +7,7 @@
     <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src 'self' https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://drive.google.com blob:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://d198y4z1gpgoxg.cloudfront.net https://docs.google.com https://www.google-analytics.com https://*.google-analytics.com https://www.google.com https://*.google.com https://analytics.google.com https://*.workers.dev; object-src 'none'; base-uri 'self'; form-action 'self' https://docs.google.com;">
     <meta name="description"
-        content="Document Viewer — Preview, read, and download Sree Narayana Guru Open University (SGOU / SNGOU) SLM textbooks, previous year question papers (PYQs), and assignment booklets.">
+        content="Preview, read, and download official SGOU SLM textbooks, previous year question papers (PYQs), and assignment booklets offline.">
     <meta name="keywords"
         content="SGOU, SNGOU, Sree Narayana Guru Open University, SGOU SLM, SGOU PYQ, SGOU assignments, SGOU PDF viewer, Kerala Open University">
     <meta name="author" content="Ahayas">
@@ -23,7 +23,7 @@
     <script>
         (function(){try{var p=new URLSearchParams(location.search);var ut=p.get('theme');if(ut==='dark'||ut==='light'){document.documentElement.setAttribute('data-theme',ut);try{localStorage.setItem('sgou-theme-v2',ut);}catch(_){}}else{var t=localStorage.getItem('sgou-theme-v2');if(t==='dark'){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.setAttribute('data-theme','light');}}}catch(_){}})();
     </script>
-    <script src="js/config.js?v=20261026_01"></script>
+    <script src="js/config.js?v=20261125_01"></script>
 
     <!-- Open Graph & Social Cards -->
     <meta property="og:site_name" content="SGOU Academic Database">
@@ -70,7 +70,10 @@
           "isPartOf": {
             "@type": "WebSite",
             "name": "SGOU Academic Database",
-            "url": "https://sgou-slm-database.vercel.app/"
+            "url": "https://sgou-slm-database.vercel.app/",
+            "publisher": {
+              "@id": "https://sgou-slm-database.vercel.app/#organization"
+            }
           },
           "inLanguage": ["en-IN", "ml-IN"],
           "breadcrumb": {
@@ -92,15 +95,58 @@
           }
         },
         {
+          "@type": "Organization",
+          "@id": "https://sgou-slm-database.vercel.app/#organization",
+          "name": "SGOU Academic Database",
+          "legalName": "SGOU Academic Database",
+          "alternateName": [
+            "SGOU SLM Database",
+            "SNGOU Academic Database"
+          ],
+          "url": "https://sgou-slm-database.vercel.app/",
+          "logo": {
+            "@type": "ImageObject",
+            "@id": "https://sgou-slm-database.vercel.app/#logo",
+            "url": "https://sgou-slm-database.vercel.app/assets/icons/icon-512.png",
+            "caption": "SGOU Academic Database Logo",
+            "width": 512,
+            "height": 512
+          },
+          "image": "https://sgou-slm-database.vercel.app/assets/images/og-image.png",
+          "description": "Free open-access digital academic database providing 1,300+ SLM textbooks, 1,040+ previous year question papers, and assignment booklets for SGOU students.",
+          "founder": {
+            "@type": "Person",
+            "name": "Ahayas",
+            "jobTitle": "Lead Engineer & Academic Curator",
+            "url": "https://sgou-slm-database.vercel.app/"
+          },
+          "sameAs": [
+            "https://github.com/researchertizar/sgou-slm-database",
+            "https://twitter.com/ahayas",
+            "https://sgou.ac.in"
+          ]
+        },
+        {
           "@type": "DigitalDocument",
           "@id": "https://sgou-slm-database.vercel.app/view#document",
           "name": "SGOU Course Academic Document",
           "encodingFormat": "application/pdf",
           "isAccessibleForFree": true,
           "publisher": {
-            "@type": "EducationalOrganization",
+            "@type": ["EducationalOrganization", "Organization"],
             "name": "Sree Narayana Guru Open University",
-            "url": "https://sgou.ac.in"
+            "legalName": "Sreenarayanaguru Open University",
+            "url": "https://sgou.ac.in",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://sgou-slm-database.vercel.app/assets/icons/icon-512.png",
+              "width": 512,
+              "height": 512
+            },
+            "sameAs": [
+              "https://en.wikipedia.org/wiki/Sreenarayanaguru_Open_University",
+              "https://twitter.com/sgou_official"
+            ]
           }
         }
       ]
@@ -108,7 +154,7 @@
     </script>
 
     <!-- Touch & Favicon Formats -->
-    <link rel="manifest" href="/manifest.json?v=20261105_01">
+    <link rel="manifest" href="/manifest.json?v=20261125_01">
     <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg?v=20260904_10">
     <link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png?v=20260904_10">
     <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png?v=20260904_10">
@@ -120,9 +166,9 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261107_01">
-    <link rel="stylesheet" href="/css/components/partner-modal.css?v=20261105_01">
-    <link rel="stylesheet" href="/css/components/toast.css?v=20261105_01">
+    <link rel="stylesheet" href="/css/components/support-modal.css?v=20261125_01">
+    <link rel="stylesheet" href="/css/components/partner-modal.css?v=20261125_01">
+    <link rel="stylesheet" href="/css/components/toast.css?v=20261125_01">
     <style>
         @view-transition {
             navigation: auto;
@@ -1811,13 +1857,13 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="/js/utils/clipboard.js?v=20261105_01"></script>
-    <script src="/js/components/toast.js?v=20261105_01"></script>
-    <script src="/js/components/theme.js?v=20261105_01"></script>
-    <script src="/js/qrcode.min.js?v=20261105_01"></script>
-    <script src="/js/components/support-modal.js?v=20261107_01"></script>
-    <script src="/js/components/partner-modal.js?v=20261105_01"></script>
-    <script src="js/telemetry/analytics-core.js?v=20261105_01"></script>
+    <script src="/js/utils/clipboard.js?v=20261125_01"></script>
+    <script src="/js/components/toast.js?v=20261125_01"></script>
+    <script src="/js/components/theme.js?v=20261125_01"></script>
+    <script src="/js/qrcode.min.js?v=20261125_01"></script>
+    <script src="/js/components/support-modal.js?v=20261125_01"></script>
+    <script src="/js/components/partner-modal.js?v=20261125_01"></script>
+    <script src="js/telemetry/analytics-core.js?v=20261125_01"></script>
     <script>
         (function () {
             var params = new URLSearchParams(window.location.search);
